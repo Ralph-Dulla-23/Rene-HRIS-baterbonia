@@ -25,6 +25,7 @@ import {
 import { useJourney } from "../../journey/JourneyContext";
 import EmployeeJourneyDrillDown from "../../journey/drilldown/EmployeeJourneyDrillDown";
 import { EmployeeJourney } from "../../journey/journeyTypes";
+import TwoWeekTrainingScheduleView from "../TwoWeekTrainingScheduleView";
 
 interface NHOHRDashboardProps {
   subTab?: string;
@@ -456,8 +457,8 @@ export default function NHOHRDashboard({ subTab = "handoffs", onSubTabChange }: 
                           </div>
                         )}
 
-                        {/* Synchronized QDS Attendance Schedule */}
-                        <div className="p-3.5 bg-[#F7F9FC] border border-[#BECBDA] rounded-xl space-y-2">
+                        {/* Synchronized QDS Attendance Schedule & 2-Week PST/FST Matrix */}
+                        <div className="p-4 bg-[#F7F9FC] border border-[#BECBDA] rounded-xl space-y-3.5">
                           <div className="flex items-center justify-between">
                             <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider flex items-center gap-1.5">
                               <Calendar className="w-3.5 h-3.5 text-[#FF5C28]" />
@@ -495,14 +496,29 @@ export default function NHOHRDashboard({ subTab = "handoffs", onSubTabChange }: 
                               </span>
                             </div>
                           </div>
+
                           {selectedHandoff.qdsScheduleAssignedBy && (
                             <div className="text-[10px] text-slate-400 flex items-center justify-between pt-0.5">
                               <span>Assigned by: <strong>{selectedHandoff.qdsScheduleAssignedBy}</strong></span>
                               <span>Timestamp: {selectedHandoff.qdsScheduleAssignedAt || "—"}</span>
                             </div>
                           )}
+
+                          {/* 2-Week Based PST & FST Clickable Schedule */}
+                          <div className="pt-2 border-t border-slate-200">
+                            <TwoWeekTrainingScheduleView
+                              startDate={selectedHandoff.qdsAssignedScheduleDate || selectedHandoff.scheduledNhoDate || "2026-10-12"}
+                              assignedTrainerId={selectedHandoff.assignedTrainerId}
+                              assignedTrainerName={selectedHandoff.assignedTrainerName}
+                              existingMaterials={selectedHandoff.qdsMaterials || []}
+                              shiftHours={selectedHandoff.qdsShiftHours || "08:00 AM – 05:00 PM (Default)"}
+                              trainingLocation={selectedHandoff.qdsTrainingLocation || "Fintech Training Room 4A"}
+                              traineeName={selectedHandoff.fullName}
+                            />
+                          </div>
                         </div>
                       </div>
+
 
                       {/* 3. WFM Production Assignment Section */}
                       <div className="p-4 bg-white rounded-xl border border-slate-200 space-y-3">

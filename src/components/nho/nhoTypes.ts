@@ -238,6 +238,8 @@ export interface NHOApplicant {
   hrAcceptedBy?: string;
   linkedEmployeeJourneyId?: string;
 
+  twoWeekSchedule?: NHODailyTrainingSchedule[];
+
   // Overall outcome
   outcome: NHOOverallOutcome;
   withdrawalReason?: string;
@@ -245,6 +247,25 @@ export interface NHOApplicant {
 
   // Audit trail
   auditLogs: NHOAuditLog[];
+}
+
+export type NHOTrainingPhase = "FST" | "PST";
+
+export interface NHODailyTrainingSchedule {
+  dayNumber: number; // 1 to 10
+  phase: NHOTrainingPhase; // "FST" (Week 1, Days 1-5) | "PST" (Week 2, Days 6-10)
+  weekNumber: 1 | 2;
+  dayOfWeek: string; // "Monday", "Tuesday", etc.
+  date: string; // YYYY-MM-DD
+  title: string;
+  topics: string[];
+  shiftHours: string;
+  room: string;
+  trainerId: string;
+  trainerName: string;
+  trainerRole?: string;
+  materials: NHOQDSMaterial[];
+  status?: "Scheduled" | "In Progress" | "Completed";
 }
 
 export interface NHOQuizQuestion {
@@ -262,3 +283,4 @@ export interface NHOQDSAttendanceSchedule {
   assignedBy?: string;
   assignedAt?: string;
 }
+

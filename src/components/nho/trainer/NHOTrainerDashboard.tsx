@@ -33,6 +33,7 @@ import {
 import { useJourney } from "../../journey/JourneyContext";
 import EmployeeJourneyDrawer from "../../journey/EmployeeJourneyDrawer";
 import { EmployeeJourney } from "../../journey/journeyTypes";
+import TwoWeekTrainingScheduleView from "../TwoWeekTrainingScheduleView";
 
 interface NHOTrainerDashboardProps {
   subTab?: string;
@@ -807,7 +808,31 @@ export default function NHOTrainerDashboard({ subTab = "queue", onSubTabChange }
                         </div>
                       </div>
                     )}
+
+                    {/* 2-Week Based PST & FST Daily Schedule */}
+                    <div className="mt-4 pt-4 border-t border-slate-100">
+                      <div className="mb-2">
+                        <h4 className="font-bold text-[#042C51] text-xs uppercase tracking-wider flex items-center gap-1.5">
+                          <Calendar className="w-3.5 h-3.5 text-[#FF5C28]" />
+                          <span>2-Week PST &amp; FST Training Schedule Matrix</span>
+                        </h4>
+                        <p className="text-[11px] text-slate-500">
+                          Click any day to inspect the curriculum materials assigned for that day and review designated trainer sessions.
+                        </p>
+                      </div>
+                      <TwoWeekTrainingScheduleView
+                        startDate={selectedTrainee.qdsAssignedScheduleDate || selectedTrainee.scheduledNhoDate || "2026-10-12"}
+                        assignedTrainerId={selectedTrainee.assignedTrainerId}
+                        assignedTrainerName={selectedTrainee.assignedTrainerName}
+                        existingMaterials={selectedTrainee.qdsMaterials || []}
+                        shiftHours={selectedTrainee.qdsShiftHours || "08:00 AM – 05:00 PM (Default)"}
+                        trainingLocation={selectedTrainee.qdsTrainingLocation || "Fintech Training Room 4A"}
+                        traineeName={selectedTrainee.fullName}
+                      />
+                    </div>
                   </div>
+
+
 
                   {/* Material Review Explicit Acknowledgment Checkbox */}
                   {selectedTrainee.trainerStatus !== "Accepted" && selectedTrainee.handoffStatus !== "Accepted" && (

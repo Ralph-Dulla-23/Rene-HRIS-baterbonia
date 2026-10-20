@@ -33,6 +33,7 @@ import { AUTHORIZED_TRAINERS } from "../NHOContext";
 import { useJourney } from "../../journey/JourneyContext";
 import EmployeeJourneyDrawer from "../../journey/EmployeeJourneyDrawer";
 import { EmployeeJourney } from "../../journey/journeyTypes";
+import TwoWeekTrainingScheduleView from "../TwoWeekTrainingScheduleView";
 
 interface NHOQDSDashboardProps {
   subTab?: string;
@@ -93,7 +94,7 @@ export default function NHOQDSDashboard({ subTab = "queue", onSubTabChange }: NH
   } = useNHO();
 
   // Requirement 4: Calendar-based interface as primary view
-  const [activeViewMode, setActiveViewMode] = useState<"calendar" | "queue" | "materials">("calendar");
+  const [activeViewMode, setActiveViewMode] = useState<"calendar" | "queue" | "materials" | "two-week">("calendar");
   const [calendarYear, setCalendarYear] = useState<number>(2026);
   const [calendarMonth, setCalendarMonth] = useState<number>(9); // 0-indexed: 9 = October
 
@@ -512,7 +513,23 @@ export default function NHOQDSDashboard({ subTab = "queue", onSubTabChange }: NH
             <BookOpenCheck className="w-3.5 h-3.5" />
             <span>Materials Package Details</span>
           </button>
+
+          <button
+            onClick={() => {
+              setActiveViewMode("two-week");
+              if (onSubTabChange) onSubTabChange("two-week");
+            }}
+            className={`px-3.5 py-1.5 rounded-lg font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+              activeViewMode === "two-week"
+                ? "bg-[#042C51] text-white shadow-xs"
+                : "text-slate-600 hover:text-[#042C51]"
+            }`}
+          >
+            <Calendar className="w-3.5 h-3.5 text-[#FF5C28]" />
+            <span>2-Week PST &amp; FST Schedule</span>
+          </button>
         </div>
+
 
         <div className="flex items-center gap-2">
           <button
@@ -910,8 +927,55 @@ export default function NHOQDSDashboard({ subTab = "queue", onSubTabChange }: NH
             </div>
           </div>
         </div>
+      ) : activeViewMode === "two-week" ? (
+        /* Two-Week PST & FST Matrix View */
+        <div className="space-y-4">
+          <div className="bg-white rounded-2xl border border-[#E6ECF2] shadow-xs p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Trainee Cohort:</span>
+              <select
+                value={selectedApp?.id || postITApplicants[0]?.id || ""}
+                onChange={e => {
+                  const target = applicants.find(a => a.id === e.target.value);
+                  if (target) handleOpenApplicant(target);
+                }}
+                className="px-3 py-1.5 rounded-xl border border-slate-300 text-xs font-bold text-[#042C51] bg-white outline-none focus:border-[#FF5C28]"
+              >
+                {postITApplicants.map(app => (
+                  <option key={app.id} value={app.id}>
+                    {app.fullName} ({app.officialKronosId || "IT Done"}) — {app.account}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => handleOpenAssignScheduleModal(selectedApp?.id)}
+                className="px-3.5 py-1.5 rounded-xl bg-[#042C51] text-white hover:bg-[#0B365F] text-xs font-bold transition-colors flex items-center gap-1.5 shadow-2xs"
+              >
+                <Clock className="w-3.5 h-3.5 text-[#FF5C28]" />
+                <span>Adjust Shift / Venue</span>
+              </button>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-[#E6ECF2] shadow-xs p-5">
+            <TwoWeekTrainingScheduleView
+              startDate={selectedApp?.qdsAssignedScheduleDate || selectedApp?.scheduledNhoDate || "2026-10-12"}
+              assignedTrainerId={selectedApp?.assignedTrainerId}
+              assignedTrainerName={selectedApp?.assignedTrainerName}
+              existingMaterials={selectedApp?.qdsMaterials || []}
+              shiftHours={selectedApp?.qdsShiftHours || "08:00 AM – 05:00 PM (Default)"}
+              trainingLocation={selectedApp?.qdsTrainingLocation || "Fintech Training Room 4A"}
+              traineeName={selectedApp?.fullName}
+            />
+          </div>
+        </div>
       ) : (
         /* Materials Assignment Detail Form */
+
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <button
