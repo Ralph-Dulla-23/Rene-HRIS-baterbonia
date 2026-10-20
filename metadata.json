@@ -1,0 +1,8 @@
+{
+  "name": "Remix Remix SiBS HRIS",
+  "description": "Workforce Hiring module for monitoring workforce coverage, recruitment demand, hiring progress, and account-level workforce plans.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

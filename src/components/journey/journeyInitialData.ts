@@ -1,0 +1,854 @@
+import { 
+  EmployeeJourney, 
+  TrainingAssignment, 
+  TrainingProgress, 
+  PerformanceRecord, 
+  AssessmentItem, 
+  AssessmentGrade, 
+  PhaseTrainingScore, 
+  AttendanceRecord, 
+  EvidenceItem, 
+  CheckInItem, 
+  CoachingAction, 
+  NotificationEvent, 
+  QDSFollowUpRequest 
+} from "./journeyTypes";
+
+export const SNAPSHOT_DATE = "2026-10-14";
+
+export const INITIAL_JOURNEYS: EmployeeJourney[] = [
+  {
+    id: "SIBS-2901",
+    nhoApplicantId: "nho-app-01-hist",
+    nhoHandoffId: "handoff-sibs-2901",
+    kronosId: "KRN-90801",
+    sibsEmployeeId: "SIBS-2901",
+    fullName: "Alyssa Rivera",
+    preferredName: "Alyssa",
+    avatarUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+    email: "alyssa.rivera@thesiblingssolutions.com",
+    contactNumber: "+63 917 111 2233",
+    roleTitle: "Customer Support Advocate",
+    department: "Operations",
+    account: "US Visa",
+    siteLocation: "Davao",
+    trainerId: "TRN-001",
+    trainerName: "Maria Cruz",
+    qa: "Elena Santos",
+    tl: "Anton Reyes",
+    manager: "Paolo Vega",
+    hr: "Jenna Villanueva",
+    readiness: true,
+    handoff: true,
+    reviews: {},
+    finalOutcome: "",
+    acknowledged: false,
+    hireDate: "2026-09-18",
+    startDate: "2026-09-19",
+    nhoAcceptedAt: "2026-09-18 09:30 AM",
+    nhoAcceptedBy: "Jenna Villanueva (HR Coordinator)",
+    daysElapsed: 27,
+    stage: "Day 1-30 Nesting",
+    overallProgressPct: 30,
+    qdsMaterials: [
+      {
+        id: "mat-2901-1",
+        title: "US Visa Intake & Customer Communication Protocol",
+        type: "PDF Document",
+        fileOrLinkRef: "US_Visa_Intake_Protocol_2026.pdf",
+        assignedAt: "2026-09-18 10:00 AM",
+        assignedBy: "Elena Santos (QDS/QA)"
+      }
+    ],
+    outstandingNhoDocuments: [],
+    day30: {
+      status: "In Progress",
+      targetDate: "2026-10-18",
+      evaluatorId: "TRN-001",
+      evaluatorName: "Maria Cruz",
+      evaluatorRole: "Trainer",
+      nestingQaScore: 84,
+      attendancePunctualityScore: 96.5,
+      outstandingDocsCleared: true,
+      trainerEndorsement: "Floor Ready"
+    },
+    day60: { status: "Pending", targetDate: "2026-11-17" },
+    day90: { status: "Pending", targetDate: "2026-12-17" },
+    touchpoints: [],
+    auditTrail: [
+      {
+        date: "2026-09-18 09:30 AM",
+        action: "HR Handoff Accepted",
+        actor: "Jenna Villanueva",
+        details: "Assumed HR operational ownership. Day 1: 2026-09-19."
+      }
+    ]
+  },
+  {
+    id: "SIBS-2902",
+    nhoApplicantId: "nho-app-02-hist",
+    nhoHandoffId: "handoff-sibs-2902",
+    kronosId: "KRN-90802",
+    sibsEmployeeId: "SIBS-2902",
+    fullName: "Marco Santos",
+    preferredName: "Marco",
+    avatarUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80",
+    email: "marco.santos@thesiblingssolutions.com",
+    contactNumber: "+63 917 222 3344",
+    roleTitle: "Customer Support Advocate",
+    department: "Operations",
+    account: "US Visa",
+    siteLocation: "Davao",
+    trainerId: "TRN-001",
+    trainerName: "Maria Cruz",
+    qa: "Elena Santos",
+    tl: "Anton Reyes",
+    manager: "Paolo Vega",
+    hr: "Jenna Villanueva",
+    readiness: true,
+    handoff: true,
+    reviews: {
+      30: {
+        decision: "Continue Plan",
+        notes: "Call handling readiness verified and coaching is in progress.",
+        manager: "Paolo Vega",
+        hr: true,
+        date: "2026-09-30"
+      }
+    },
+    finalOutcome: "",
+    acknowledged: false,
+    hireDate: "2026-08-31",
+    startDate: "2026-09-01",
+    nhoAcceptedAt: "2026-08-31 09:00 AM",
+    nhoAcceptedBy: "Jenna Villanueva",
+    daysElapsed: 45,
+    stage: "Day 31-60 Ramp",
+    overallProgressPct: 50,
+    qdsMaterials: [],
+    outstandingNhoDocuments: [],
+    day30: { status: "Completed", targetDate: "2026-09-30", completedDate: "2026-09-30", outstandingDocsCleared: true },
+    day60: { status: "In Progress", targetDate: "2026-10-30" },
+    day90: { status: "Pending", targetDate: "2026-11-29" },
+    touchpoints: [],
+    auditTrail: [
+      { date: "2026-09-30", action: "Day 30 Review Approved", actor: "Paolo Vega", details: "Decision: Continue Plan" }
+    ]
+  },
+  {
+    id: "SIBS-2903",
+    nhoApplicantId: "nho-app-03-hist",
+    nhoHandoffId: "handoff-sibs-2903",
+    kronosId: "KRN-90803",
+    sibsEmployeeId: "SIBS-2903",
+    fullName: "Nica Flores",
+    preferredName: "Nica",
+    avatarUrl: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80",
+    email: "nica.flores@thesiblingssolutions.com",
+    contactNumber: "+63 917 333 4455",
+    roleTitle: "Customer Care Specialist",
+    department: "Operations",
+    account: "Customer Care",
+    siteLocation: "Tagum",
+    trainerId: "TRN-002",
+    trainerName: "Kim Ramos",
+    qa: "Ella Lim",
+    tl: "Rico Torres",
+    manager: "Erica Santos",
+    hr: "Jenna Villanueva",
+    readiness: true,
+    handoff: true,
+    reviews: {
+      30: {
+        decision: "Continue Plan",
+        notes: "Completed first milestone.",
+        manager: "Erica Santos",
+        hr: true,
+        date: "2026-08-30"
+      },
+      60: {
+        decision: "Targeted Support / Reassessment",
+        notes: "Improve documentation consistency.",
+        manager: "Erica Santos",
+        hr: true,
+        date: "2026-09-29"
+      }
+    },
+    finalOutcome: "",
+    acknowledged: false,
+    hireDate: "2026-07-31",
+    startDate: "2026-08-01",
+    nhoAcceptedAt: "2026-07-31 10:00 AM",
+    nhoAcceptedBy: "Jenna Villanueva",
+    daysElapsed: 76,
+    stage: "Day 61-90 Regularization Assessment",
+    overallProgressPct: 84,
+    qdsMaterials: [],
+    outstandingNhoDocuments: [],
+    day30: { status: "Completed", targetDate: "2026-08-30", completedDate: "2026-08-30", outstandingDocsCleared: true },
+    day60: { status: "Completed", targetDate: "2026-09-29", completedDate: "2026-09-29", outstandingDocsCleared: true },
+    day90: { status: "In Progress", targetDate: "2026-10-29" },
+    touchpoints: [],
+    auditTrail: [
+      { date: "2026-09-29", action: "Day 60 Review Approved", actor: "Erica Santos", details: "Decision: Targeted Support / Reassessment" }
+    ]
+  },
+  {
+    id: "SIBS-2904",
+    nhoApplicantId: "nho-app-04-hist",
+    nhoHandoffId: "handoff-sibs-2904",
+    kronosId: "KRN-90804",
+    sibsEmployeeId: "SIBS-2904",
+    fullName: "Jessa Mendoza",
+    preferredName: "Jessa",
+    avatarUrl: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&auto=format&fit=crop&q=80",
+    email: "jessa.mendoza@thesiblingssolutions.com",
+    contactNumber: "+63 917 444 5566",
+    roleTitle: "Customer Care Specialist",
+    department: "Operations",
+    account: "Customer Care",
+    siteLocation: "Tagum",
+    trainerId: "TRN-002",
+    trainerName: "Kim Ramos",
+    qa: "Ella Lim",
+    tl: "Rico Torres",
+    manager: "Erica Santos",
+    hr: "Jenna Villanueva",
+    readiness: true,
+    handoff: true,
+    reviews: {
+      30: { decision: "Continue Plan", notes: "On track", manager: "Erica Santos", hr: true, date: "2026-08-14" },
+      60: { decision: "Continue", notes: "Good quality", manager: "Erica Santos", hr: true, date: "2026-09-13" }
+    },
+    finalOutcome: "",
+    acknowledged: false,
+    hireDate: "2026-07-16",
+    startDate: "2026-07-17",
+    nhoAcceptedAt: "2026-07-16 09:15 AM",
+    nhoAcceptedBy: "Jenna Villanueva",
+    daysElapsed: 91,
+    stage: "Day 61-90 Regularization Assessment",
+    overallProgressPct: 100,
+    qdsMaterials: [],
+    outstandingNhoDocuments: [],
+    day30: { status: "Completed", targetDate: "2026-08-14", completedDate: "2026-08-14", outstandingDocsCleared: true },
+    day60: { status: "Completed", targetDate: "2026-09-13", completedDate: "2026-09-13", outstandingDocsCleared: true },
+    day90: { status: "In Progress", targetDate: "2026-10-14" },
+    touchpoints: [],
+    auditTrail: [
+      { date: "2026-09-13", action: "Day 60 Review Approved", actor: "Erica Santos", details: "Decision: Continue" }
+    ]
+  },
+  {
+    id: "SIBS-2905",
+    nhoApplicantId: "nho-app-05-hist",
+    nhoHandoffId: "handoff-sibs-2905",
+    kronosId: "KRN-90805",
+    sibsEmployeeId: "SIBS-2905",
+    fullName: "Ethan Garcia",
+    preferredName: "Ethan",
+    avatarUrl: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80",
+    email: "ethan.garcia@thesiblingssolutions.com",
+    contactNumber: "+63 917 555 6677",
+    roleTitle: "Customer Support Advocate",
+    department: "Operations",
+    account: "US Visa",
+    siteLocation: "Davao",
+    trainerId: "TRN-001",
+    trainerName: "Maria Cruz",
+    qa: "Elena Santos",
+    tl: "Anton Reyes",
+    manager: "Paolo Vega",
+    hr: "Jenna Villanueva",
+    readiness: false,
+    handoff: false,
+    reviews: {},
+    finalOutcome: "",
+    acknowledged: false,
+    hireDate: "2026-10-06",
+    startDate: "2026-10-07",
+    nhoAcceptedAt: "2026-10-06 04:30 PM",
+    nhoAcceptedBy: "Jenna Villanueva",
+    daysElapsed: 9,
+    stage: "Day 1-30 Nesting",
+    overallProgressPct: 10,
+    qdsMaterials: [
+      {
+        id: "mat-2905-1",
+        title: "US Visa Program Fundamentals 2026",
+        type: "PDF Document",
+        fileOrLinkRef: "US_Visa_Fundamentals_2026.pdf",
+        assignedAt: "2026-10-06 05:00 PM",
+        assignedBy: "Elena Santos (QDS/QA)"
+      }
+    ],
+    outstandingNhoDocuments: [],
+    day30: { status: "Pending", targetDate: "2026-11-05", outstandingDocsCleared: true },
+    day60: { status: "Pending", targetDate: "2026-12-05" },
+    day90: { status: "Pending", targetDate: "2027-01-04" },
+    touchpoints: [],
+    auditTrail: [
+      { date: "2026-10-06", action: "Handoff Initiated", actor: "System", details: "Onboarding trajectory registered." }
+    ]
+  },
+  {
+    id: "SIBS-2906",
+    nhoApplicantId: "nho-app-06-hist",
+    nhoHandoffId: "handoff-sibs-2906",
+    kronosId: "KRN-90806",
+    sibsEmployeeId: "SIBS-2906",
+    fullName: "Omar Perez",
+    preferredName: "Omar",
+    avatarUrl: "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=150&auto=format&fit=crop&q=80",
+    email: "omar.perez@thesiblingssolutions.com",
+    contactNumber: "+63 917 666 7788",
+    roleTitle: "Customer Care Specialist",
+    department: "Operations",
+    account: "Customer Care",
+    siteLocation: "Davao",
+    trainerId: "TRN-002",
+    trainerName: "Kim Ramos",
+    qa: "Ella Lim",
+    tl: "Rico Torres",
+    manager: "Erica Santos",
+    hr: "Jenna Villanueva",
+    readiness: true,
+    handoff: true,
+    reviews: {
+      30: {
+        decision: "Escalate Blocker",
+        notes: "Requires focused process retraining.",
+        manager: "Erica Santos",
+        hr: false,
+        date: "2026-10-01"
+      }
+    },
+    finalOutcome: "",
+    acknowledged: false,
+    hireDate: "2026-09-01",
+    startDate: "2026-09-02",
+    nhoAcceptedAt: "2026-09-01 09:30 AM",
+    nhoAcceptedBy: "Jenna Villanueva",
+    daysElapsed: 44,
+    stage: "Day 31-60 Ramp",
+    overallProgressPct: 48,
+    qdsMaterials: [],
+    outstandingNhoDocuments: [],
+    day30: { status: "In Progress", targetDate: "2026-10-01", outstandingDocsCleared: true },
+    day60: { status: "Pending", targetDate: "2026-10-31" },
+    day90: { status: "Pending", targetDate: "2026-11-30" },
+    touchpoints: [],
+    auditTrail: [
+      { date: "2026-10-01", action: "Day 30 Review Submitted", actor: "Erica Santos", details: "Decision: Escalate Blocker" }
+    ]
+  },
+  {
+    id: "JRN-2026-001",
+    nhoApplicantId: "nho-app-06",
+    nhoHandoffId: "handoff-nho-app-06",
+    kronosId: "KRN-90846",
+    sibsEmployeeId: "SIB-2026-088",
+    fullName: "Patricia Camille Tan",
+    preferredName: "Camille",
+    avatarUrl: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80",
+    email: "patricia.tan@thesiblingssolutions.com",
+    contactNumber: "+63 918 333 4444",
+    roleTitle: "Fintech Compliance Specialist",
+    department: "Finance Operations",
+    account: "Fintech Tier 1",
+    siteLocation: "SiBS Clark Global City, Pampanga",
+    wfmSeating: {
+      wing: "Right Wing",
+      seatNumber: "RW-021",
+      floor: "4th Floor Pod B",
+      assignedBy: "Danilo Morales (WFM Lead)"
+    },
+    trainerId: "TRN-002",
+    trainerName: "Carlos Mendoza (L&D Specialist)",
+    qa: "Elena Santos",
+    tl: "Anton Reyes",
+    manager: "Paolo Vega",
+    hr: "Dulla, Ralph Vincent (HR Operations Lead)",
+    readiness: true,
+    handoff: true,
+    reviews: {
+      30: {
+        decision: "Continue Plan",
+        notes: "Exhibits solid grasp of AML compliance standards and core banking sandbox routines.",
+        manager: "Paolo Vega",
+        hr: true,
+        date: "2026-10-09"
+      }
+    },
+    finalOutcome: "",
+    acknowledged: false,
+    hireDate: "2026-09-23",
+    nhoAcceptedAt: "2026-09-23 09:30 AM",
+    nhoAcceptedBy: "Dulla, Ralph Vincent (HR Operations Lead)",
+    startDate: "2026-09-24",
+    daysElapsed: 22,
+    stage: "Day 1-30 Nesting",
+    overallProgressPct: 24,
+    qdsMaterials: [
+      {
+        id: "qds-mat-601",
+        title: "Finance & Fintech Compliance Curriculum 2026",
+        type: "PDF Document",
+        fileOrLinkRef: "Fintech_Compliance_Curriculum_2026.pdf",
+        fileSize: "5.1 MB",
+        description: "Regulatory reporting guidelines and data governance",
+        assignedAt: "2026-09-22 04:30 PM",
+        assignedBy: "Carla Villanueva (Lead QDS)"
+      }
+    ],
+    outstandingNhoDocuments: [
+      {
+        id: "doc-605",
+        name: "BIR Form 2316 (Certificate of Compensation)",
+        category: "Pre-Employment",
+        isMajor: false,
+        isEssentialAgreement: false,
+        status: "For Verification",
+        deadlineStatus: "On Time",
+        dueDate: "2026-10-09",
+        documentOwner: "HR",
+        fileName: "bir_2316_patricia_tan.pdf"
+      }
+    ],
+    day30: {
+      status: "In Progress",
+      targetDate: "2026-10-24",
+      evaluatorId: "TRN-002",
+      evaluatorName: "Carlos Mendoza",
+      evaluatorRole: "L&D Specialist / Trainer",
+      nestingQaScore: 88,
+      attendancePunctualityScore: 97.5,
+      outstandingDocsCleared: false,
+      trainerEndorsement: "Floor Ready"
+    },
+    day60: { status: "Pending", targetDate: "2026-11-23" },
+    day90: { status: "Pending", targetDate: "2026-12-23" },
+    touchpoints: [],
+    auditTrail: [
+      {
+        date: "2026-09-23 09:30 AM",
+        action: "Handoff Accepted & Journey Created",
+        actor: "Dulla, Ralph Vincent",
+        details: "Transferred from NHO V1 upon 2/2 departmental readiness. Preserved hire date: 2026-09-23."
+      }
+    ]
+  }
+];
+
+export const INITIAL_PERFORMANCE: PerformanceRecord[] = [
+  { id: 1001, emp: "SIBS-2901", metric: "Training Assessment", score: 83, date: "2026-09-28", owner: "Maria Cruz", notes: "Initial baseline training evaluation" },
+  { id: 1002, emp: "SIBS-2901", metric: "Training Assessment", score: 87, date: "2026-10-10", owner: "Maria Cruz", notes: "Latest recorded training assessment" },
+  { id: 1003, emp: "SIBS-2901", metric: "QA Audit", score: 78, date: "2026-09-28", owner: "Elena Santos", notes: "Initial QA audit baseline" },
+  { id: 1004, emp: "SIBS-2901", metric: "QA Audit", score: 84, date: "2026-10-10", owner: "Elena Santos", notes: "Latest independent QA audit" },
+  { id: 1005, emp: "SIBS-2901", metric: "Work Simulation", score: 76, date: "2026-09-28", owner: "Anton Reyes", notes: "Baseline work simulation" },
+  { id: 1006, emp: "SIBS-2901", metric: "Work Simulation", score: 81, date: "2026-10-10", owner: "Anton Reyes", notes: "Latest work simulation" },
+
+  { id: 1007, emp: "SIBS-2902", metric: "Training Assessment", score: 90, date: "2026-09-20", owner: "Maria Cruz", notes: "Baseline assessment" },
+  { id: 1008, emp: "SIBS-2902", metric: "Training Assessment", score: 93, date: "2026-10-11", owner: "Maria Cruz", notes: "Latest training assessment" },
+  { id: 1009, emp: "SIBS-2902", metric: "QA Audit", score: 88, date: "2026-09-20", owner: "Elena Santos", notes: "Baseline QA audit" },
+  { id: 1010, emp: "SIBS-2902", metric: "QA Audit", score: 92, date: "2026-10-11", owner: "Elena Santos", notes: "Latest QA audit" },
+  { id: 1011, emp: "SIBS-2902", metric: "Work Simulation", score: 86, date: "2026-09-20", owner: "Anton Reyes", notes: "Baseline simulation" },
+  { id: 1012, emp: "SIBS-2902", metric: "Work Simulation", score: 91, date: "2026-10-11", owner: "Anton Reyes", notes: "Latest simulation" },
+
+  { id: 1013, emp: "SIBS-2903", metric: "Training Assessment", score: 72, date: "2026-09-12", owner: "Kim Ramos", notes: "Baseline assessment" },
+  { id: 1014, emp: "SIBS-2903", metric: "Training Assessment", score: 76, date: "2026-10-11", owner: "Kim Ramos", notes: "Latest training assessment" },
+  { id: 1015, emp: "SIBS-2903", metric: "QA Audit", score: 65, date: "2026-09-12", owner: "Ella Lim", notes: "Baseline QA audit" },
+  { id: 1016, emp: "SIBS-2903", metric: "QA Audit", score: 70, date: "2026-10-11", owner: "Ella Lim", notes: "Latest QA audit" },
+  { id: 1017, emp: "SIBS-2903", metric: "Work Simulation", score: 61, date: "2026-09-12", owner: "Rico Torres", notes: "Baseline simulation" },
+  { id: 1018, emp: "SIBS-2903", metric: "Work Simulation", score: 67, date: "2026-10-11", owner: "Rico Torres", notes: "Latest simulation" },
+
+  { id: 1019, emp: "SIBS-2904", metric: "Training Assessment", score: 93, date: "2026-09-02", owner: "Kim Ramos", notes: "Baseline assessment" },
+  { id: 1020, emp: "SIBS-2904", metric: "Training Assessment", score: 96, date: "2026-10-12", owner: "Kim Ramos", notes: "Latest training assessment" },
+  { id: 1021, emp: "SIBS-2904", metric: "QA Audit", score: 90, date: "2026-09-02", owner: "Ella Lim", notes: "Baseline QA audit" },
+  { id: 1022, emp: "SIBS-2904", metric: "QA Audit", score: 94, date: "2026-10-12", owner: "Ella Lim", notes: "Latest QA audit" },
+  { id: 1023, emp: "SIBS-2904", metric: "Work Simulation", score: 91, date: "2026-09-02", owner: "Rico Torres", notes: "Baseline simulation" },
+  { id: 1024, emp: "SIBS-2904", metric: "Work Simulation", score: 93, date: "2026-10-12", owner: "Rico Torres", notes: "Latest simulation" },
+
+  { id: 1025, emp: "SIBS-2905", metric: "Training Assessment", score: 66, date: "2026-10-08", owner: "Maria Cruz", notes: "Early assessment" },
+  { id: 1026, emp: "SIBS-2905", metric: "Training Assessment", score: 73, date: "2026-10-12", owner: "Maria Cruz", notes: "Latest training assessment" },
+
+  { id: 1027, emp: "SIBS-2906", metric: "Training Assessment", score: 74, date: "2026-09-19", owner: "Kim Ramos", notes: "Baseline assessment" },
+  { id: 1028, emp: "SIBS-2906", metric: "Training Assessment", score: 77, date: "2026-10-10", owner: "Kim Ramos", notes: "Latest assessment" },
+  { id: 1029, emp: "SIBS-2906", metric: "QA Audit", score: 58, date: "2026-09-19", owner: "Ella Lim", notes: "Baseline QA audit" },
+  { id: 1030, emp: "SIBS-2906", metric: "QA Audit", score: 62, date: "2026-10-10", owner: "Ella Lim", notes: "Latest QA audit" },
+  { id: 1031, emp: "SIBS-2906", metric: "Work Simulation", score: 55, date: "2026-09-19", owner: "Rico Torres", notes: "Baseline simulation" },
+  { id: 1032, emp: "SIBS-2906", metric: "Work Simulation", score: 61, date: "2026-10-10", owner: "Rico Torres", notes: "Latest simulation" },
+
+  // Historical benchmarks for Jessa and Nica
+  { id: 1033, emp: "SIBS-2903", metric: "Training Assessment", score: 75, date: "2026-08-25", owner: "Kim Ramos", notes: "Day 30 historical benchmark" },
+  { id: 1034, emp: "SIBS-2903", metric: "Work Simulation", score: 69, date: "2026-08-25", owner: "Rico Torres", notes: "Day 30 historical benchmark" },
+  { id: 1035, emp: "SIBS-2904", metric: "Training Assessment", score: 89, date: "2026-08-10", owner: "Kim Ramos", notes: "Day 30 historical benchmark" },
+  { id: 1036, emp: "SIBS-2904", metric: "QA Audit", score: 84, date: "2026-08-10", owner: "Ella Lim", notes: "Day 30 historical benchmark" },
+  { id: 1037, emp: "SIBS-2904", metric: "Work Simulation", score: 82, date: "2026-08-10", owner: "Rico Torres", notes: "Day 30 historical benchmark" }
+];
+
+export const INITIAL_ASSIGNMENTS: TrainingAssignment[] = [
+  {
+    id: 201,
+    emp: "SIBS-2905",
+    date: "2026-10-14",
+    type: "Material",
+    category: "Product knowledge",
+    title: "US Visa program fundamentals",
+    description: "Read the introductory workflow guide before the practical exercise.",
+    details: "Learning points: identify applicant request categories, follow the verification sequence, understand when to escalate uncertain cases. This is sample learning text, not an official US Visa policy.",
+    duration: "25 min",
+    priority: "High",
+    owner: "Maria Cruz",
+    created: "2026-10-14"
+  },
+  {
+    id: 202,
+    emp: "SIBS-2905",
+    date: "2026-10-14",
+    type: "Material",
+    category: "Communication",
+    title: "Customer interaction standards",
+    description: "Review professional communication, active listening and accurate case notes.",
+    details: "Learning points: clarify the request, restate the expected next step, use neutral professional language, and document the interaction concisely.",
+    duration: "15 min",
+    priority: "Normal",
+    owner: "Maria Cruz",
+    created: "2026-10-14"
+  },
+  {
+    id: 203,
+    emp: "SIBS-2905",
+    date: "2026-10-14",
+    type: "Material",
+    category: "Compliance",
+    title: "Data privacy & secure handling",
+    description: "Review general handling precautions before working on mock records.",
+    details: "Learning points: use only permitted training data, avoid sharing personal details, verify authorization, and report suspected data incidents through the proper channel.",
+    duration: "15 min",
+    priority: "High",
+    owner: "Maria Cruz",
+    created: "2026-10-14"
+  },
+  {
+    id: 204,
+    emp: "SIBS-2905",
+    date: "2026-10-14",
+    type: "Goal",
+    category: "Practice",
+    title: "Finish knowledge check",
+    description: "Complete the introductory quiz and record your result for trainer verification.",
+    details: "Target: complete a 10-item sample knowledge check with at least 8 correct answers. The actual quiz is external to this prototype.",
+    duration: "30 min",
+    priority: "High",
+    owner: "Maria Cruz",
+    created: "2026-10-14"
+  },
+  {
+    id: 205,
+    emp: "SIBS-2905",
+    date: "2026-10-14",
+    type: "Goal",
+    category: "Practice",
+    title: "Practice three mock scenarios",
+    description: "Explain the proposed resolution and note any blocker encountered.",
+    details: "Target: finish three trainer-provided practice scenarios and describe how you handled each.",
+    duration: "45 min",
+    priority: "High",
+    owner: "Maria Cruz",
+    created: "2026-10-14"
+  },
+  {
+    id: 206,
+    emp: "SIBS-2905",
+    date: "2026-10-14",
+    type: "Goal",
+    category: "Reflection",
+    title: "Daily training reflection",
+    description: "Summarize key lessons and one topic you want your trainer to explain.",
+    details: "Target: submit one learning takeaway, one question, and a self-confidence rating in your notes.",
+    duration: "10 min",
+    priority: "Normal",
+    owner: "Maria Cruz",
+    created: "2026-10-14"
+  },
+  {
+    id: 207,
+    emp: "SIBS-2905",
+    date: "2026-10-13",
+    type: "Material",
+    category: "Orientation",
+    title: "Welcome and training orientation",
+    description: "Read the training schedule and expectations.",
+    details: "Sample overview of the training journey, escalation points, and how daily goals are verified.",
+    duration: "20 min",
+    priority: "Normal",
+    owner: "Maria Cruz",
+    created: "2026-10-13"
+  },
+  {
+    id: 208,
+    emp: "SIBS-2905",
+    date: "2026-10-13",
+    type: "Goal",
+    category: "Readiness",
+    title: "Confirm workstation readiness",
+    description: "Check that your demo tools and training environment are available.",
+    details: "Target: confirm the safe sample training environment is ready.",
+    duration: "10 min",
+    priority: "Normal",
+    owner: "Maria Cruz",
+    created: "2026-10-13"
+  },
+  // Alyssa Rivera assignments
+  {
+    id: 211,
+    emp: "SIBS-2901",
+    date: "2026-10-14",
+    type: "Material",
+    category: "Quality",
+    title: "Supported operations refresher",
+    description: "Review common exception scenarios while transitioning into operations.",
+    details: "Review the sample exception checklist and note cases requiring help.",
+    duration: "20 min",
+    priority: "Normal",
+    owner: "Anton Reyes",
+    created: "2026-10-14"
+  },
+  {
+    id: 212,
+    emp: "SIBS-2901",
+    date: "2026-10-14",
+    type: "Goal",
+    category: "Practice",
+    title: "Document two supported interactions",
+    description: "Apply the case documentation standard in two mock work examples.",
+    details: "Target: two complete mock records checked by the receiving Team Leader.",
+    duration: "35 min",
+    priority: "High",
+    owner: "Anton Reyes",
+    created: "2026-10-14"
+  },
+  {
+    id: 213,
+    emp: "SIBS-2901",
+    date: "2026-10-14",
+    type: "Material",
+    category: "Escalations",
+    title: "Exception and escalation decision tree",
+    description: "Understand the differences between standard and exception handling.",
+    details: "Practice routes: straightforward request, missing info, risk escalation.",
+    duration: "20 min",
+    priority: "High",
+    owner: "Anton Reyes",
+    created: "2026-10-14"
+  },
+  {
+    id: 214,
+    emp: "SIBS-2901",
+    date: "2026-10-14",
+    type: "Material",
+    category: "QA preparation",
+    title: "QA scorecard and self-audit checklist",
+    description: "Review the example evaluation categories before mock cases.",
+    details: "Check accuracy, completeness, empathy, and escalation.",
+    duration: "20 min",
+    priority: "Normal",
+    owner: "Anton Reyes",
+    created: "2026-10-14"
+  }
+];
+
+export const INITIAL_PROGRESS: TrainingProgress[] = [
+  {
+    id: 320,
+    assignmentId: 207,
+    emp: "SIBS-2905",
+    status: "Verified",
+    note: "Read orientation; questions answered.",
+    submitted: "2026-10-13",
+    reviewer: "Maria Cruz",
+    reviewed: "2026-10-13",
+    feedback: "Good preparation."
+  },
+  {
+    id: 321,
+    assignmentId: 208,
+    emp: "SIBS-2905",
+    status: "Verified",
+    note: "Confirmed sample workstation readiness.",
+    submitted: "2026-10-13",
+    reviewer: "Maria Cruz",
+    reviewed: "2026-10-13",
+    feedback: "Ready."
+  },
+  {
+    id: 322,
+    assignmentId: 202,
+    emp: "SIBS-2905",
+    status: "Submitted",
+    note: "Read communication standards and completed notes.",
+    submitted: "2026-10-14"
+  },
+  {
+    id: 323,
+    assignmentId: 211,
+    emp: "SIBS-2901",
+    status: "Verified",
+    note: "Reviewed exception checklist.",
+    submitted: "2026-10-14",
+    reviewer: "Anton Reyes",
+    reviewed: "2026-10-14",
+    feedback: "Verified."
+  }
+];
+
+export const INITIAL_ASSESSMENTS: AssessmentItem[] = [
+  {
+    id: 8101,
+    title: "US Visa Process Knowledge Quiz",
+    skill: "Visa Process Knowledge",
+    description: "Measures product and process knowledge for visa intake workflows.",
+    phase: "PST",
+    account: "US Visa",
+    batch: "US Visa Product Training – Batch 08",
+    max: 100,
+    passing: 80,
+    status: "Published"
+  },
+  {
+    id: 8102,
+    title: "System Navigation Practical",
+    skill: "System Navigation",
+    description: "Demonstrate the correct steps in a simulated US Visa system environment.",
+    phase: "PST",
+    account: "US Visa",
+    batch: "US Visa Product Training – Batch 08",
+    max: 100,
+    passing: 80,
+    status: "Published"
+  },
+  {
+    id: 8103,
+    title: "Communication Role Play",
+    skill: "Communication Skills",
+    description: "Call opening, probing, empathy, and professional closing simulation.",
+    phase: "FST",
+    account: "All accounts",
+    batch: "Fundamental Skills – Batch 08",
+    max: 100,
+    passing: 80,
+    status: "Published"
+  },
+  {
+    id: 8104,
+    title: "Data Privacy & Compliance Assessment",
+    skill: "Data Privacy",
+    description: "Identify privacy risks and correct data handling procedures.",
+    phase: "FST",
+    account: "All accounts",
+    batch: "Fundamental Skills – Batch 08",
+    max: 50,
+    passing: 40,
+    status: "Published"
+  },
+  {
+    id: 8105,
+    title: "Customer Care Case Resolution Quiz",
+    skill: "Case Resolution",
+    description: "Select appropriate resolutions and escalation routes for customer service cases.",
+    phase: "PST",
+    account: "Customer Care",
+    batch: "Customer Care Product Skills – Batch 03",
+    max: 100,
+    passing: 80,
+    status: "Published"
+  },
+  {
+    id: 8106,
+    title: "Documentation Accuracy Practical",
+    skill: "Case Documentation",
+    description: "Demonstrate complete, compliant customer case documentation.",
+    phase: "PST",
+    account: "Customer Care",
+    batch: "Customer Care Product Skills – Batch 03",
+    max: 100,
+    passing: 80,
+    status: "Published"
+  }
+];
+
+export const INITIAL_ASSESSMENT_GRADES: AssessmentGrade[] = [
+  { assessmentId: 8101, emp: "SIBS-2901", score: 86, date: "2026-10-14", grader: "Maria Cruz" },
+  { assessmentId: 8101, emp: "SIBS-2902", score: 92, date: "2026-10-14", grader: "Maria Cruz" },
+  { assessmentId: 8102, emp: "SIBS-2901", score: 89, date: "2026-10-14", grader: "Maria Cruz" },
+  { assessmentId: 8103, emp: "SIBS-2901", score: 85, date: "2026-10-14", grader: "Maria Cruz" },
+  { assessmentId: 8103, emp: "SIBS-2902", score: 88, date: "2026-10-14", grader: "Maria Cruz" },
+  { assessmentId: 8103, emp: "SIBS-2904", score: 89, date: "2026-10-14", grader: "Kim Ramos" },
+  { assessmentId: 8104, emp: "SIBS-2905", score: 41, date: "2026-10-14", grader: "Maria Cruz" },
+  { assessmentId: 8105, emp: "SIBS-2904", score: 91, date: "2026-10-14", grader: "Kim Ramos" },
+  { assessmentId: 8105, emp: "SIBS-2903", score: 72, date: "2026-10-14", grader: "Kim Ramos" },
+  { assessmentId: 8106, emp: "SIBS-2904", score: 95, date: "2026-10-14", grader: "Kim Ramos" }
+];
+
+export const INITIAL_PHASE_TRAINING_SCORES: PhaseTrainingScore[] = [
+  { emp: "SIBS-2901", phase: "FST", score: 82, date: "2026-09-28", owner: "Maria Cruz", source: "Phase assessment" },
+  { emp: "SIBS-2902", phase: "FST", score: 84, date: "2026-09-14", owner: "Maria Cruz", source: "Phase assessment" },
+  { emp: "SIBS-2902", phase: "PST", score: 91, date: "2026-09-28", owner: "Anton Reyes", source: "Phase assessment" },
+  { emp: "SIBS-2903", phase: "FST", score: 71, date: "2026-08-14", owner: "Kim Ramos", source: "Phase assessment" },
+  { emp: "SIBS-2903", phase: "PST", score: 66, date: "2026-08-28", owner: "Rico Torres", source: "Phase assessment" },
+  { emp: "SIBS-2904", phase: "FST", score: 83, date: "2026-07-30", owner: "Kim Ramos", source: "Phase assessment" },
+  { emp: "SIBS-2904", phase: "PST", score: 89, date: "2026-08-13", owner: "Rico Torres", source: "Phase assessment" },
+  { emp: "SIBS-2906", phase: "FST", score: 65, date: "2026-09-15", owner: "Kim Ramos", source: "Phase assessment" },
+  { emp: "SIBS-2906", phase: "PST", score: 68, date: "2026-09-29", owner: "Rico Torres", source: "Phase assessment" }
+];
+
+export const INITIAL_ATTENDANCE: AttendanceRecord[] = [
+  { id: 10001, emp: "SIBS-2901", date: "2026-10-06", status: "Late", source: "Kronos Shift Record", notes: "Arrived 15 mins late", recorded: "2026-10-14" },
+  { id: 10002, emp: "SIBS-2901", date: "2026-10-09", status: "Absent", source: "Kronos Shift Record", notes: "Medical consultation", recorded: "2026-10-14" },
+  { id: 10003, emp: "SIBS-2902", date: "2026-10-07", status: "Late", source: "Kronos Shift Record", notes: "Traffic delay", recorded: "2026-10-14" },
+  { id: 10004, emp: "SIBS-2903", date: "2026-10-05", status: "Late", source: "Kronos Shift Record", notes: "Late punch", recorded: "2026-10-14" },
+  { id: 10005, emp: "SIBS-2903", date: "2026-10-13", status: "Absent", source: "Kronos Shift Record", notes: "Unplanned leave", recorded: "2026-10-14" },
+  { id: 10006, emp: "SIBS-2904", date: "2026-10-08", status: "Excused", source: "Approved Leave Request", notes: "Official business", recorded: "2026-10-14" },
+  { id: 10007, emp: "SIBS-2905", date: "2026-10-09", status: "Absent", source: "Kronos Shift Record", notes: "Documented personal emergency", recorded: "2026-10-14" },
+  { id: 10008, emp: "SIBS-2905", date: "2026-10-12", status: "Late", source: "Kronos Shift Record", notes: "10 mins late", recorded: "2026-10-14" },
+  { id: 10009, emp: "SIBS-2906", date: "2026-10-02", status: "Absent", source: "Kronos Shift Record", notes: "Sick leave", recorded: "2026-10-14" },
+  { id: 10010, emp: "SIBS-2906", date: "2026-10-13", status: "Late", source: "Kronos Shift Record", notes: "Transit delay", recorded: "2026-10-14" },
+  { id: 10011, emp: "SIBS-2906", date: "2026-10-14", status: "Unrecorded", source: "Pending Verification", notes: "Awaiting supervisor sign-off", recorded: "2026-10-14" }
+];
+
+export const INITIAL_EVIDENCE: EvidenceItem[] = [
+  { id: 1, emp: "SIBS-2901", type: "Training", title: "Training completion sheet", owner: "Maria Cruz", notes: "Product fundamentals completed", date: "2026-09-29" },
+  { id: 2, emp: "SIBS-2901", type: "QDS / QA", title: "Quality monitoring observation", owner: "Elena Santos", notes: "Meets base quality requirements", date: "2026-10-03" },
+  { id: 3, emp: "SIBS-2902", type: "Performance", title: "Supported operations quality check", owner: "Elena Santos", notes: "Quality stable at 91%", date: "2026-10-08" },
+  { id: 4, emp: "SIBS-2903", type: "Coaching", title: "Documentation coaching log", owner: "Rico Torres", notes: "Further consistency coaching required", date: "2026-10-11" }
+];
+
+export const INITIAL_CHECKINS: CheckInItem[] = [
+  { id: 1, emp: "SIBS-2901", date: "2026-10-09", type: "Team Leader", owner: "Anton Reyes", confidence: 4, notes: "Employee adapting to live cases; needs more speed." },
+  { id: 2, emp: "SIBS-2903", date: "2026-10-10", type: "QDS / QA", owner: "Ella Lim", confidence: 3, notes: "QA documentation follow-up." }
+];
+
+export const INITIAL_COACHING_ACTIONS: CoachingAction[] = [
+  { id: 1, emp: "SIBS-2901", title: "Improve average handling time", owner: "Anton Reyes", due: "2026-10-20", status: "Open", notes: "Shadow two experienced agents" },
+  { id: 2, emp: "SIBS-2903", title: "Documentation consistency coaching", owner: "Rico Torres", due: "2026-10-13", status: "Open", notes: "Three QA spot checks" },
+  { id: 3, emp: "SIBS-2902", title: "Review knowledge-base usage", owner: "Anton Reyes", due: "2026-10-08", status: "Done", notes: "Completed" }
+];
+
+export const INITIAL_NOTIFICATIONS: NotificationEvent[] = [
+  { id: 1, emp: "SIBS-2901", text: "Trainer readiness verified and TL handoff accepted.", date: "2026-10-02", role: "Team Leader" }
+];
+
+export const INITIAL_QDS_REQUESTS: QDSFollowUpRequest[] = [
+  {
+    id: 1,
+    emp: "SIBS-2906",
+    trainer: "Kim Ramos",
+    assignedTo: "Ella Lim",
+    type: "Independent QA recheck",
+    notes: "Significant gap between trainer assessment (77%) and QA audit (62%). Requesting independent calibration recheck.",
+    due: "2026-10-18",
+    status: "Open",
+    created: "2026-10-12"
+  }
+];
