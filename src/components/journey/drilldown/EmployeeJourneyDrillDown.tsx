@@ -30,8 +30,14 @@ import {
   ShieldAlert,
   HelpCircle,
   TrendingUp,
-  Layers
+  Layers,
+  ShieldCheck,
+  Lock,
+  Eye,
+  EyeOff
 } from "lucide-react";
+import { useDemoAuth } from "../../../auth/DemoAuthContext";
+import { getEmphasizedEmployeeStatus } from "../employeeStatusUtils";
 
 interface EmployeeJourneyDrillDownProps {
   journey: EmployeeJourney;
@@ -82,6 +88,16 @@ export default function EmployeeJourneyDrillDown({
     const d = journey.daysElapsed || 1;
     return d <= 14 ? 0 : d <= 28 ? 1 : d <= 30 ? 2 : d <= 59 ? 3 : d === 60 ? 4 : d <= 89 ? 5 : 6;
   });
+
+  // Demo Auth Role & Coach-Only Overview Access
+  const { user } = useDemoAuth();
+  const [coachModeOverride, setCoachModeOverride] = useState<"coach" | "trainee" | "auto">("auto");
+  const coachRoles = ["Trainer", "Team Leader", "Manager", "SOM", "QDS", "HR", "HR Admin", "Super Admin"];
+  const userIsCoach = !user || coachRoles.includes(user.role);
+  const isViewingAsCoach = coachModeOverride === "auto" ? userIsCoach : coachModeOverride === "coach";
+
+  // Centralized Emphasized Employee Status (removes other confusing statuses)
+  const emphasizedStatus = getEmphasizedEmployeeStatus(journey);
 
   // Modals state
   const [showLinkModal, setShowLinkModal] = useState(false);
@@ -318,14 +334,9 @@ export default function EmployeeJourneyDrillDown({
               <div>
                 <div className="flex items-center gap-2 flex-wrap">
                   <h2 className="text-lg font-black text-[#042C51]">{journey.fullName}</h2>
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 border border-blue-200 text-[#042C51]">
-                    {journey.stage}
+                  <span className={`px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shadow-xs ${emphasizedStatus.badgeClass}`}>
+                    {emphasizedStatus.label}
                   </span>
-                  {journey.isAwaitingLinkage && (
-                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 border border-amber-200 text-amber-800">
-                      Needs Authorized Linkage
-                    </span>
-                  )}
                 </div>
 
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500 mt-1">
@@ -396,6 +407,64 @@ export default function EmployeeJourneyDrillDown({
             })}
           </div>
         </div>
+
+        {/* Day 30 Post-Audit Handoff High-Priority Alert Banner for HR and Supervisors */}
+        {emphasizedStatus.isHandoffDue && emphasizedStatus.handoffStatus === "Pending" && (
+          <div className="bg-gradient-to-r from-orange-50 via-amber-50/70 to-orange-50 border-b-2 border-[#FF5C28] px-5 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-[#042C51] shrink-0 shadow-2xs">
+            <div className="flex items-start sm:items-center gap-3">
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-[#FF5C28] text-white font-black text-xs shadow-xs animate-pulse">
+                !
+              </span>
+              <div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <strong className="text-[#FF5C28] font-black uppercase tracking-wider text-[11px]">
+                    Day 30 Checkpoint Handoff Due • HR & Supervisor Action Required
+                  </strong>
+                  <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-orange-100 text-[#FF5C28] border border-orange-200">
+                    PST & QA Audit Complete ({qaScoreVal}%)
+                  </span>
+                </div>
+                <p className="text-[11.5px] text-slate-600 mt-0.5">
+                  Trainee has completed Product Skills Training (PST) and independent QA audit. Trainer {journey.trainerName || "Maria Cruz"} must endorse custody transfer to Team Leader {journey.tl || "Anton Reyes"} for operational Ramp. HR has been notified.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setActiveTab("handoffs")}
+              className="px-3.5 py-2 rounded-xl bg-[#FF5C28] hover:bg-[#e04f20] text-white font-black text-xs shrink-0 shadow-xs cursor-pointer transition-colors flex items-center gap-1.5 self-start sm:self-auto"
+            >
+              <span>Perform Handoff</span>
+              <span>→</span>
+            </button>
+          </div>
+        )}
+
+        {emphasizedStatus.isHandoffDue && emphasizedStatus.handoffStatus === "Submitted" && (
+          <div className="bg-amber-50 border-b-2 border-amber-500 px-5 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-[#042C51] shrink-0 shadow-2xs">
+            <div className="flex items-start sm:items-center gap-3">
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-amber-500 text-white font-black text-xs shadow-xs">
+                ⏳
+              </span>
+              <div>
+                <strong className="text-amber-800 font-black uppercase tracking-wider text-[11px] block">
+                  Awaiting Team Leader Sign-Off & Custody Acceptance
+                </strong>
+                <p className="text-[11.5px] text-amber-900/80 mt-0.5">
+                  Endorsed by Trainer {journey.day30Handoff?.trainerName || journey.trainerName}. Team Leader {journey.day30Handoff?.targetTlName || journey.tl || "Anton Reyes"} must sign off and accept custody into Ramp operations.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setActiveTab("handoffs")}
+              className="px-3.5 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-black text-xs shrink-0 shadow-xs cursor-pointer transition-colors flex items-center gap-1.5 self-start sm:self-auto"
+            >
+              <span>Accept Custody</span>
+              <span>→</span>
+            </button>
+          </div>
+        )}
 
         {/* Toast Feedback */}
         {toastMessage && (
@@ -908,73 +977,288 @@ export default function EmployeeJourneyDrillDown({
             </div>
           )}
 
-          {/* TAB 5: COACHING */}
+          {/* TAB 5: COACHING & SUPPORT */}
           {activeTab === "coaching" && (
-            <div className="bg-white rounded-2xl border border-[#E6ECF2] p-5 shadow-xs space-y-4">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div className="bg-white rounded-2xl border border-[#E6ECF2] p-5 shadow-xs space-y-5">
+              {/* Top Bar with Role View Mode Toggle */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
                 <div>
-                  <h3 className="text-sm font-extrabold text-[#042C51]">Coaching & Corrective Support</h3>
-                  <p className="text-xs text-slate-500">Action items assigned by Team Leader or Trainer.</p>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-black uppercase text-[#FF5C28] tracking-widest block">
+                      GROW FRAMEWORK & PERFORMANCE RECOVERY
+                    </span>
+                    {isViewingAsCoach && (
+                      <span className="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-[#042C51] text-white flex items-center gap-1">
+                        <Lock className="w-2.5 h-2.5 text-[#FF5C28]" />
+                        Coach-Only Mode
+                      </span>
+                    )}
+                  </div>
+                  <h3 className="text-base font-extrabold text-[#042C51]">Coaching & Corrective Support</h3>
+                  <p className="text-xs text-slate-500">
+                    Supervisory GROW diagnostics, 23 QA parameters, KPI impact, and action items.
+                  </p>
                 </div>
-                <button
-                  onClick={() => setShowAddCoaching(true)}
-                  className="px-3 py-1.5 rounded-xl bg-[#FF5C28] hover:bg-[#e04f20] text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
-                >
-                  + Add Action
-                </button>
-              </div>
 
-              <div className="rounded-xl border border-[#DBE8F4] bg-[#F7F9FC] p-4 space-y-3">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div><h4 className="text-sm font-extrabold text-[#042C51]">ESEP Coaching Outcomes</h4><p className="text-xs text-slate-500">{employeeEsepSessions.length} documented session(s) · {evaluatedEsepCount} evaluated · read-only facilitator evidence</p></div>
-                  <button type="button" onClick={() => setShowEsepDetails(true)} className="rounded-xl border border-[#BECBDA] bg-white px-3 py-2 text-xs font-bold text-[#042C51] hover:bg-[#E9F0FC]">View coaching form & results →</button>
-                </div>
-                {employeeEsepSessions.length ? employeeEsepSessions.map(session => {
-                  const effect = evaluationFor(session, esepEvaluations);
-                  const comparison = kpiComparison(effect);
-                  const status = coachingStatus(session, esepEvaluations, simulatedCurrentDate);
-                  return <div key={session.id} className="rounded-lg border border-[#E6ECF2] bg-white p-3 text-xs">
-                    <div className="flex flex-wrap justify-between gap-2"><strong className="text-[#042C51]">{session.type} · {session.date}</strong><span className={status === 'Evaluated' ? 'text-emerald-700' : status === 'Overdue' ? 'text-red-600' : 'text-amber-700'}>{status}</span></div>
-                    <p className="mt-1 text-slate-500">{session.facilitator} · {session.facilitatorRole}</p>
-                    <p className="mt-2 text-slate-700">{effect?.notes ?? 'Effectiveness review not yet recorded.'}</p>
-                    {comparison && <p className="mt-1 font-semibold text-[#042C51]">Recorded KPI: {comparison.before} → {comparison.after} ({comparison.differenceLabel}; original units)</p>}
-                  </div>;
-                }) : <p className="rounded-lg border border-dashed border-[#BECBDA] p-4 text-xs text-slate-500">No ESEP coaching records have been added for this employee.</p>}
-                <p className="text-[11px] text-slate-500">Coaching records are independent of official QA scoring and 30/60/90 milestone decisions.</p>
-              </div>
-
-              <div className="space-y-3">
-                {employeeCoaching.map(co => (
-                  <div key={co.id} className="p-4 rounded-xl border border-[#E6ECF2] bg-white flex items-center justify-between gap-3 shadow-xs">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <strong className="text-xs font-bold text-[#042C51]">{co.title}</strong>
-                        <span className={`px-2 py-0.2 rounded text-[9.5px] font-bold ${
-                          co.status === "Done" 
-                            ? "sibs-tone-green-bg sibs-tone-green-text border sibs-tone-green-border" 
-                            : "sibs-tone-amber-bg sibs-tone-amber-text border sibs-tone-amber-border"
-                        }`}>
-                          {co.status}
-                        </span>
-                      </div>
-                      <p className="text-xs text-slate-600">{co.notes}</p>
-                      <span className="text-[10px] text-slate-400 block">Owner: {co.owner} • Due: {co.due}</span>
-                    </div>
-
+                <div className="flex items-center gap-2 self-start sm:self-auto">
+                  {/* Interactive Coach / Trainee Role Switcher */}
+                  <div className="flex items-center rounded-xl bg-[#F7F9FC] border border-[#BECBDA] p-1 text-xs shadow-2xs">
                     <button
-                      onClick={() => toggleCoachingAction(co.id)}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer shrink-0 shadow-xs ${
-                        co.status === "Done" 
-                          ? "bg-white border border-[#BECBDA] text-[#042C51] hover:bg-[#F7F9FC]" 
-                          : "bg-[#FF5C28] hover:bg-[#e04f20] text-white"
+                      type="button"
+                      onClick={() => setCoachModeOverride("coach")}
+                      className={`px-2.5 py-1 rounded-lg font-bold text-[11px] transition-all flex items-center gap-1 cursor-pointer ${
+                        isViewingAsCoach
+                          ? "bg-[#042C51] text-white shadow-2xs"
+                          : "text-slate-600 hover:text-[#042C51]"
                       }`}
+                      title="Switch to Coach/Supervisor Confidential View"
                     >
-                      {co.status === "Done" ? "Reopen Action" : "Mark Complete"}
+                      <ShieldCheck className="w-3.5 h-3.5 text-[#FF5C28]" />
+                      <span>Coach Overview</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setCoachModeOverride("trainee")}
+                      className={`px-2.5 py-1 rounded-lg font-bold text-[11px] transition-all flex items-center gap-1 cursor-pointer ${
+                        !isViewingAsCoach
+                          ? "bg-[#FF5C28] text-white shadow-2xs"
+                          : "text-slate-600 hover:text-[#042C51]"
+                      }`}
+                      title="Switch to Trainee View (Employee Action Items)"
+                    >
+                      <User className="w-3.5 h-3.5" />
+                      <span>Trainee View</span>
                     </button>
                   </div>
-                ))}
+
+                  {isViewingAsCoach && (
+                    <button
+                      type="button"
+                      onClick={() => setShowAddCoaching(true)}
+                      className="px-3 py-1.5 rounded-xl bg-[#FF5C28] hover:bg-[#e04f20] text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+                    >
+                      + Add Action
+                    </button>
+                  )}
+                </div>
               </div>
-              {showEsepDetails && <TrainerCoachingDetailsModal employee={journey} sessions={esepSessions} evaluations={esepEvaluations} asOf={simulatedCurrentDate} onClose={() => setShowEsepDetails(false)} />}
+
+              {/* COACH-ONLY CONFIDENTIAL OVERVIEW (Visible only to Coaches, Trainers, TLs, Managers, QDS, and HR) */}
+              {isViewingAsCoach ? (
+                <div className="space-y-4">
+                  <div className="rounded-2xl border-2 border-[#042C51]/20 bg-gradient-to-b from-[#F7F9FC] to-white p-5 shadow-xs space-y-4 relative overflow-hidden">
+                    <div className="h-1 w-full bg-gradient-to-r from-[#042C51] via-[#c24b30] to-[#FF5C28] absolute top-0 left-0" />
+
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="flex h-5 w-5 items-center justify-center rounded-md bg-[#042C51] text-white">
+                            <Lock className="w-3 h-3 text-[#FF5C28]" />
+                          </span>
+                          <h4 className="text-sm font-black text-[#042C51] tracking-tight">
+                            Coaches & Supervisors Confidential Overview
+                          </h4>
+                          <span className="px-2 py-0.5 rounded-full text-[9px] font-black bg-emerald-100 text-emerald-800 border border-emerald-200">
+                            Authorized Access
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-500 mt-0.5">
+                          Private facilitator notes, GROW framework diagnostics, 23 QA parameter flags, and pre/post KPI impact. Shielded from standard employee view.
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => setShowEsepDetails(true)}
+                          className="rounded-xl border border-[#042C51] bg-[#042C51] text-white px-3.5 py-1.5 text-xs font-bold hover:bg-[#0B365F] transition-colors shadow-xs flex items-center gap-1.5 cursor-pointer"
+                        >
+                          <ShieldCheck className="w-3.5 h-3.5 text-[#FF5C28]" />
+                          <span>View Full GROW Form & Results →</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* 4 Coaching Impact KPI Metrics */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
+                      <div className="p-3 rounded-xl border border-[#E6ECF2] bg-white">
+                        <span className="text-[10px] font-bold text-slate-500 block uppercase">Documented Sessions</span>
+                        <strong className="text-xl font-black text-[#042C51] my-0.5 block">{employeeEsepSessions.length}</strong>
+                        <span className="text-[10px] text-slate-500">Read-only ESEP records</span>
+                      </div>
+                      <div className="p-3 rounded-xl border border-[#E6ECF2] bg-white">
+                        <span className="text-[10px] font-bold text-slate-500 block uppercase">Evaluated Follow-ups</span>
+                        <strong className="text-xl font-black text-emerald-700 my-0.5 block">{evaluatedEsepCount} / {employeeEsepSessions.length}</strong>
+                        <span className="text-[10px] text-slate-500">Effectiveness verified</span>
+                      </div>
+                      <div className="p-3 rounded-xl border border-[#E6ECF2] bg-white">
+                        <span className="text-[10px] font-bold text-slate-500 block uppercase">QA Parameters Evaluated</span>
+                        <strong className="text-xl font-black text-[#042C51] my-0.5 block">23 Matrix</strong>
+                        <span className="text-[10px] text-slate-500">Root-cause mapping</span>
+                      </div>
+                      <div className="p-3 rounded-xl border border-[#E6ECF2] bg-white">
+                        <span className="text-[10px] font-bold text-slate-500 block uppercase">Latest QA Trigger</span>
+                        <strong className="text-xl font-black text-[#FF5C28] my-0.5 block">{qaScoreVal}%</strong>
+                        <span className="text-[10px] text-slate-500">Target benchmark: 85%</span>
+                      </div>
+                    </div>
+
+                    {/* Active ESEP Session Summary Cards */}
+                    {employeeEsepSessions.length > 0 ? (
+                      <div className="space-y-3 pt-1">
+                        {employeeEsepSessions.map(session => {
+                          const effect = evaluationFor(session, esepEvaluations);
+                          const comparison = kpiComparison(effect);
+                          const status = coachingStatus(session, esepEvaluations, simulatedCurrentDate);
+
+                          return (
+                            <div key={session.id} className="rounded-xl border border-[#DBE8F4] bg-white p-4 text-xs space-y-2 shadow-2xs">
+                              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-2">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-mono text-[10px] font-black px-2 py-0.5 rounded bg-slate-100 text-slate-700">
+                                    ESEP-{session.id}
+                                  </span>
+                                  <strong className="text-xs font-black text-[#042C51]">{session.type}</strong>
+                                  <span className="text-slate-400">•</span>
+                                  <span className="text-slate-500 font-semibold">{session.date}</span>
+                                </div>
+                                <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black ${
+                                  status === 'Evaluated' 
+                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' 
+                                    : status === 'Overdue' 
+                                    ? 'bg-red-50 text-red-700 border border-red-200' 
+                                    : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                }`}>
+                                  {status}
+                                </span>
+                              </div>
+
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11.5px] text-slate-600">
+                                <div>
+                                  <span className="text-[10px] font-bold uppercase text-slate-400 block">Facilitator / Supervisor</span>
+                                  <strong className="text-[#042C51]">{session.facilitator}</strong> ({session.facilitatorRole})
+                                </div>
+                                <div>
+                                  <span className="text-[10px] font-bold uppercase text-slate-400 block">Coaching Reason(s)</span>
+                                  <span className="font-semibold text-slate-700">{session.reasons?.join(', ') || "QA Calibration & Efficiency"}</span>
+                                </div>
+                              </div>
+
+                              {/* GROW Summary Compact Grid */}
+                              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-[11px]">
+                                <div className="p-2 rounded-lg bg-[#F7F9FC] border border-[#E6ECF2]">
+                                  <strong className="text-[#042C51] block text-[10px] uppercase">G • Goal</strong>
+                                  <p className="line-clamp-2 text-slate-600 mt-0.5">{session.goal || "Floor accuracy & adherence"}</p>
+                                </div>
+                                <div className="p-2 rounded-lg bg-[#F7F9FC] border border-[#E6ECF2]">
+                                  <strong className="text-[#042C51] block text-[10px] uppercase">R • Reality</strong>
+                                  <p className="line-clamp-2 text-slate-600 mt-0.5">{session.reality || "Observed pacing variance"}</p>
+                                </div>
+                                <div className="p-2 rounded-lg bg-[#F7F9FC] border border-[#E6ECF2]">
+                                  <strong className="text-[#042C51] block text-[10px] uppercase">O • Options</strong>
+                                  <p className="line-clamp-2 text-slate-600 mt-0.5">{session.options || "Knowledgebase drills & call shadowing"}</p>
+                                </div>
+                                <div className="p-2 rounded-lg bg-[#F7F9FC] border border-[#E6ECF2]">
+                                  <strong className="text-[#042C51] block text-[10px] uppercase">W • Will</strong>
+                                  <p className="line-clamp-2 text-slate-600 mt-0.5">{session.will || "Trainee commits to script checklist"}</p>
+                                </div>
+                              </div>
+
+                              {comparison && (
+                                <div className="p-2 rounded-lg bg-emerald-50/80 border border-emerald-200 flex items-center justify-between text-[11px]">
+                                  <span className="font-bold text-emerald-900">Recorded KPI Impact Delta:</span>
+                                  <span className="font-mono font-bold text-emerald-800">
+                                    Before: {comparison.before} → After: {comparison.after} ({comparison.differenceLabel})
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="rounded-xl border border-dashed border-[#BECBDA] p-5 text-center text-xs text-slate-500">
+                        No ESEP coaching records currently logged for this trainee. Coaches may log a new session using the GROW form.
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                /* TRAINEE-FACING VIEW: Safe from confidential notes and private supervisor evaluations */
+                <div className="space-y-4">
+                  <div className="rounded-2xl border border-blue-200 bg-blue-50/50 p-4 text-xs text-[#042C51] space-y-1.5">
+                    <div className="flex items-center gap-2">
+                      <User className="w-4 h-4 text-[#FF5C28]" />
+                      <strong className="font-black text-sm">My Personalized Growth & Action Plan</strong>
+                    </div>
+                    <p className="text-slate-600 text-[11.5px]">
+                      Here are your actionable growth items and practice assignments assigned by your Trainer and Team Leader. Complete each item to strengthen your floor readiness.
+                    </p>
+                    <div className="pt-1 flex items-center gap-1.5 text-[10.5px] text-slate-500">
+                      <Lock className="w-3 h-3 text-slate-400" />
+                      <span>Confidential supervisor diagnostic evaluations and calibration notes are kept private to authorized coaches.</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* ACTION ITEMS SECTION (Visible in both views, with appropriate controls) */}
+              <div className="space-y-3 pt-2">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-black uppercase text-[#042C51] tracking-wider">
+                    Assigned Action Items & Follow-ups ({employeeCoaching.length})
+                  </h4>
+                  <span className="text-[11px] text-slate-500 font-semibold">
+                    {employeeCoaching.filter(c => c.status === "Done").length} of {employeeCoaching.length} completed
+                  </span>
+                </div>
+
+                {employeeCoaching.length > 0 ? (
+                  employeeCoaching.map(co => (
+                    <div key={co.id} className="p-4 rounded-xl border border-[#E6ECF2] bg-white flex items-center justify-between gap-3 shadow-xs">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <strong className="text-xs font-bold text-[#042C51]">{co.title}</strong>
+                          <span className={`px-2 py-0.2 rounded text-[9.5px] font-bold ${
+                            co.status === "Done" 
+                              ? "sibs-tone-green-bg sibs-tone-green-text border sibs-tone-green-border" 
+                              : "sibs-tone-amber-bg sibs-tone-amber-text border sibs-tone-amber-border"
+                          }`}>
+                            {co.status}
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-600">{co.notes}</p>
+                        <span className="text-[10px] text-slate-400 block">Owner: {co.owner} • Due: {co.due}</span>
+                      </div>
+
+                      <button
+                        onClick={() => toggleCoachingAction(co.id)}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer shrink-0 shadow-xs ${
+                          co.status === "Done" 
+                            ? "bg-white border border-[#BECBDA] text-[#042C51] hover:bg-[#F7F9FC]" 
+                            : "bg-[#FF5C28] hover:bg-[#e04f20] text-white"
+                        }`}
+                      >
+                        {co.status === "Done" ? "Reopen Action" : "Mark Complete"}
+                      </button>
+                    </div>
+                  ))
+                ) : (
+                  <p className="rounded-xl border border-dashed border-[#BECBDA] p-4 text-xs text-slate-500 text-center">
+                    No open action items assigned to this employee.
+                  </p>
+                )}
+              </div>
+
+              {showEsepDetails && (
+                <TrainerCoachingDetailsModal 
+                  employee={journey} 
+                  sessions={esepSessions} 
+                  evaluations={esepEvaluations} 
+                  asOf={simulatedCurrentDate} 
+                  onClose={() => setShowEsepDetails(false)} 
+                />
+              )}
             </div>
           )}
 

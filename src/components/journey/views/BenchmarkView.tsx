@@ -20,6 +20,7 @@ import {
   Eye,
   Link as LinkIcon
 } from "lucide-react";
+import { getEmphasizedEmployeeStatus } from "../employeeStatusUtils";
 
 interface BenchmarkViewProps {
   onOpenLinkModal?: (journey: EmployeeJourney) => void;
@@ -654,6 +655,7 @@ export default function BenchmarkView({ onOpenLinkModal, onSwitchModule }: Bench
                   const progressPct = Math.min(100, Math.round((daysElapsed / 90) * 100));
                   const openActionsCount = coachingActions.filter(a => (a.emp === e.sibsEmployeeId || a.emp === e.id) && a.status !== "Done").length;
                   const pendingReviews = [30, 60, 90].filter(k => daysElapsed >= k && !e.reviews?.[k]?.hr).length;
+                  const empStatus = getEmphasizedEmployeeStatus(e);
 
                   return (
                     <tr 
@@ -670,6 +672,12 @@ export default function BenchmarkView({ onOpenLinkModal, onSwitchModule }: Bench
                           <div className="min-w-0">
                             <strong className="text-xs text-[#042C51] block truncate">{e.fullName}</strong>
                             <span className="text-[10px] text-slate-400 block">{e.sibsEmployeeId || e.id}</span>
+                            {empStatus.isHandoffDue && (
+                              <span className={`mt-0.5 inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[8.5px] font-black uppercase tracking-wider ${empStatus.badgeClass}`}>
+                                <AlertTriangle className="w-2.5 h-2.5 shrink-0" />
+                                {empStatus.shortLabel}
+                              </span>
+                            )}
                           </div>
                         </div>
                       </td>
@@ -830,7 +838,9 @@ export default function BenchmarkView({ onOpenLinkModal, onSwitchModule }: Bench
                           <div className="w-full h-1 bg-[#E6EAF0] rounded-full overflow-hidden">
                             <div className="h-full bg-gradient-to-r from-[#042C51] to-[#FF5C28] rounded-full" style={{ width: `${progressPct}%` }} />
                           </div>
-                          <span className="text-[9.5px] text-slate-400 block truncate">{e.stage}</span>
+                          <span className="text-[9.5px] font-semibold text-slate-500 block truncate" title={empStatus.label}>
+                            {empStatus.shortLabel}
+                          </span>
                         </div>
                       </td>
 

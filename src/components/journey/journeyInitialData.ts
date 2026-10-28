@@ -942,7 +942,10 @@ export const INITIAL_COACHING_ACTIONS: CoachingAction[] = [
 ];
 
 export const INITIAL_NOTIFICATIONS: NotificationEvent[] = [
-  { id: 1, emp: "SIBS-2901", text: "Trainer readiness verified and TL handoff accepted.", date: "2026-10-02", role: "Team Leader" }
+  { id: 1, emp: "SIBS-2901", text: "Day 30 Checkpoint (PST & QA Audit Complete): Action Required — Formal Handoff from Trainer Maria Cruz to TL Anton Reyes is due for Alyssa Rivera.", date: "2026-10-14", role: "HR" },
+  { id: 2, emp: "SIBS-2901", text: "Day 30 Endorsement Due: PST (84%) and QA audit (84%) registered. Please complete Trainer → Team Leader handover checklist.", date: "2026-10-14", role: "Trainer" },
+  { id: 3, emp: "SIBS-2901", text: "Incoming Trainee Handoff Alert: Alyssa Rivera scheduled for operational Ramp transition under your supervision upon Day 30 sign-off.", date: "2026-10-14", role: "Team Leader" },
+  { id: 4, emp: "SIBS-2902", text: "Trainer readiness verified and TL handoff accepted.", date: "2026-10-02", role: "Team Leader" }
 ];
 
 export const INITIAL_QDS_REQUESTS: QDSFollowUpRequest[] = [

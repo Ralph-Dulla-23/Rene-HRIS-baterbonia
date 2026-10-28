@@ -168,25 +168,47 @@ export default function NotificationsView({ onSwitchModule }: NotificationsViewP
               const matchedEmp = journeys.find(j => j.sibsEmployeeId === n.emp || j.id === n.emp);
 
               return (
-                <div key={n.id} className="p-3.5 sm:p-4 rounded-xl border border-[#E6ECF2] bg-white hover:border-[#BECBDA] transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+                <div 
+                  key={n.id} 
+                  className={`p-3.5 sm:p-4 rounded-xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs ${
+                    n.text.includes("Day 30") || n.role === "HR"
+                      ? "border-[#FF5C28]/50 bg-gradient-to-r from-orange-50/50 via-white to-white"
+                      : "border-[#E6ECF2] bg-white hover:border-[#BECBDA]"
+                  }`}
+                >
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
-                      <span className="px-2 py-0.5 rounded text-[9.5px] font-bold sibs-tone-blue-bg sibs-tone-blue-text border sibs-tone-blue-border">
+                      <span className={`px-2 py-0.5 rounded text-[9.5px] font-bold ${
+                        n.role === "HR" 
+                          ? "bg-[#FF5C28] text-white" 
+                          : n.role === "Trainer"
+                          ? "bg-[#042C51] text-white"
+                          : "sibs-tone-blue-bg sibs-tone-blue-text border sibs-tone-blue-border"
+                      }`}>
                         {n.role}
                       </span>
                       <span className="text-[10px] text-slate-400">{n.date}</span>
+                      {n.text.includes("Day 30") && (
+                        <span className="text-[9px] font-black uppercase text-[#FF5C28] px-1.5 py-0.2 rounded bg-orange-100">
+                          Day 30 Handoff
+                        </span>
+                      )}
                     </div>
 
-                    <p className="text-xs text-[#042C51] font-semibold">{n.text}</p>
+                    <p className="text-xs text-[#042C51] font-bold">{n.text}</p>
                     <span className="text-[10.5px] text-slate-500 block">Trainee: <strong className="text-[#042C51]">{matchedEmp?.fullName || n.emp}</strong> ({matchedEmp?.account || "Operations"})</span>
                   </div>
 
                   {matchedEmp && (
                     <button
                       onClick={() => setSelectedJourney(matchedEmp)}
-                      className="px-3.5 py-1.5 rounded-xl border border-[#BECBDA] bg-white hover:bg-[#F7F9FC] text-[#042C51] text-xs font-semibold shrink-0 shadow-xs transition-colors cursor-pointer"
+                      className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold shrink-0 shadow-xs transition-colors cursor-pointer flex items-center gap-1.5 ${
+                        n.text.includes("Day 30")
+                          ? "bg-[#FF5C28] hover:bg-[#e04f20] text-white font-bold"
+                          : "border border-[#BECBDA] bg-white hover:bg-[#F7F9FC] text-[#042C51]"
+                      }`}
                     >
-                      Inspect Journey →
+                      <span>{n.text.includes("Day 30") ? "Review Handoff →" : "Inspect Journey →"}</span>
                     </button>
                   )}
                 </div>

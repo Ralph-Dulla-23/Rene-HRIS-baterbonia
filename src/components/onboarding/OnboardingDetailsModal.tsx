@@ -78,13 +78,28 @@ export default function OnboardingDetailsModal({
                       <p className="text-xs font-bold text-slate-600">{record.candidateEmail}</p>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10.5px] font-black px-2.5 py-1 rounded-full bg-amber-100 text-amber-900 border border-amber-200">
-                        {record.showStatus}
-                      </span>
-                      <span className="text-[10.5px] font-black px-2.5 py-1 rounded-full bg-[#042C51] text-white">
-                        {record.finalOutcome}
-                      </span>
+                    <div>
+                      {record.finalOutcome === "True Hire" ? (
+                        <span className="text-[10.5px] font-black px-3 py-1 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-300 flex items-center gap-1.5 shadow-2xs">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                          True Hire • Day 1 Completed
+                        </span>
+                      ) : record.finalOutcome === "No Show" ? (
+                        <span className="text-[10.5px] font-black px-3 py-1 rounded-full bg-rose-100 text-rose-900 border border-rose-300 flex items-center gap-1.5 shadow-2xs">
+                          <AlertTriangle className="w-3.5 h-3.5 text-rose-600" />
+                          No Show • Did Not Report
+                        </span>
+                      ) : record.finalOutcome === "Pre-start Withdrawal" ? (
+                        <span className="text-[10.5px] font-black px-3 py-1 rounded-full bg-orange-100 text-orange-900 border border-orange-300 flex items-center gap-1.5 shadow-2xs">
+                          <AlertTriangle className="w-3.5 h-3.5 text-orange-600" />
+                          Pre-start Withdrawn • Dropped Before Day 1
+                        </span>
+                      ) : (
+                        <span className="text-[10.5px] font-black px-3 py-1 rounded-full bg-blue-100 text-[#042C51] border border-blue-200 flex items-center gap-1.5 shadow-2xs">
+                          <Clock className="w-3.5 h-3.5 text-blue-600" />
+                          Pre-Boarding • Starts in {daysToStart} Day/s
+                        </span>
+                      )}
                     </div>
                   </div>
 
@@ -189,65 +204,23 @@ export default function OnboardingDetailsModal({
                 </div>
               </div>
 
-              {/* Right Sidebar */}
+              {/* Right Sidebar: Dedicated Action & Governance Panel */}
               <div className="lg:col-span-4 space-y-4">
-                {/* Onboarding Summary Detail Rows */}
-                <div className="bg-slate-50/80 p-4 rounded-2xl border border-slate-200 space-y-2.5 text-xs">
-                  <h4 className="font-black uppercase text-[10px] text-slate-500 tracking-wider">
-                    Onboarding Summary
-                  </h4>
-
-                  <div className="space-y-2 text-slate-700 divide-y divide-slate-200/80">
-                    <div className="flex justify-between pt-1">
-                      <span className="text-slate-500">Onboarding ID:</span>
-                      <span className="font-mono font-bold text-[#042C51]">{record.onboardingId || record.id}</span>
-                    </div>
-                    <div className="flex justify-between pt-1">
-                      <span className="text-slate-500">Offer ID:</span>
-                      <span className="font-mono font-semibold">{record.offerId || "OFF-2026-001"}</span>
-                    </div>
-                    <div className="flex justify-between pt-1">
-                      <span className="text-slate-500">Role:</span>
-                      <span className="font-bold text-slate-900 text-right">{record.roleTitle}</span>
-                    </div>
-                    <div className="flex justify-between pt-1">
-                      <span className="text-slate-500">Account:</span>
-                      <span className="font-bold text-slate-900">{record.account}</span>
-                    </div>
-                    <div className="flex justify-between pt-1">
-                      <span className="text-slate-500">Location:</span>
-                      <span className="font-bold text-slate-900">{record.location}</span>
-                    </div>
-                    <div className="flex justify-between pt-1">
-                      <span className="text-slate-500">Accepted Date:</span>
-                      <span className="font-mono font-bold">{record.acceptedOfferDate}</span>
-                    </div>
-                    <div className="flex justify-between pt-1">
-                      <span className="text-slate-500">Expected Start:</span>
-                      <span className="font-mono font-bold text-slate-900">{record.expectedStartDate}</span>
-                    </div>
-                    <div className="flex justify-between pt-1">
-                      <span className="text-slate-500">Actual Start:</span>
-                      <span className="font-mono font-bold text-emerald-700">{record.actualStartDate || "—"}</span>
-                    </div>
-                    <div className="flex justify-between pt-1">
-                      <span className="text-slate-500">Days to Start:</span>
-                      <span className="font-bold text-slate-900">{daysToStart} days</span>
-                    </div>
-                    <div className="flex justify-between pt-1">
-                      <span className="text-slate-500">Owner:</span>
-                      <span className="font-bold text-slate-900">{record.owner}</span>
-                    </div>
-                  </div>
-                </div>
-
                 {/* Update Outcome Action Buttons (only shown when finalOutcome is not yet final) */}
-                {!isFinalOutcomeLocked && (
-                  <div className="bg-white p-4 rounded-2xl border border-slate-200 space-y-2.5 shadow-2xs">
-                    <h4 className="font-black uppercase text-[10px] text-slate-500 tracking-wider">
-                      Update Outcome
-                    </h4>
-                    <div className="space-y-2">
+                {!isFinalOutcomeLocked ? (
+                  <div className="bg-white p-5 rounded-2xl border-2 border-[#FF5C28]/30 space-y-3 shadow-xs">
+                    <div className="flex items-center gap-2">
+                      <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#FF5C28] text-white">
+                        <Clock className="w-3.5 h-3.5" />
+                      </span>
+                      <h4 className="font-black uppercase text-xs text-[#042C51] tracking-wide">
+                        Resolve Day 1 Outcome
+                      </h4>
+                    </div>
+                    <p className="text-[11px] text-slate-600">
+                      Record candidate arrival on their scheduled start date.
+                    </p>
+                    <div className="space-y-2 pt-1">
                       <button
                         type="button"
                         onClick={() => onOpenOutcomeModal("Show")}
@@ -273,6 +246,22 @@ export default function OnboardingDetailsModal({
                         Mark as Withdrawn
                       </button>
                     </div>
+                  </div>
+                ) : (
+                  <div className={`p-4 rounded-2xl border space-y-2 text-xs ${
+                    record.finalOutcome === "True Hire" ? "border-emerald-200 bg-emerald-50/70" : "border-slate-200 bg-slate-50"
+                  }`}>
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className={`w-4 h-4 ${record.finalOutcome === "True Hire" ? "text-emerald-600" : "text-slate-500"}`} />
+                      <strong className={`font-black uppercase text-[10.5px] ${record.finalOutcome === "True Hire" ? "text-emerald-900" : "text-slate-800"}`}>
+                        {record.finalOutcome === "True Hire" ? "True Hire Finalized" : "Outcome Finalized"}
+                      </strong>
+                    </div>
+                    <p className="text-[11px] leading-relaxed text-slate-600">
+                      {record.finalOutcome === "True Hire"
+                        ? `Candidate successfully reported on Day 1 (${record.actualStartDate || record.expectedStartDate}) and transitioned to active operations & 30-60-90 Employee Journey.`
+                        : `Candidate status marked as ${record.finalOutcome}. No further pre-boarding required.`}
+                    </p>
                   </div>
                 )}
 
