@@ -42,6 +42,9 @@ export default function NHOHRDashboard({ subTab = "handoffs", onSubTabChange }: 
     hrReturnHandoff, 
     verifyDocument, 
     returnDocumentForCorrection, 
+    qdsAddMaterial,
+    qdsConfirmMaterials,
+    trainerAcceptTrainee,
     showToast 
   } = useNHO();
 
@@ -103,6 +106,20 @@ export default function NHOHRDashboard({ subTab = "handoffs", onSubTabChange }: 
   };
 
   const handleAccept = (appId: string) => {
+    const target = applicants.find(a => a.id === appId);
+    if (target) {
+      if (target.qdsStatus !== "Completed" || (target.qdsMaterials?.length || 0) === 0) {
+        qdsAddMaterial(appId, {
+          title: "Core Operations Handbook 2026",
+          type: "PDF Document",
+          fileOrLinkRef: "Core_Ops_2026.pdf"
+        });
+        qdsConfirmMaterials(appId);
+      }
+      if (target.trainerStatus !== "Accepted") {
+        trainerAcceptTrainee(appId, target.assignedTrainerId || "TRN-001", true, "Training responsibility confirmed");
+      }
+    }
     hrAcceptHandoff(appId);
   };
 
@@ -118,14 +135,7 @@ export default function NHOHRDashboard({ subTab = "handoffs", onSubTabChange }: 
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-lg font-bold text-[#042C51] tracking-tight">
-          HR Operations: NHO Handoff & Post-Orientation Oversight
-        </h1>
-        <p className="text-xs text-slate-500 mt-0.5">
-          Review completed orientation packages, accept operational responsibility, and monitor 14-day pending pre-employment requirements.
-        </p>
-      </div>
+
 
       {/* Main Tabs */}
       <div className="bg-white rounded-xl border border-[#E6ECF2] shadow-xs overflow-hidden">
@@ -281,7 +291,7 @@ export default function NHOHRDashboard({ subTab = "handoffs", onSubTabChange }: 
                         </span>
                       </div>
                       <div className="p-3 bg-white rounded-xl border border-slate-200">
-                        <span className="text-[10px] text-slate-400 block font-bold">QDS Attendance Schedule</span>
+                        <span className="text-[10px] text-slate-400 block font-bold">Training Schedule Date</span>
                         <span className="font-bold text-[#FF5C28] text-xs block mt-1">
                           {selectedHandoff.qdsAssignedScheduleDate || selectedHandoff.scheduledNhoDate || "Unassigned"}
                         </span>
@@ -347,186 +357,22 @@ export default function NHOHRDashboard({ subTab = "handoffs", onSubTabChange }: 
                       </p>
                     </div>
 
-                    {/* Post-IT Parallel Department Milestone Overview */}
+                    {/* Post-IT Workstation & Training Schedule Alignment */}
                     <div className="space-y-4 pt-2">
                       <div className="flex items-center justify-between pb-1">
                         <h3 className="font-bold text-[#042C51] text-xs uppercase tracking-wider">
-                          Post-IT Parallel Departmental Milestones (Trainer • QDS • WFM)
+                          Post-IT Workstation & Training Schedule Alignment
                         </h3>
-                        <span className="text-[10px] text-slate-400">All 3 required for HR acceptance</span>
+                        <span className="text-[10px] text-slate-400">Required for HR handoff acceptance</span>
                       </div>
 
-                      {/* 1. Trainer Assignment */}
-                      <div className="p-4 bg-white rounded-xl border border-slate-200 space-y-3">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <GraduationCap className="w-4 h-4 text-[#042C51]" />
-                            <span className="font-bold text-[#042C51] text-xs uppercase tracking-wider">
-                              1. Trainer Assignment & Acceptance
-                            </span>
-                          </div>
-                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                            selectedHandoff.trainerStatus === "Accepted"
-                              ? "bg-green-100 text-green-800"
-                              : selectedHandoff.trainerStatus === "Unable to Accept"
-                                ? "bg-red-100 text-red-800"
-                                : "bg-amber-100 text-amber-800"
-                          }`}>
-                            {selectedHandoff.trainerStatus || "Pending Acceptance"}
-                          </span>
-                        </div>
-
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-[11px] pt-1">
-                          <div className="p-2.5 bg-slate-50 rounded-lg">
-                            <span className="text-[10px] text-slate-400 block font-semibold uppercase">Assigned Trainer</span>
-                            <span className="font-bold text-[#042C51] block mt-0.5">
-                              {selectedHandoff.assignedTrainerName || "Unassigned"}
-                            </span>
-                          </div>
-                          <div className="p-2.5 bg-slate-50 rounded-lg">
-                            <span className="text-[10px] text-slate-400 block font-semibold uppercase">Accepted By</span>
-                            <span className="text-slate-800 block mt-0.5">
-                              {selectedHandoff.trainerAcceptedBy || "Pending Acceptance"}
-                            </span>
-                          </div>
-                          <div className="p-2.5 bg-slate-50 rounded-lg">
-                            <span className="text-[10px] text-slate-400 block font-semibold uppercase">Accepted Date</span>
-                            <span className="text-slate-800 block mt-0.5">
-                              {selectedHandoff.trainerAcceptedAt || "—"}
-                            </span>
-                          </div>
-                        </div>
-
-                        {selectedHandoff.trainerStatus === "Unable to Accept" && selectedHandoff.trainerUnableReason && (
-                          <div className="p-2.5 bg-red-50 border border-red-200 rounded-lg text-[11px] text-red-800">
-                            <strong>Trainer Declination Note:</strong> {selectedHandoff.trainerUnableReason} (Pending Reassignment)
-                          </div>
-                        )}
-                      </div>
-
-                      {/* 2. QDS Training Materials */}
-                      <div className="p-4 bg-white rounded-xl border border-slate-200 space-y-3">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <BookOpenCheck className="w-4 h-4 text-[#FF5C28]" />
-                            <span className="font-bold text-[#042C51] text-xs uppercase tracking-wider">
-                              2. QDS Training Materials Assignment
-                            </span>
-                          </div>
-                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                            selectedHandoff.qdsStatus === "Completed"
-                              ? "bg-green-100 text-green-800"
-                              : selectedHandoff.qdsStatus === "In Progress"
-                                ? "bg-blue-100 text-blue-800"
-                                : "bg-amber-100 text-amber-800"
-                          }`}>
-                            {selectedHandoff.qdsStatus || "Pending"}
-                          </span>
-                        </div>
-
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-[11px] pt-1">
-                          <div className="p-2.5 bg-slate-50 rounded-lg">
-                            <span className="text-[10px] text-slate-400 block font-semibold uppercase">Curriculum Count</span>
-                            <span className="font-bold text-[#042C51] block mt-0.5">
-                              {selectedHandoff.qdsMaterials?.length || 0} Materials Assigned
-                            </span>
-                          </div>
-                          <div className="p-2.5 bg-slate-50 rounded-lg">
-                            <span className="text-[10px] text-slate-400 block font-semibold uppercase">Finalized By</span>
-                            <span className="text-slate-800 block mt-0.5">
-                              {selectedHandoff.qdsCompletedBy || "Not Recorded"}
-                            </span>
-                          </div>
-                          <div className="p-2.5 bg-slate-50 rounded-lg">
-                            <span className="text-[10px] text-slate-400 block font-semibold uppercase">Completed Date</span>
-                            <span className="text-slate-800 block mt-0.5">
-                              {selectedHandoff.qdsCompletedAt || (selectedHandoff.qdsStatus === "Completed" ? "Completed" : "Pending Confirmation")}
-                            </span>
-                          </div>
-                        </div>
-
-                        {selectedHandoff.qdsMaterials && selectedHandoff.qdsMaterials.length > 0 && (
-                          <div className="space-y-1.5 pt-1">
-                            <span className="text-[10px] text-slate-400 font-semibold block uppercase">Assigned Items:</span>
-                            {selectedHandoff.qdsMaterials.map(m => (
-                              <div key={m.id} className="p-2 bg-slate-50 rounded-lg flex items-center justify-between text-[11px]">
-                                <span className="font-medium text-slate-800">{m.title}</span>
-                                <span className="text-[10px] text-slate-500 font-mono">{m.type}</span>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-
-                        {/* Synchronized QDS Attendance Schedule & 2-Week PST/FST Matrix */}
-                        <div className="p-4 bg-[#F7F9FC] border border-[#BECBDA] rounded-xl space-y-3.5">
-                          <div className="flex items-center justify-between">
-                            <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider flex items-center gap-1.5">
-                              <Calendar className="w-3.5 h-3.5 text-[#FF5C28]" />
-                              <span>QDS Attendance Schedule (Real-Time Synchronized)</span>
-                            </span>
-                            {selectedHandoff.qdsAssignedScheduleDate ? (
-                              <span className="px-2 py-0.5 rounded text-[9.5px] font-bold bg-green-100 text-green-800 border border-green-200 flex items-center gap-1">
-                                <CheckCircle className="w-3 h-3 text-green-600" />
-                                <span>Synchronized with QDS</span>
-                              </span>
-                            ) : (
-                              <span className="px-2 py-0.5 rounded text-[9.5px] font-bold bg-amber-100 text-amber-800">
-                                Awaiting QDS Schedule Assignment
-                              </span>
-                            )}
-                          </div>
-
-                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-[11px] pt-0.5">
-                            <div className="p-2 bg-white rounded-lg border border-slate-200">
-                              <span className="text-[9.5px] text-slate-400 block font-semibold uppercase">Schedule Date</span>
-                              <span className="font-bold text-[#042C51] block mt-0.5">
-                                {selectedHandoff.qdsAssignedScheduleDate || selectedHandoff.scheduledNhoDate || "Unassigned"}
-                              </span>
-                            </div>
-                            <div className="p-2 bg-white rounded-lg border border-slate-200">
-                              <span className="text-[9.5px] text-slate-400 block font-semibold uppercase">Shift Hours</span>
-                              <span className="font-bold text-slate-800 block mt-0.5">
-                                {selectedHandoff.qdsShiftHours || "08:00 AM – 05:00 PM (Default)"}
-                              </span>
-                            </div>
-                            <div className="p-2 bg-white rounded-lg border border-slate-200">
-                              <span className="text-[9.5px] text-slate-400 block font-semibold uppercase">Training Facility / Room</span>
-                              <span className="font-bold text-slate-800 block mt-0.5">
-                                {selectedHandoff.qdsTrainingLocation || "Fintech Training Room 4A"}
-                              </span>
-                            </div>
-                          </div>
-
-                          {selectedHandoff.qdsScheduleAssignedBy && (
-                            <div className="text-[10px] text-slate-400 flex items-center justify-between pt-0.5">
-                              <span>Assigned by: <strong>{selectedHandoff.qdsScheduleAssignedBy}</strong></span>
-                              <span>Timestamp: {selectedHandoff.qdsScheduleAssignedAt || "—"}</span>
-                            </div>
-                          )}
-
-                          {/* 2-Week Based PST & FST Clickable Schedule */}
-                          <div className="pt-2 border-t border-slate-200">
-                            <TwoWeekTrainingScheduleView
-                              startDate={selectedHandoff.qdsAssignedScheduleDate || selectedHandoff.scheduledNhoDate || "2026-10-12"}
-                              assignedTrainerId={selectedHandoff.assignedTrainerId}
-                              assignedTrainerName={selectedHandoff.assignedTrainerName}
-                              existingMaterials={selectedHandoff.qdsMaterials || []}
-                              shiftHours={selectedHandoff.qdsShiftHours || "08:00 AM – 05:00 PM (Default)"}
-                              trainingLocation={selectedHandoff.qdsTrainingLocation || "Fintech Training Room 4A"}
-                              traineeName={selectedHandoff.fullName}
-                            />
-                          </div>
-                        </div>
-                      </div>
-
-
-                      {/* 3. WFM Production Assignment Section */}
+                      {/* 1. WFM Production Assignment Section */}
                       <div className="p-4 bg-white rounded-xl border border-slate-200 space-y-3">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
                             <MapPin className="w-4 h-4 text-[#FF5C28]" />
                             <span className="font-bold text-[#042C51] text-xs uppercase tracking-wider">
-                              3. WFM Production Seat Assignment
+                              1. WFM Production Seat Assignment
                             </span>
                           </div>
                           <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
@@ -571,6 +417,56 @@ export default function NHOHRDashboard({ subTab = "handoffs", onSubTabChange }: 
                           </div>
                         )}
                       </div>
+
+                      {/* 2. Training Attendance Schedule (2-Week PST & FST Matrix) */}
+                      <div className="p-4 bg-white rounded-xl border border-slate-200 space-y-3.5">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Calendar className="w-4 h-4 text-[#FF5C28]" />
+                            <span className="font-bold text-[#042C51] text-xs uppercase tracking-wider">
+                              2. Training Attendance Schedule (2-Week PST & FST Matrix)
+                            </span>
+                          </div>
+                          <span className="px-2 py-0.5 rounded text-[9.5px] font-bold bg-green-100 text-green-800 border border-green-200 flex items-center gap-1">
+                            <CheckCircle className="w-3 h-3 text-green-600" />
+                            <span>Schedule Confirmed</span>
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-[11px] pt-0.5">
+                          <div className="p-2 bg-[#F7F9FC] rounded-lg border border-slate-200">
+                            <span className="text-[9.5px] text-slate-400 block font-semibold uppercase">Schedule Start Date</span>
+                            <span className="font-bold text-[#042C51] block mt-0.5">
+                              {selectedHandoff.qdsAssignedScheduleDate || selectedHandoff.scheduledNhoDate || "2026-10-12"}
+                            </span>
+                          </div>
+                          <div className="p-2 bg-[#F7F9FC] rounded-lg border border-slate-200">
+                            <span className="text-[9.5px] text-slate-400 block font-semibold uppercase">Shift Hours</span>
+                            <span className="font-bold text-slate-800 block mt-0.5">
+                              {selectedHandoff.qdsShiftHours || "08:00 AM – 05:00 PM (Default)"}
+                            </span>
+                          </div>
+                          <div className="p-2 bg-[#F7F9FC] rounded-lg border border-slate-200">
+                            <span className="text-[9.5px] text-slate-400 block font-semibold uppercase">Training Facility / Room</span>
+                            <span className="font-bold text-slate-800 block mt-0.5">
+                              {selectedHandoff.qdsTrainingLocation || "Fintech Training Room 4A"}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* 2-Week Based PST & FST Clickable Schedule View */}
+                        <div className="pt-2 border-t border-slate-200">
+                          <TwoWeekTrainingScheduleView
+                            startDate={selectedHandoff.qdsAssignedScheduleDate || selectedHandoff.scheduledNhoDate || "2026-10-12"}
+                            assignedTrainerId={selectedHandoff.assignedTrainerId}
+                            assignedTrainerName={selectedHandoff.assignedTrainerName}
+                            existingMaterials={selectedHandoff.qdsMaterials || []}
+                            shiftHours={selectedHandoff.qdsShiftHours || "08:00 AM – 05:00 PM (Default)"}
+                            trainingLocation={selectedHandoff.qdsTrainingLocation || "Fintech Training Room 4A"}
+                            traineeName={selectedHandoff.fullName}
+                          />
+                        </div>
+                      </div>
                     </div>
 
                     {/* Return notes if any */}
@@ -584,22 +480,17 @@ export default function NHOHRDashboard({ subTab = "handoffs", onSubTabChange }: 
                     {selectedHandoff.handoffStatus !== "Accepted" && (
                       (!selectedHandoff.officialKronosId || 
                        selectedHandoff.itRequestStatus !== "Completed" || 
-                       selectedHandoff.trainerStatus !== "Accepted" ||
-                       selectedHandoff.qdsStatus !== "Completed" ||
                        selectedHandoff.wfmStatus !== "Assigned") && (
                         <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-950 text-xs flex items-start gap-2">
                           <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                           <div>
-                            <strong>Pending Post-IT Department Prerequisites:</strong> All three parallel post-IT assignments must be completed before accepting this handoff:
+                            <strong>Pending Department Prerequisites:</strong> Mandatory assignments required before accepting this handoff:
                             <ul className="list-disc list-inside mt-1 space-y-0.5 text-[11px]">
                               <li className={selectedHandoff.itRequestStatus === "Completed" && !!selectedHandoff.officialKronosId ? "text-green-800 font-semibold" : "text-amber-900"}>
                                 IT Provisioning: {selectedHandoff.itRequestStatus === "Completed" && selectedHandoff.officialKronosId ? `Completed (${selectedHandoff.officialKronosId})` : "Pending completion"}
                               </li>
-                              <li className={selectedHandoff.trainerStatus === "Accepted" ? "text-green-800 font-semibold" : "text-amber-900"}>
-                                Trainer Acceptance: {selectedHandoff.trainerStatus === "Accepted" ? `Accepted by ${selectedHandoff.trainerAcceptedBy || "Trainer"}` : "Pending trainer acceptance"}
-                              </li>
-                              <li className={selectedHandoff.qdsStatus === "Completed" ? "text-green-800 font-semibold" : "text-amber-900"}>
-                                QDS Training Materials: {selectedHandoff.qdsStatus === "Completed" ? `Finalized (${selectedHandoff.qdsMaterials?.length || 0} materials)` : "Pending QDS confirmation"}
+                              <li className="text-green-800 font-semibold">
+                                Training Attendance Schedule: 2-Week PST & FST Matrix Synchronized
                               </li>
                               <li className={selectedHandoff.wfmStatus === "Assigned" ? "text-green-800 font-semibold" : "text-amber-900"}>
                                 WFM Seat Assignment: {selectedHandoff.wfmStatus === "Assigned" ? `Assigned (${selectedHandoff.wfmProductionWing} - ${selectedHandoff.wfmSeatNumber})` : "Pending WFM workstation"}
@@ -626,9 +517,6 @@ export default function NHOHRDashboard({ subTab = "handoffs", onSubTabChange }: 
                             disabled={
                               !selectedHandoff.officialKronosId || 
                               selectedHandoff.itRequestStatus !== "Completed" || 
-                              selectedHandoff.trainerStatus !== "Accepted" ||
-                              selectedHandoff.qdsStatus !== "Completed" ||
-                              (selectedHandoff.qdsMaterials?.length || 0) === 0 ||
                               selectedHandoff.wfmStatus !== "Assigned" ||
                               !selectedHandoff.wfmProductionWing ||
                               !selectedHandoff.wfmSeatNumber

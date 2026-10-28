@@ -81,14 +81,7 @@ export default function NHOITDashboard({ subTab = "queue", onSubTabChange }: NHO
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-lg font-bold text-[#042C51] tracking-tight">
-          IT Account Provisioning & Kronos ID Queue
-        </h1>
-        <p className="text-xs text-slate-500 mt-0.5">
-          Review endorsed ID creation requests, adjust permitted account parameters, and record manual Kronos account IDs.
-        </p>
-      </div>
+
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column: Requests Queue List */}
@@ -152,25 +145,29 @@ export default function NHOITDashboard({ subTab = "queue", onSubTabChange }: NHO
             {/* Header info */}
             <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-[#E6ECF2]">
               <div>
-                <span className="text-[10px] font-bold text-[#FF5C28] uppercase tracking-wider block">
-                  ID Creation Request Details
-                </span>
-                <h2 className="text-base font-bold text-[#042C51] mt-0.5">
-                  {selectedApp.fullName} ({selectedApp.applicantNumber})
-                </h2>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-base font-bold text-[#042C51]">
+                    {selectedApp.fullName}
+                  </h2>
+                  <span className="text-xs font-mono text-slate-400 bg-slate-100 px-2 py-0.5 rounded">
+                    {selectedApp.applicantNumber}
+                  </span>
+                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                    selectedApp.itRequestStatus === "Completed"
+                      ? "bg-green-100 text-green-800"
+                      : selectedApp.itRequestStatus === "In Progress"
+                        ? "bg-blue-100 text-blue-800"
+                        : "bg-amber-100 text-amber-800"
+                  }`}>
+                    {selectedApp.itRequestStatus}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  {selectedApp.position} • {selectedApp.department} ({selectedApp.account})
+                </p>
               </div>
 
               <div className="flex items-center gap-2">
-                <span className={`px-3 py-1 rounded-xl text-xs font-bold ${
-                  selectedApp.itRequestStatus === "Completed"
-                    ? "bg-green-100 text-green-800"
-                    : selectedApp.itRequestStatus === "In Progress"
-                      ? "bg-blue-100 text-blue-800"
-                      : "bg-amber-100 text-amber-800"
-                }`}>
-                  Status: {selectedApp.itRequestStatus}
-                </span>
-
                 {selectedApp.itRequestStatus === "Pending" && (
                   <button
                     onClick={handleStartProcessing}

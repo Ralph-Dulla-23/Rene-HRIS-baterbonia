@@ -21,19 +21,19 @@ const journeyTabs: Record<DemoRole,string[]> = {
   QDS:['qds-dashboard','trainer-monitoring','notifications'],
   Trainer:['trainer-monitoring','trainee-dashboard','notifications'],
   WFM:[],
-  HR:['benchmark','trainee-dashboard','trainer-monitoring','qds-dashboard','notifications','configuration'],
-  'HR Admin':['benchmark','trainee-dashboard','trainer-monitoring','qds-dashboard','notifications','configuration'],
-  'Team Leader':['benchmark','trainer-monitoring','notifications'],
-  Manager:['benchmark','trainer-monitoring','notifications'],
-  SOM:['benchmark','trainer-monitoring','notifications'],
-  'Super Admin':['benchmark','trainee-dashboard','trainer-monitoring','qds-dashboard','notifications','configuration'],
+  HR:['benchmark','trainee-dashboard','notifications','configuration'],
+  'HR Admin':['benchmark','trainer-monitoring','qds-dashboard','trainee-dashboard','notifications','configuration'],
+  'Team Leader':['benchmark','notifications'],
+  Manager:['benchmark','notifications'],
+  SOM:['benchmark','notifications'],
+  'Super Admin':['benchmark','trainer-monitoring','qds-dashboard','trainee-dashboard','notifications','configuration'],
 };
 
 const modules: Record<DemoRole,string[]> = {
   Employee:['Employee Dashboard','Time & Attendance','Leaves & Time Off','Resignation Management','Employee Journey'],
   TA:['TA Dashboard','Employee Directory','Workforce Hiring','Hiring Needs Intake','Available Positions','Job Description','Applicant Leads','Talent Pool','Candidate Pipeline','Offers','New Hire Orientation','Onboarding','Candidate Experience','Recruitment Flowchart','Sourcing Analytics','Action Items','Weekly Reports','Public Application Form','Public Survey'],
   IT:['New Hire Orientation'],
-  QDS:['Employee Journey','New Hire Orientation','QDS Application'],
+  QDS:['Employee Journey','New Hire Orientation'],
   Trainer:['Employee Journey','New Hire Orientation'],
   WFM:['Workforce Hiring','Employee Directory','Time & Attendance','New Hire Orientation','Action Items'],
   HR:['HR Admin Dashboard','Employee Directory','Time & Attendance','Leaves & Time Off','Resignation Management','New Hire Orientation','Employee Journey','Onboarding','Hiring Needs Intake','Available Positions','Candidate Experience'],
@@ -41,7 +41,7 @@ const modules: Record<DemoRole,string[]> = {
   'Team Leader':['OM Dashboard','Employee Directory','Time & Attendance','Leaves & Time Off','Employee Journey'],
   Manager:['OM Dashboard','Employee Directory','Time & Attendance','Leaves & Time Off','Employee Journey'],
   SOM:['OM Dashboard','Employee Directory','Time & Attendance','Leaves & Time Off','Employee Journey'],
-  'Super Admin':['Super Admin Dashboard','HR Admin Dashboard','HR Dashboard','TA Dashboard','OM Dashboard','Employee Dashboard','Trainee Dashboard','Employee Directory','Time & Attendance','Leaves & Time Off','Resignation Management','Workforce Hiring','Hiring Needs Intake','Available Positions','Job Description','Applicant Leads','Talent Pool','Candidate Pipeline','Offers','New Hire Orientation','Onboarding','Candidate Experience','Employee Journey','QDS Application','Recruitment Flowchart','Sourcing Analytics','Action Items','Weekly Reports','Departments','Office Locations','Email Logs','Recruitment Settings','Frontend Design PDF View','Process Specbook','Public Application Form','Public Survey'],
+  'Super Admin':['Super Admin Dashboard','HR Admin Dashboard','HR Dashboard','TA Dashboard','OM Dashboard','Employee Dashboard','Trainee Dashboard','Employee Directory','Time & Attendance','Leaves & Time Off','Resignation Management','Workforce Hiring','Hiring Needs Intake','Available Positions','Job Description','Applicant Leads','Talent Pool','Candidate Pipeline','Offers','New Hire Orientation','Onboarding','Candidate Experience','Employee Journey','Recruitment Flowchart','Sourcing Analytics','Action Items','Weekly Reports','Departments','Office Locations','Email Logs','Recruitment Settings','Frontend Design PDF View','Process Specbook','Public Application Form','Public Survey'],
 };
 
 export function normalizeModule(module: string): string {

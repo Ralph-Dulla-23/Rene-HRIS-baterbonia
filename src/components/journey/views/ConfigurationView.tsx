@@ -37,13 +37,14 @@ export default function ConfigurationView({ onSwitchModule }: ConfigurationViewP
     setTimeout(() => setToastMessage(null), 3000);
   };
 
-  const handleReset = () => {
-    if (window.confirm("CONFIRM DEMO RESET: Are you sure you want to reset all 30/60/90 Employee Journey data to pristine baseline state?")) {
-      resetJourneysToDefault();
-      setDateInput("2026-10-14");
-      setToastMessage("All Journey state, materials, assessments, and audit logs have been reset to default baseline.");
-      setTimeout(() => setToastMessage(null), 3000);
-    }
+  const [showConfirmResetModal, setShowConfirmResetModal] = useState(false);
+
+  const handleConfirmReset = () => {
+    resetJourneysToDefault();
+    setDateInput("2026-10-14");
+    setShowConfirmResetModal(false);
+    setToastMessage("All Journey state, materials, assessments, and audit logs have been reset to default baseline.");
+    setTimeout(() => setToastMessage(null), 3000);
   };
 
   const roleOwnership = [
@@ -76,41 +77,46 @@ export default function ConfigurationView({ onSwitchModule }: ConfigurationViewP
 
   return (
     <div className="space-y-6">
-      {/* Top Banner (aligned to SiBS HRIS Deep Navy theme) */}
-      <div className="bg-gradient-to-r from-[#042C51] via-[#0B365F] to-[#13406D] text-white p-6 rounded-2xl shadow-xs border border-[#13406D] flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div>
-          <span className="text-[10px] font-black uppercase tracking-widest text-[#FF5C28]">
-            SYSTEM SPECIFICATION & TESTING CONTROLS
-          </span>
-          <h1 className="text-xl sm:text-2xl font-black text-white mt-1 mb-2 tracking-tight">
-            Journey Configuration
-          </h1>
-          <p className="text-xs text-[#E6EAF0] max-w-2xl leading-relaxed">
-            Role ownership specifications, proposed HRIS API endpoints, compliance rules, and time-travel testing controls.
-          </p>
-        </div>
+      {/* SiBS HRIS Standard Header: White card with top accent gradient bar */}
+      <section className="overflow-hidden rounded-xl border border-[#E6ECF2] bg-white shadow-xs">
+        <div className="h-[3.5px] w-full bg-gradient-to-r from-[#042C51] via-[#c24b30] to-[#FF5C28]" />
+        <div className="flex flex-wrap items-center justify-between gap-4 p-4 sm:p-5">
+          <div className="space-y-1">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-blue-100 bg-[#E9F0FC] px-2.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wide text-[#042C51]">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#FF5C28]" />
+              System Specification & Testing Controls
+            </span>
+            <h1 className="text-xl sm:text-2xl font-black tracking-tight text-[#042C51]">
+              Journey Configuration
+            </h1>
+            <p className="text-xs text-[#667085] max-w-3xl leading-normal">
+              Role ownership specifications, proposed HRIS API endpoints, governance compliance rules, and time-travel demo testing controls.
+            </p>
+          </div>
 
-        <div className="flex items-center gap-2 flex-wrap">
-          <button
-            onClick={handleReset}
-            className="px-4 py-2 rounded-xl bg-[#E74C3C] hover:bg-red-700 text-white font-semibold text-xs flex items-center gap-1.5 cursor-pointer shadow-xs transition-colors shrink-0"
-          >
-            <RotateCcw className="w-4 h-4" />
-            <span>Reset Demo Baseline</span>
-          </button>
-
-          {onSwitchModule && (
+          <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
-              onClick={() => onSwitchModule("New Hire Orientation (NHO)")}
-              className="px-3.5 py-2 rounded-xl border border-white/30 bg-white/10 hover:bg-white/20 text-white font-semibold text-xs flex items-center gap-1.5 cursor-pointer shadow-xs transition-colors shrink-0"
+              onClick={() => setShowConfirmResetModal(true)}
+              className="px-3.5 py-2 rounded-xl bg-[#E74C3C] hover:bg-red-700 text-white font-semibold text-xs flex items-center gap-1.5 cursor-pointer shadow-xs transition-colors shrink-0"
             >
-              <Layers className="w-4 h-4 text-[#FF5C28]" />
-              <span>Back to NHO</span>
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>Reset Demo Baseline</span>
             </button>
-          )}
+
+            {onSwitchModule && (
+              <button
+                type="button"
+                onClick={() => onSwitchModule("New Hire Orientation (NHO)")}
+                className="px-3.5 py-2 rounded-xl border border-[#BECBDA] hover:bg-[#F7F9FC] text-[#042C51] font-semibold text-xs flex items-center gap-1.5 cursor-pointer shadow-xs transition-colors shrink-0"
+              >
+                <Layers className="w-4 h-4 text-[#FF5C28]" />
+                <span>Back to NHO</span>
+              </button>
+            )}
+          </div>
         </div>
-      </div>
+      </section>
 
       {toastMessage && (
         <div className="sibs-tone-green-bg border sibs-tone-green-border sibs-tone-green-text text-xs px-4 py-2.5 rounded-xl flex items-center justify-between shadow-xs">
@@ -121,8 +127,46 @@ export default function ConfigurationView({ onSwitchModule }: ConfigurationViewP
         </div>
       )}
 
+      {/* In-UI Reset Confirmation Modal */}
+      {showConfirmResetModal && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-xl border border-[#E6ECF2]">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-red-50 text-red-600 flex items-center justify-center font-bold shrink-0">
+                <AlertCircle className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-extrabold text-[#042C51]">Confirm Demo Reset</h3>
+                <p className="text-xs text-slate-500">Restore default sample data</p>
+              </div>
+            </div>
+
+            <p className="text-xs text-[#042C51] leading-relaxed">
+              Are you sure you want to reset all 30/60/90 Employee Journey data to pristine baseline state? All completed scorecards, logged feedback, and simulated dates will be reloaded.
+            </p>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setShowConfirmResetModal(false)}
+                className="px-4 py-2 rounded-xl border border-[#BECBDA] bg-white hover:bg-[#F7F9FC] text-[#042C51] font-semibold text-xs transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmReset}
+                className="px-4 py-2 rounded-xl bg-[#E74C3C] hover:bg-red-700 text-white font-semibold text-xs shadow-xs transition-colors cursor-pointer"
+              >
+                Yes, Reset Baseline
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Time-Travel Demo Testing Controls */}
-      <div className="bg-white rounded-2xl border border-[#E6ECF2] shadow-xs p-6 space-y-4">
+      <div className="bg-white rounded-xl border border-[#E6ECF2] shadow-xs p-4 sm:p-5 space-y-4">
         <div className="border-b border-slate-100 pb-3">
           <h2 className="text-sm font-extrabold text-[#042C51]">Time-Travel Testing Controller</h2>
           <p className="text-xs text-slate-500">Change simulated current date to evaluate Day 30, Day 60, and Day 90 milestone evaluation rules.</p>
@@ -173,7 +217,7 @@ export default function ConfigurationView({ onSwitchModule }: ConfigurationViewP
       </div>
 
       {/* Role Ownership Specification */}
-      <div className="bg-white rounded-2xl border border-[#E6ECF2] shadow-xs p-6 space-y-4">
+      <div className="bg-white rounded-xl border border-[#E6ECF2] shadow-xs p-4 sm:p-5 space-y-4">
         <div className="border-b border-slate-100 pb-3">
           <h2 className="text-sm font-extrabold text-[#042C51]">Role Ownership & Security Architecture</h2>
           <p className="text-xs text-slate-500">Access rules for trainers, QDS, team leaders, and HR administrators.</p>
@@ -190,7 +234,7 @@ export default function ConfigurationView({ onSwitchModule }: ConfigurationViewP
       </div>
 
       {/* Proposed HRIS API Endpoints */}
-      <div className="bg-white rounded-2xl border border-[#E6ECF2] shadow-xs p-6 space-y-4">
+      <div className="bg-white rounded-xl border border-[#E6ECF2] shadow-xs p-4 sm:p-5 space-y-4">
         <div className="border-b border-slate-100 pb-3">
           <h2 className="text-sm font-extrabold text-[#042C51]">Proposed SiBS HRIS Integration Endpoints</h2>
           <p className="text-xs text-slate-500">Backend service contracts for persistent Employee Journey storage and multi-role operations.</p>

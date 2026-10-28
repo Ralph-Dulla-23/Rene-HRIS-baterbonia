@@ -98,128 +98,109 @@ export default function NHOTADashboard({
     });
   }, [applicants, searchQuery, statusFilter, checkITEndorsementEligibility]);
 
+  const summaryCards = [
+    { label: "Scheduled", value: metrics.totalScheduled, subtitle: "Active orientation cohort", icon: Users, tone: "blue" },
+    { label: "Pending Attendance", value: metrics.pendingAttendance, subtitle: "Awaiting attendance tagging", icon: Clock, tone: "amber" },
+    { label: "Pending Majors", value: metrics.pendingMajorVerification, subtitle: "Physical document clearance", icon: FileCheck, tone: "orange" },
+    { label: "Pending Orientation / Agreements", value: metrics.pendingOrientationOrAgreements, subtitle: "Applicant portal requirements", icon: AlertCircle, tone: "amber" },
+    { label: "Ready for IT", value: metrics.readyForIT, subtitle: "Eligibility criteria completed", icon: CheckCircle, tone: "green" },
+    { label: "Awaiting IT", value: metrics.awaitingIT, subtitle: "Kronos ID provisioning", icon: Server, tone: "blue" },
+    { label: "Awaiting HR", value: metrics.pendingHRAcceptance, subtitle: "Final handoff review", icon: ShieldCheck, tone: "purple" }
+  ] as const;
+
+  const tones = {
+    blue: { label: "text-slate-700", background: "bg-blue-50 border-blue-100", icon: "text-blue-600" },
+    amber: { label: "text-amber-700", background: "bg-amber-50 border-amber-100", icon: "text-amber-600" },
+    orange: { label: "text-[#FF5C28]", background: "bg-orange-50 border-orange-100", icon: "text-[#FF5C28]" },
+    green: { label: "text-emerald-700", background: "bg-emerald-50 border-emerald-100", icon: "text-emerald-600" },
+    purple: { label: "text-violet-700", background: "bg-violet-50 border-violet-100", icon: "text-violet-600" }
+  } as const;
+
   return (
-    <div className="space-y-6">
-      {/* Page Title & Scope Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+    <div className="min-w-0 space-y-5">
+      {/* Standard compact HRIS metric cards: proportional, dense, and aligned with project design */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-2.5">
+        {summaryCards.map(card => {
+          const Icon = card.icon;
+          const tone = tones[card.tone];
+          return (
+            <div
+              key={card.label}
+              className="flex min-h-[86px] sm:min-h-[92px] flex-col justify-between rounded-xl border border-[#E6ECF2] bg-white p-3 shadow-xs transition-all hover:shadow-sm hover:border-[#BECBDA]"
+            >
+              <div className="flex items-center justify-between gap-1.5">
+                <span className={`text-[10px] font-black uppercase tracking-wider ${tone.label} truncate`}>
+                  {card.label}
+                </span>
+                <div className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border ${tone.background} ${tone.icon}`}>
+                  <Icon className="h-3.5 w-3.5" />
+                </div>
+              </div>
+              <div className="mt-1">
+                <div className="text-xl sm:text-2xl font-black tabular-nums tracking-tight text-[#042C51]">
+                  {card.value}
+                </div>
+                <div className="mt-0.5 text-[10.5px] font-medium text-slate-500 truncate" title={card.subtitle}>
+                  {card.subtitle}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* HRIS Employee Records-style container: section title, labeled filters, inset tab and table. */}
+      <section className="min-w-0 space-y-4 rounded-xl border border-[#E6ECF2] bg-white p-4 shadow-xs sm:p-5">
         <div>
-          <h1 className="text-lg font-bold text-[#042C51] tracking-tight">
-            TA New Hire Orientation (NHO) Management
-          </h1>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Monitor scheduled orientations, attendance, major requirements, agreements, and IT handoffs.
-          </p>
+          <h2 className="text-base font-bold tracking-tight text-[#042C51]">NHO Applicant Records</h2>
+          <p className="mt-0.5 text-xs font-medium text-slate-500">Review orientation schedules, attendance, document verification and handoff progress.</p>
         </div>
-
-        <div className="flex items-center gap-2">
-          <span className="text-[11px] font-semibold text-slate-500 bg-white border border-[#E6ECF2] px-3 py-1.5 rounded-xl shadow-xs">
-            Simulated Session Date: <strong className="text-[#042C51]">Oct 09, 2026</strong>
-          </span>
-        </div>
-      </div>
-
-      {/* KPI Cards Row (7 distinct metrics without decorative fluff) */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
-        <div className="bg-white rounded-xl p-3 border border-[#E6ECF2] shadow-xs">
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-            Scheduled
-          </span>
-          <div className="text-lg font-black text-[#042C51] mt-1">{metrics.totalScheduled}</div>
-          <span className="text-[10px] text-slate-500">Active cohort</span>
-        </div>
-
-        <div className="bg-white rounded-xl p-3 border border-[#E6ECF2] shadow-xs">
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-            Pending Attendance
-          </span>
-          <div className="text-lg font-black text-amber-600 mt-1">{metrics.pendingAttendance}</div>
-          <span className="text-[10px] text-slate-500">Awaiting arrival</span>
-        </div>
-
-        <div className="bg-white rounded-xl p-3 border border-[#E6ECF2] shadow-xs">
-          <span className="text-[10px] font-bold text-[#FF5C28] uppercase tracking-wider block">
-            Pending Majors
-          </span>
-          <div className="text-lg font-black text-[#FF5C28] mt-1">{metrics.pendingMajorVerification}</div>
-          <span className="text-[10px] text-slate-500">Self-upload/audit</span>
-        </div>
-
-        <div className="bg-white rounded-xl p-3 border border-[#E6ECF2] shadow-xs">
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-            Pending Contracts
-          </span>
-          <div className="text-lg font-black text-slate-700 mt-1">{metrics.pendingOrientationOrAgreements}</div>
-          <span className="text-[10px] text-slate-500">Portal in progress</span>
-        </div>
-
-        <div className="bg-white rounded-xl p-3 border-2 border-emerald-500/40 shadow-xs bg-emerald-50/20">
-          <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider block">
-            Ready for IT
-          </span>
-          <div className="text-lg font-black text-emerald-700 mt-1">{metrics.readyForIT}</div>
-          <span className="text-[10px] text-emerald-600 font-medium">9/9 criteria met</span>
-        </div>
-
-        <div className="bg-white rounded-xl p-3 border border-[#E6ECF2] shadow-xs">
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-            Awaiting IT
-          </span>
-          <div className="text-lg font-black text-blue-600 mt-1">{metrics.awaitingIT}</div>
-          <span className="text-[10px] text-slate-500">In provisioning</span>
-        </div>
-
-        <div className="bg-white rounded-xl p-3 border border-[#E6ECF2] shadow-xs">
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-            Awaiting HR
-          </span>
-          <div className="text-lg font-black text-purple-600 mt-1">{metrics.pendingHRAcceptance}</div>
-          <span className="text-[10px] text-slate-500">Handoff review</span>
-        </div>
-      </div>
-
-      {/* Applicant Table & Controls */}
-      <div className="bg-white rounded-xl border border-[#E6ECF2] shadow-xs overflow-hidden">
-        {/* Table Filter Toolbar */}
-        <div className="p-4 border-b border-[#E6ECF2] flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-3 flex-1 min-w-[280px]">
-            <div className="relative flex-1 max-w-sm">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+        <div className="grid grid-cols-1 items-end gap-3 md:grid-cols-12">
+          <label className="space-y-1 md:col-span-8">
+            <span className="block text-xs font-semibold text-slate-700">Search</span>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <input
-                type="text"
+                type="search"
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                placeholder="Search candidate name, ID, position, account..."
-                className="w-full pl-9 pr-3 py-1.5 bg-[#F7F9FC] border border-[#E6ECF2] rounded-xl text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#042C51]"
+                placeholder="Search by candidate name, applicant ID, position, or account..."
+                className="w-full rounded-xl border border-[#E6ECF2] bg-white py-2.5 pl-9 pr-3 text-xs text-[#042C51] placeholder:text-slate-400 focus:border-[#FF5C28] focus:outline-none focus:ring-1 focus:ring-[#FF5C28]"
               />
             </div>
-
-            <div className="flex items-center gap-1.5 text-xs">
-              <Filter className="w-3.5 h-3.5 text-slate-400" />
-              <select
-                value={statusFilter}
-                onChange={e => setStatusFilter(e.target.value)}
-                className="bg-[#F7F9FC] border border-[#E6ECF2] rounded-xl px-2.5 py-1.5 text-xs font-semibold text-slate-700 focus:outline-none"
-              >
-                <option value="all">All Statuses ({applicants.length})</option>
-                <option value="ready_it">Ready for IT Endorsement ({metrics.readyForIT})</option>
-                <option value="pending_attendance">Pending Attendance ({metrics.pendingAttendance})</option>
-                <option value="pending_majors">Pending Majors ({metrics.pendingMajorVerification})</option>
-                <option value="no_show">No Show</option>
-                <option value="awaiting_hr">Awaiting HR Acceptance ({metrics.pendingHRAcceptance})</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="text-xs text-slate-500">
-            Showing <strong className="text-[#042C51]">{filteredApplicants.length}</strong> applicants
-          </div>
+          </label>
+          <label className="space-y-1 md:col-span-4">
+            <span className="block text-xs font-semibold text-slate-700">Status</span>
+            <select
+              value={statusFilter}
+              onChange={e => setStatusFilter(e.target.value)}
+              className="w-full rounded-xl border border-[#E6ECF2] bg-white px-3 py-2.5 text-xs font-semibold text-[#042C51] focus:border-[#FF5C28] focus:outline-none focus:ring-1 focus:ring-[#FF5C28]"
+            >
+              <option value="all">All Statuses ({applicants.length})</option>
+              <option value="ready_it">Ready for IT Endorsement ({metrics.readyForIT})</option>
+              <option value="pending_attendance">Pending Attendance ({metrics.pendingAttendance})</option>
+              <option value="pending_majors">Pending Majors ({metrics.pendingMajorVerification})</option>
+              <option value="no_show">No Show</option>
+              <option value="awaiting_hr">Awaiting HR Acceptance ({metrics.pendingHRAcceptance})</option>
+            </select>
+          </label>
         </div>
 
+        <div className="min-w-0 overflow-hidden rounded-xl border border-[#E6ECF2] bg-white">
+          <div className="flex items-center justify-between gap-2 border-b border-[#E6ECF2] px-4 pt-2">
+            <div className="flex items-center gap-2 border-b-2 border-[#FF5C28] px-1 pb-3 pt-1 text-xs font-extrabold text-[#FF5C28]">
+              <Users className="h-3.5 w-3.5" />
+              APPLICANTS
+              <span className="rounded-full bg-[#042C51] px-2 py-0.5 text-[10px] font-black text-white">{filteredApplicants.length}</span>
+            </div>
+            <span className="pb-2 text-[11px] font-medium text-slate-500">{filteredApplicants.length} of {applicants.length} records</span>
+          </div>
+
         {/* Dense Responsive Data Table */}
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse text-xs">
+        <div className="min-w-0 overflow-x-auto">
+          <table className="w-full min-w-[1340px] border-collapse text-left text-xs">
             <thead>
-              <tr className="bg-[#F7F9FC] border-b border-[#E6ECF2] text-slate-500 font-bold text-[11px] uppercase tracking-wider">
+              <tr className="border-b border-[#E6ECF2] bg-slate-50/70 text-[11px] font-black uppercase tracking-wider text-slate-500">
                 <th className="py-3 px-4">Applicant</th>
                 <th className="py-3 px-3">Position & Account</th>
                 <th className="py-3 px-3">NHO Date</th>
@@ -241,7 +222,7 @@ export default function NHOTADashboard({
                 return (
                   <tr 
                     key={app.id} 
-                    className="hover:bg-slate-50/80 transition-colors cursor-pointer group"
+                    className="group cursor-pointer transition-colors hover:bg-slate-50/70"
                     onClick={() => {
                       setSelectedApplicantId(app.id);
                       onOpenDetails(app);
@@ -387,7 +368,7 @@ export default function NHOTADashboard({
                               setSelectedApplicantId(app.id);
                               onOpenDetails(app, "majors");
                             }}
-                            className="px-2.5 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 text-[#042C51] font-semibold text-[11px] border border-blue-200 transition-colors cursor-pointer"
+                            className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-[11px] font-semibold text-[#042C51] transition-colors hover:bg-blue-100"
                           >
                             Review Docs ({verifiedMajorsCount}/4)
                           </button>
@@ -399,7 +380,7 @@ export default function NHOTADashboard({
                               setSelectedApplicantId(app.id);
                               onOpenAttendanceModal(app);
                             }}
-                            className="px-2.5 py-1 rounded-lg bg-red-600 hover:bg-red-700 text-white font-bold text-[11px] transition-colors cursor-pointer"
+                            className="rounded-lg bg-red-600 px-3 py-2 text-[11px] font-bold text-white transition-colors hover:bg-red-700"
                           >
                             Follow-Up / Reschedule
                           </button>
@@ -411,7 +392,7 @@ export default function NHOTADashboard({
                               setSelectedApplicantId(app.id);
                               onOpenEndorsement(app);
                             }}
-                            className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] transition-colors cursor-pointer"
+                            className="rounded-lg bg-emerald-600 px-3 py-2 text-[11px] font-bold text-white transition-colors hover:bg-emerald-700"
                           >
                             Endorse to IT
                           </button>
@@ -425,7 +406,7 @@ export default function NHOTADashboard({
                               setSelectedApplicantId(app.id);
                               setSendCredentialsApplicant(app);
                             }}
-                            className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-[#042C51] hover:text-white text-[#042C51] font-semibold text-[11px] border border-[#E6ECF2] transition-colors cursor-pointer flex items-center gap-1"
+                            className="flex items-center gap-1 rounded-lg border border-[#E6ECF2] bg-slate-50 px-3 py-2 text-[11px] font-semibold text-[#042C51] transition-colors hover:border-[#FF5C28]"
                             title="Re-send Temporary Access Link & Credentials (Show only)"
                           >
                             <Mail className="w-3.5 h-3.5 text-[#FF5C28]" />
@@ -448,10 +429,18 @@ export default function NHOTADashboard({
                   </tr>
                 );
               })}
+              {filteredApplicants.length === 0 && (
+                <tr>
+                  <td colSpan={10} className="py-12 text-center text-xs font-medium text-slate-500">
+                    No applicants match the selected filters.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
+          </div>
         </div>
-      </div>
+      </section>
 
       {sendCredentialsApplicant && (
         <NHOSendCredentialsModal

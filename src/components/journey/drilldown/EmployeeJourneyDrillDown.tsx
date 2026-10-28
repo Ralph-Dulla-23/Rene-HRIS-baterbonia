@@ -1,6 +1,9 @@
 import React, { useState } from "react";
+import TrainerCoachingDetailsModal from "../TrainerCoachingDetailsModal";
+import { coachingForEmployee, coachingStatus, evaluationFor, kpiComparison } from "../trainerCoachingUtils";
 import { EmployeeJourney, ReviewRecord } from "../journeyTypes";
 import { useJourney } from "../JourneyContext";
+import Day30HandoffCard from "../Day30HandoffCard";
 import { 
   X, 
   CheckCircle2, 
@@ -35,13 +38,15 @@ interface EmployeeJourneyDrillDownProps {
   isOpen: boolean;
   onClose: () => void;
   initialTab?: "timeline" | "attendance" | "evidence" | "checkins" | "coaching" | "reviews" | "handoffs";
+  initialPhaseIndex?: number;
 }
 
 export default function EmployeeJourneyDrillDown({ 
   journey, 
   isOpen, 
   onClose,
-  initialTab = "timeline"
+  initialTab = "timeline",
+  initialPhaseIndex
 }: EmployeeJourneyDrillDownProps) {
   const { 
     updateDay30Milestone, 
@@ -59,6 +64,8 @@ export default function EmployeeJourneyDrillDown({
     checkIns,
     addCheckIn,
     coachingActions,
+    esepSessions,
+    esepEvaluations,
     addCoachingAction,
     toggleCoachingAction,
     assignments,
@@ -71,6 +78,7 @@ export default function EmployeeJourneyDrillDown({
 
   const [activeTab, setActiveTab] = useState<"timeline" | "attendance" | "evidence" | "checkins" | "coaching" | "reviews" | "handoffs">(initialTab);
   const [selectedPhaseIndex, setSelectedPhaseIndex] = useState<number>(() => {
+    if (initialPhaseIndex !== undefined) return initialPhaseIndex;
     const d = journey.daysElapsed || 1;
     return d <= 14 ? 0 : d <= 28 ? 1 : d <= 30 ? 2 : d <= 59 ? 3 : d === 60 ? 4 : d <= 89 ? 5 : 6;
   });
@@ -102,6 +110,7 @@ export default function EmployeeJourneyDrillDown({
   const [ciNotes, setCiNotes] = useState("");
 
   const [showAddCoaching, setShowAddCoaching] = useState(false);
+  const [showEsepDetails, setShowEsepDetails] = useState(false);
   const [coachTitle, setCoachTitle] = useState("");
   const [coachOwner, setCoachOwner] = useState("Anton Reyes (Team Leader)");
   const [coachDue, setCoachDue] = useState("2026-10-25");
@@ -134,6 +143,8 @@ export default function EmployeeJourneyDrillDown({
   const employeeEvidence = evidence.filter(e => e.emp === empKey || e.emp === journey.id);
   const employeeCheckIns = checkIns.filter(c => c.emp === empKey || c.emp === journey.id);
   const employeeCoaching = coachingActions.filter(c => c.emp === empKey || c.emp === journey.id);
+  const employeeEsepSessions = coachingForEmployee(esepSessions, journey);
+  const evaluatedEsepCount = employeeEsepSessions.filter(s => evaluationFor(s, esepEvaluations)).length;
   const employeeAssignments = assignments.filter(a => a.emp === empKey || a.emp === journey.id);
 
   // Helper date function
@@ -296,32 +307,33 @@ export default function EmployeeJourneyDrillDown({
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 overflow-hidden">
       <div className="bg-white rounded-2xl w-full max-w-6xl h-[92vh] flex flex-col shadow-2xl overflow-hidden border border-[#E6ECF2]">
         
-        {/* Header / Banner */}
-        <div className="bg-gradient-to-r from-[#042C51] via-[#0B365F] to-[#13406D] text-white p-5 shrink-0">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        {/* SiBS HRIS Modal Header with Top Accent Gradient Bar */}
+        <div className="bg-white shrink-0 border-b border-[#E6ECF2]">
+          <div className="h-[3.5px] w-full bg-gradient-to-r from-[#042C51] via-[#c24b30] to-[#FF5C28]" />
+          <div className="p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-white text-[#042C51] font-black text-lg flex items-center justify-center shrink-0">
+              <div className="w-11 h-11 rounded-xl bg-[#042C51] text-white font-black text-sm flex items-center justify-center shrink-0 shadow-xs">
                 {journey.fullName.split(" ").map(n => n[0]).slice(0, 2).join("")}
               </div>
               <div>
                 <div className="flex items-center gap-2 flex-wrap">
-                  <h2 className="text-lg font-black text-white">{journey.fullName}</h2>
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-white/10 border border-white/20 text-white">
+                  <h2 className="text-lg font-black text-[#042C51]">{journey.fullName}</h2>
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 border border-blue-200 text-[#042C51]">
                     {journey.stage}
                   </span>
                   {journey.isAwaitingLinkage && (
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#E67E22] text-white">
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 border border-amber-200 text-amber-800">
                       Needs Authorized Linkage
                     </span>
                   )}
                 </div>
 
-                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-[#E6EAF0] mt-1">
-                  <span>SIB ID: <strong>{journey.sibsEmployeeId || "Not Linked"}</strong></span>
-                  <span>Kronos ID: <strong>{journey.kronosId || "Not Linked"}</strong></span>
-                  <span>Account: <strong>{journey.account}</strong></span>
-                  <span>Trainer: <strong>{journey.trainerName || "Unassigned"}</strong></span>
-                  <span>WFM Station: <strong>{journey.wfmSeating ? `${journey.wfmSeating.wing} • ${journey.wfmSeating.seatNumber}` : "Pending"}</strong></span>
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500 mt-1">
+                  <span>SIB ID: <strong className="text-[#042C51]">{journey.sibsEmployeeId || "Not Linked"}</strong></span>
+                  <span>Kronos ID: <strong className="text-[#042C51]">{journey.kronosId || "Not Linked"}</strong></span>
+                  <span>Account: <strong className="text-[#042C51]">{journey.account}</strong></span>
+                  <span>Trainer: <strong className="text-[#042C51]">{journey.trainerName || "Unassigned"}</strong></span>
+                  <span>WFM Station: <strong className="text-[#042C51]">{journey.wfmSeating ? `${journey.wfmSeating.wing} • ${journey.wfmSeating.seatNumber}` : "Pending"}</strong></span>
                 </div>
               </div>
             </div>
@@ -330,7 +342,7 @@ export default function EmployeeJourneyDrillDown({
               {journey.isAwaitingLinkage && (
                 <button
                   onClick={() => setShowLinkModal(true)}
-                  className="px-3 py-1.5 rounded-xl bg-[#E67E22] hover:bg-[#d35400] text-white font-semibold text-xs flex items-center gap-1.5 cursor-pointer shadow-xs transition-colors"
+                  className="px-3.5 py-1.5 rounded-xl bg-[#FF5C28] hover:bg-[#e04f20] text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-xs transition-colors"
                 >
                   <LinkIcon className="w-3.5 h-3.5" />
                   <span>Authorize Linkage</span>
@@ -339,16 +351,17 @@ export default function EmployeeJourneyDrillDown({
 
               <button
                 onClick={onClose}
-                className="p-2 rounded-xl hover:bg-white/10 text-white/80 hover:text-white cursor-pointer transition-colors"
+                className="p-1.5 rounded-xl text-slate-400 hover:text-[#042C51] hover:bg-slate-100 cursor-pointer transition-colors"
                 title="Close"
+                aria-label="Close modal"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
           </div>
 
-          {/* 7 Horizontal Navigation Tabs */}
-          <div className="flex items-center gap-1 mt-4 overflow-x-auto pt-2 border-t border-white/10 scrollbar-none text-xs">
+          {/* 7 Horizontal Navigation Tabs with SiBS HRIS active orange line */}
+          <div className="flex items-center gap-1 px-4 sm:px-5 overflow-x-auto bg-[#FAFCFF] border-t border-[#E6ECF2] scrollbar-none text-xs">
             {[
               ["timeline", "◇", "Journey Timeline"],
               ["attendance", "◫", "Attendance & Absenteeism"],
@@ -357,18 +370,30 @@ export default function EmployeeJourneyDrillDown({
               ["coaching", "⚑", "Coaching & Support"],
               ["reviews", "★", "30 / 60 / 90 Reviews"],
               ["handoffs", "⇄", "Handoffs"]
-            ].map(([id, icon, label]) => (
-              <button
-                key={id}
-                onClick={() => setActiveTab(id as any)}
-                className={`px-3 py-1.5 rounded-lg font-bold transition-colors cursor-pointer shrink-0 flex items-center gap-1.5 ${
-                  activeTab === id ? "bg-white text-[#042C51] shadow-xs" : "text-white/80 hover:bg-white/10"
-                }`}
-              >
-                <span>{icon}</span>
-                <span>{label}</span>
-              </button>
-            ))}
+            ].map(([id, icon, label]) => {
+              const isHandoffTab = id === "handoffs";
+              const isHandoffActionDue = isHandoffTab && (journey.day30Handoff?.status !== "Accepted" && (journey.daysElapsed || 1) >= 20);
+
+              return (
+                <button
+                  key={id}
+                  onClick={() => setActiveTab(id as any)}
+                  className={`py-2.5 px-3 font-bold transition-colors cursor-pointer shrink-0 flex items-center gap-1.5 border-b-2 text-xs ${
+                    activeTab === id
+                      ? "border-[#FF5C28] text-[#FF5C28] bg-white shadow-2xs"
+                      : "border-transparent text-slate-500 hover:text-[#042C51]"
+                  }`}
+                >
+                  <span>{icon}</span>
+                  <span>{label}</span>
+                  {isHandoffActionDue && (
+                    <span className="px-1.5 py-0.2 rounded-full text-[8.5px] font-black bg-[#FF5C28] text-white animate-pulse">
+                      Action Due
+                    </span>
+                  )}
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -385,7 +410,8 @@ export default function EmployeeJourneyDrillDown({
         {/* Scrollable Container */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
 
-          {/* EMPLOYEE PERFORMANCE VISUALIZATION ABOVE TABS */}
+          {/* Overview belongs to Journey Timeline, not every drilldown tab. */}
+          {activeTab === "timeline" && (
           <div className="bg-white rounded-2xl border border-[#E6ECF2] p-5 shadow-xs space-y-5">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
               <div>
@@ -561,6 +587,7 @@ export default function EmployeeJourneyDrillDown({
               </div>
             </div>
           </div>
+          )}
 
           {/* TAB 1: JOURNEY TIMELINE (WITH 7 CLICKABLE TIMELINE PHASES) */}
           {activeTab === "timeline" && (
@@ -587,6 +614,7 @@ export default function EmployeeJourneyDrillDown({
                     const prevEnd = i === 0 ? 0 : [14, 28, 30, 59, 60, 89][i - 1];
                     const active = daysElapsed >= (i === 2 ? 29 : i === 0 ? 1 : prevEnd + 1) && daysElapsed <= Number(last);
                     const isSelected = selectedPhaseIndex === i;
+                    const isDay30HandoffDue = i === 2 && (journey.day30Handoff?.status !== "Accepted" && daysElapsed >= 20);
 
                     return (
                       <button
@@ -602,7 +630,14 @@ export default function EmployeeJourneyDrillDown({
                         }`}
                       >
                         <div>
-                          <span className="text-[10px] font-bold text-slate-500 block">{date}</span>
+                          <div className="flex items-center justify-between gap-1">
+                            <span className="text-[10px] font-bold text-slate-500 block">{date}</span>
+                            {isDay30HandoffDue && (
+                              <span className="text-[8px] font-black uppercase px-1 py-0.2 rounded bg-[#FF5C28] text-white">
+                                Handoff Due
+                              </span>
+                            )}
+                          </div>
                           <strong className="text-xs font-extrabold text-[#042C51] block mt-1 leading-snug">{name}</strong>
                           <span className="text-[9.5px] text-slate-500 block mt-1">{owner}</span>
                         </div>
@@ -713,6 +748,19 @@ export default function EmployeeJourneyDrillDown({
                         <span className="text-[10px] text-slate-400">Manager & HR outcome</span>
                       </div>
                     </div>
+
+                    {/* Day 30 Specific: Trainer to Team Leader Handoff Feature */}
+                    {selectedPhaseIndex === 2 && (
+                      <div className="pt-2">
+                        <Day30HandoffCard 
+                          journey={journey} 
+                          onUpdateSuccess={msg => {
+                            setToastMessage(msg);
+                            setTimeout(() => setToastMessage(null), 3500);
+                          }} 
+                        />
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <div className="p-4 bg-[#F7F9FC] border border-[#E6ECF2] rounded-xl text-xs text-slate-600 space-y-2">
@@ -876,6 +924,25 @@ export default function EmployeeJourneyDrillDown({
                 </button>
               </div>
 
+              <div className="rounded-xl border border-[#DBE8F4] bg-[#F7F9FC] p-4 space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div><h4 className="text-sm font-extrabold text-[#042C51]">ESEP Coaching Outcomes</h4><p className="text-xs text-slate-500">{employeeEsepSessions.length} documented session(s) · {evaluatedEsepCount} evaluated · read-only facilitator evidence</p></div>
+                  <button type="button" onClick={() => setShowEsepDetails(true)} className="rounded-xl border border-[#BECBDA] bg-white px-3 py-2 text-xs font-bold text-[#042C51] hover:bg-[#E9F0FC]">View coaching form & results →</button>
+                </div>
+                {employeeEsepSessions.length ? employeeEsepSessions.map(session => {
+                  const effect = evaluationFor(session, esepEvaluations);
+                  const comparison = kpiComparison(effect);
+                  const status = coachingStatus(session, esepEvaluations, simulatedCurrentDate);
+                  return <div key={session.id} className="rounded-lg border border-[#E6ECF2] bg-white p-3 text-xs">
+                    <div className="flex flex-wrap justify-between gap-2"><strong className="text-[#042C51]">{session.type} · {session.date}</strong><span className={status === 'Evaluated' ? 'text-emerald-700' : status === 'Overdue' ? 'text-red-600' : 'text-amber-700'}>{status}</span></div>
+                    <p className="mt-1 text-slate-500">{session.facilitator} · {session.facilitatorRole}</p>
+                    <p className="mt-2 text-slate-700">{effect?.notes ?? 'Effectiveness review not yet recorded.'}</p>
+                    {comparison && <p className="mt-1 font-semibold text-[#042C51]">Recorded KPI: {comparison.before} → {comparison.after} ({comparison.differenceLabel}; original units)</p>}
+                  </div>;
+                }) : <p className="rounded-lg border border-dashed border-[#BECBDA] p-4 text-xs text-slate-500">No ESEP coaching records have been added for this employee.</p>}
+                <p className="text-[11px] text-slate-500">Coaching records are independent of official QA scoring and 30/60/90 milestone decisions.</p>
+              </div>
+
               <div className="space-y-3">
                 {employeeCoaching.map(co => (
                   <div key={co.id} className="p-4 rounded-xl border border-[#E6ECF2] bg-white flex items-center justify-between gap-3 shadow-xs">
@@ -907,6 +974,7 @@ export default function EmployeeJourneyDrillDown({
                   </div>
                 ))}
               </div>
+              {showEsepDetails && <TrainerCoachingDetailsModal employee={journey} sessions={esepSessions} evaluations={esepEvaluations} asOf={simulatedCurrentDate} onClose={() => setShowEsepDetails(false)} />}
             </div>
           )}
 
@@ -1003,41 +1071,65 @@ export default function EmployeeJourneyDrillDown({
 
           {/* TAB 7: HANDOFFS */}
           {activeTab === "handoffs" && (
-            <div className="bg-white rounded-2xl border border-[#E6ECF2] p-5 shadow-xs space-y-4">
-              <div className="border-b border-slate-100 pb-3">
-                <h3 className="text-sm font-extrabold text-[#042C51]">Handoff & Transition Status</h3>
-                <p className="text-xs text-slate-500">Track NHO to Journey, Trainer to Operations, and HR Regularization handoffs.</p>
-              </div>
+            <div className="space-y-4">
+              {/* Day 30 Trainer -> Team Leader Handoff Card */}
+              <Day30HandoffCard 
+                journey={journey} 
+                onUpdateSuccess={msg => {
+                  setToastMessage(msg);
+                  setTimeout(() => setToastMessage(null), 3500);
+                }} 
+              />
 
-              <div className="space-y-3 text-xs">
-                <div className="p-3.5 rounded-xl border border-[#E6ECF2] bg-[#FAFCFF] flex items-center justify-between">
-                  <div>
-                    <strong className="text-[#042C51] block">NHO → Employee Journey Handoff</strong>
-                    <span className="text-slate-500 text-[11px]">Accepted by HR Coordinator: {journey.nhoAcceptedBy || "System"}</span>
-                  </div>
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold sibs-tone-green-bg sibs-tone-green-text border sibs-tone-green-border">
-                    Completed
-                  </span>
+              {/* Complete Journey Handoff Lifecycle Overview */}
+              <div className="bg-white rounded-2xl border border-[#E6ECF2] p-5 shadow-xs space-y-4">
+                <div className="border-b border-slate-100 pb-3">
+                  <h3 className="text-sm font-extrabold text-[#042C51]">Employee Transition Lifecycle</h3>
+                  <p className="text-xs text-slate-500">Track onboarding stages from NHO through 90-day regularization.</p>
                 </div>
 
-                <div className="p-3.5 rounded-xl border border-[#E6ECF2] bg-[#FAFCFF] flex items-center justify-between">
-                  <div>
-                    <strong className="text-[#042C51] block">Training → Operations Handoff (Day 30)</strong>
-                    <span className="text-slate-500 text-[11px]">Accepted by Team Leader: Anton Reyes</span>
+                <div className="space-y-3 text-xs">
+                  <div className="p-3.5 rounded-xl border border-[#E6ECF2] bg-[#FAFCFF] flex items-center justify-between">
+                    <div>
+                      <strong className="text-[#042C51] block">1. NHO → Employee Journey Handoff</strong>
+                      <span className="text-slate-500 text-[11px]">Accepted by HR Coordinator: {journey.nhoAcceptedBy || "System"}</span>
+                    </div>
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold sibs-tone-green-bg sibs-tone-green-text border sibs-tone-green-border">
+                      Completed
+                    </span>
                   </div>
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold sibs-tone-green-bg sibs-tone-green-text border sibs-tone-green-border">
-                    Completed
-                  </span>
-                </div>
 
-                <div className="p-3.5 rounded-xl border border-[#E6ECF2] bg-[#FAFCFF] flex items-center justify-between">
-                  <div>
-                    <strong className="text-[#042C51] block">Day 90 Regularization Contract Issuance</strong>
-                    <span className="text-slate-500 text-[11px]">HR Operations Sign-off</span>
+                  <div className="p-3.5 rounded-xl border border-[#E6ECF2] bg-[#FAFCFF] flex items-center justify-between">
+                    <div>
+                      <strong className="text-[#042C51] block">2. Training → Operations Handoff (Day 30 Checkpoint)</strong>
+                      <span className="text-slate-500 text-[11px]">
+                        Trainer: {journey.day30Handoff?.trainerName || journey.trainerName || "Trainer"} ➔ Team Leader: {journey.day30Handoff?.targetTlName || journey.tl || "Team Leader"}
+                      </span>
+                    </div>
+                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                      journey.day30Handoff?.status === "Accepted"
+                        ? "sibs-tone-green-bg sibs-tone-green-text border sibs-tone-green-border"
+                        : journey.day30Handoff?.status === "Submitted"
+                          ? "sibs-tone-blue-bg sibs-tone-blue-text border sibs-tone-blue-border"
+                          : "sibs-tone-amber-bg sibs-tone-amber-text border sibs-tone-amber-border"
+                    }`}>
+                      {journey.day30Handoff?.status || "Pending"}
+                    </span>
                   </div>
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold sibs-tone-amber-bg sibs-tone-amber-text border sibs-tone-amber-border">
-                    In Progress
-                  </span>
+
+                  <div className="p-3.5 rounded-xl border border-[#E6ECF2] bg-[#FAFCFF] flex items-center justify-between">
+                    <div>
+                      <strong className="text-[#042C51] block">3. Day 90 Regularization Contract Issuance</strong>
+                      <span className="text-slate-500 text-[11px]">Operations Manager & HR Sign-off</span>
+                    </div>
+                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                      journey.daysElapsed >= 90 && journey.day90?.status === "Completed"
+                        ? "sibs-tone-green-bg sibs-tone-green-text border sibs-tone-green-border"
+                        : "sibs-tone-amber-bg sibs-tone-amber-text border sibs-tone-amber-border"
+                    }`}>
+                      {journey.daysElapsed >= 90 ? "Under Review" : "Upcoming"}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>

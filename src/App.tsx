@@ -63,7 +63,6 @@ import FrontendDesignPdfView from "./components/FrontendDesignPdfView";
 import WorkflowProcessScreenViewer from "./components/WorkflowProcessScreenViewer";
 import FigmaExportModal from "./components/FigmaExportModal";
 import NHOMainModule from "./components/nho/NHOMainModule";
-import NHOQDSDashboard from "./components/nho/qds/NHOQDSDashboard";
 import { NHOProvider } from "./components/nho/NHOContext";
 import EmployeeJourneyModule from "./components/journey/EmployeeJourneyModule";
 import { JourneyProvider } from "./components/journey/JourneyContext";
@@ -385,32 +384,15 @@ function AuthenticatedWorkspace() {
             </div>
           ) : currentModule === "QDS Application" || currentModule === "QDS" || currentModule === "Separate QDS Application" ? (
             <div className="mt-16 flex-1 flex flex-col w-full min-w-0">
-              <div className="bg-[#042C51] text-white py-3.5 px-6 shadow-xs flex items-center justify-between border-b border-[#E6ECF2]">
-                <div className="flex items-center gap-2.5">
-                  <BookOpenCheck className="w-5 h-5 text-[#FF5C28]" />
-                  <div>
-                    <h2 className="text-sm font-bold tracking-tight text-white flex items-center gap-2">
-                      <span>Standalone QDS Application</span>
-                      <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-[#FF5C28] text-white">
-                        External System
-                      </span>
-                    </h2>
-                    <p className="text-[11px] text-slate-300 font-medium">
-                      Quality &amp; Development System • Training Attendance Scheduling &amp; Materials Assignment
-                    </p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setCurrentModule("New Hire Orientation")}
-                  className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs transition-colors cursor-pointer flex items-center gap-1.5"
-                >
-                  <span>Return to HR Operations</span>
-                </button>
-              </div>
-              <div className="p-4 sm:p-6 lg:p-8 flex-1">
-                <NHOQDSDashboard onSwitchModule={setCurrentModule} />
-              </div>
+              <NHOMainModule
+                onSwitchModule={(mod, journeyId) => {
+                  if (!canAccessModule(user.role, mod)) return;
+                  setCurrentModule(mod);
+                  if (journeyId) setFocusedJourneyId(journeyId);
+                }}
+              />
             </div>
+
           ) : currentModule === "Employee Journey" || currentModule === "30/60/90 Employee Journey" || currentModule === "Trainee Dashboard" ? (
             <div className="mt-20 px-6 flex-1 flex flex-col w-full">
               <EmployeeJourneyModule 

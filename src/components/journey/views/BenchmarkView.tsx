@@ -41,8 +41,10 @@ export default function BenchmarkView({ onOpenLinkModal, onSwitchModule }: Bench
     assignments, 
     progress,
     coachingActions,
-    simulatedCurrentDate, 
-    setSelectedJourney 
+    simulatedCurrentDate,
+    setSimulatedCurrentDate,
+    setSelectedJourney,
+    pendingDay30HandoffsCount 
   } = useJourney();
 
   // Filter States
@@ -52,6 +54,7 @@ export default function BenchmarkView({ onOpenLinkModal, onSwitchModule }: Bench
   const [selectedTrainer, setSelectedTrainer] = useState<string>("All trainers");
   const [selectedSite, setSelectedSite] = useState<string>("All sites");
   const [selectedRisk, setSelectedRisk] = useState<string>("all");
+  const [showOnlyHandoffDue, setShowOnlyHandoffDue] = useState(false);
 
   // Selected Trainee for Inspection Card
   const [inspectedEmpId, setInspectedEmpId] = useState<string | null>("SIBS-2904");
@@ -167,6 +170,14 @@ export default function BenchmarkView({ onOpenLinkModal, onSwitchModule }: Bench
   // Filtered Journeys
   const visibleJourneys = useMemo(() => {
     return journeys.filter(j => {
+      if (showOnlyHandoffDue) {
+        const days = j.daysElapsed || 1;
+        const handoff = j.day30Handoff || j.day30?.handoff;
+        if (days < 20 || (handoff && handoff.status === "Accepted")) {
+          return false;
+        }
+      }
+
       const term = searchQuery.toLowerCase().trim();
       const matchesSearch = !term || 
         j.fullName.toLowerCase().includes(term) ||
@@ -197,7 +208,7 @@ export default function BenchmarkView({ onOpenLinkModal, onSwitchModule }: Bench
 
       return matchesSearch && matchesAccount && matchesTrainer && matchesSite && matchesRisk;
     });
-  }, [journeys, searchQuery, selectedPhaseFilter, selectedAccount, selectedTrainer, selectedSite, selectedRisk, simulatedCurrentDate]);
+  }, [journeys, searchQuery, selectedPhaseFilter, selectedAccount, selectedTrainer, selectedSite, selectedRisk, showOnlyHandoffDue, simulatedCurrentDate]);
 
   // Aggregate stats per milestone day (Day 30, 60, 90)
   const getAggregates = (day: number) => {
@@ -205,8 +216,9 @@ export default function BenchmarkView({ onOpenLinkModal, onSwitchModule }: Bench
     const eligible = records.filter(r => r.eligible);
     const complete = eligible.filter(r => r.composite !== null);
     const meanComp = complete.length ? Math.round(complete.reduce((s, r) => s + (r.composite || 0), 0) / complete.length) : null;
-    const meanQA = eligible.length ? Math.round(eligible.reduce((s, r) => s + r.qaScore, 0) / eligible.length) : null;
-    const attEligible = eligible.filter(r => r.attRate !== null);
+    const qaRecords = eligible.filter(r => r.qaScore !== null && r.qaScore !== undefined && !isNaN(r.qaScore));
+    const meanQA = qaRecords.length ? Math.round(qaRecords.reduce((s, r) => s + Number(r.qaScore), 0) / qaRecords.length) : null;
+    const attEligible = eligible.filter(r => r.attRate !== null && !isNaN(r.attRate));
     const meanAtt = attEligible.length ? Math.round(attEligible.reduce((s, r) => s + (r.attRate || 0), 0) / attEligible.length) : null;
     const highCount = complete.filter(r => (r.composite || 0) >= 85).length;
     const lowCount = complete.filter(r => (r.composite || 0) < 70).length;
@@ -240,24 +252,77 @@ export default function BenchmarkView({ onOpenLinkModal, onSwitchModule }: Bench
 
   return (
     <div className="space-y-6">
-      {/* Hero Banner (aligned to SiBS HRIS Deep Navy theme) */}
-      <div className="bg-gradient-to-r from-[#042C51] via-[#0B365F] to-[#13406D] text-white p-6 rounded-2xl shadow-xs border border-[#13406D] flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div>
-          <span className="text-[10px] font-black uppercase tracking-widest text-[#FF5C28]">
-            ADMIN PERFORMANCE INTELLIGENCE • 30 / 60 / 90 DAY
-          </span>
-          <h2 className="text-xl sm:text-2xl font-black text-white mt-1 mb-2 tracking-tight">
-            Employee performance benchmarking
-          </h2>
-          <p className="text-xs text-[#E6EAF0] max-w-3xl leading-relaxed">
-            Track all trainees and compare milestone scores, independent QA, attendance, training completion, development actions and HR checkpoint readiness in one view.
-          </p>
-        </div>
+      {/* SiBS HRIS Standard Header: White card with top accent gradient bar */}
+      <section className="overflow-hidden rounded-xl border border-[#E6ECF2] bg-white shadow-xs">
+        <div className="h-[3.5px] w-full bg-gradient-to-r from-[#042C51] via-[#c24b30] to-[#FF5C28]" />
+        <div className="flex flex-wrap items-center justify-between gap-4 p-4 sm:p-5">
+          <div className="space-y-1">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-blue-100 bg-[#E9F0FC] px-2.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wide text-[#042C51]">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#FF5C28]" />
+              Performance Intelligence • 30 / 60 / 90 Day
+            </span>
+            <h1 className="text-xl sm:text-2xl font-black tracking-tight text-[#042C51]">
+              Employee Performance Benchmarking
+            </h1>
+            <p className="text-xs text-[#667085] max-w-3xl leading-normal">
+              Track cohort trainees and compare milestone scores, independent QA audits, attendance, training completion, and regularization readiness in one view.
+            </p>
+          </div>
 
-        <span className="px-3 py-1.5 rounded-full text-xs font-bold bg-white/10 border border-white/20 text-white shrink-0">
-          HR Admin • Read-only benchmarking
-        </span>
-      </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="px-3 py-1.5 rounded-xl text-xs font-bold bg-[#F7F9FC] border border-[#E6ECF2] text-[#042C51] shrink-0">
+              HR Admin • Read-only Benchmarking
+            </span>
+            <label className="flex items-center gap-2 rounded-xl border border-[#E6ECF2] bg-white px-3 py-1.5 text-xs text-[#042C51]">
+              <span className="font-medium text-slate-500">Demo date</span>
+              <input
+                type="date"
+                value={simulatedCurrentDate}
+                onChange={e => setSimulatedCurrentDate(e.target.value)}
+                className="max-w-[135px] bg-transparent font-semibold text-[#042C51] outline-none cursor-pointer"
+                title="Simulated milestone date"
+              />
+            </label>
+          </div>
+        </div>
+      </section>
+
+      {/* HR Urgent Notification Alert Banner for Day 30 Trainer -> Team Leader Handoff */}
+      {pendingDay30HandoffsCount > 0 && (
+        <div className="bg-gradient-to-r from-orange-50 via-amber-50/60 to-white border-l-4 border-[#FF5C28] border-y border-r border-[#E6ECF2] rounded-xl p-4 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-start sm:items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-orange-100 border border-orange-200 text-[#FF5C28] flex items-center justify-center shrink-0 shadow-2xs">
+              <AlertTriangle className="w-5 h-5 text-[#FF5C28]" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="px-2 py-0.5 rounded-full text-[9.5px] font-black uppercase tracking-wider bg-[#FF5C28] text-white">
+                  HR Action Required
+                </span>
+                <h3 className="text-sm font-black text-[#042C51]">
+                  Day 30 Employee Custody Handoff: Trainer → Team Leader Transition ({pendingDay30HandoffsCount} Pending)
+                </h3>
+              </div>
+              <p className="text-xs text-slate-600 mt-1 max-w-3xl leading-relaxed">
+                Trainees completing Day 1–30 Nesting must receive formal Trainer readiness endorsement and Team Leader acceptance before transitioning into live operational ramp. Review pending handoffs below.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => setShowOnlyHandoffDue(prev => !prev)}
+              className={`px-3.5 py-2 rounded-xl font-bold text-xs transition-colors cursor-pointer shadow-xs ${
+                showOnlyHandoffDue
+                  ? "bg-[#042C51] text-white hover:bg-[#083a69]"
+                  : "bg-[#FF5C28] text-white hover:bg-[#e04f20]"
+              }`}
+            >
+              {showOnlyHandoffDue ? "Show All Cohort Trainees" : `Filter Handoffs Due (${pendingDay30HandoffsCount})`}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Filter Toolbar Card */}
       <div className="bg-white rounded-2xl border border-[#E6ECF2] shadow-xs p-5 space-y-4">
@@ -362,30 +427,119 @@ export default function BenchmarkView({ onOpenLinkModal, onSwitchModule }: Bench
         </div>
       </div>
 
-      {/* 4 Top Metric Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="bg-white rounded-xl border border-[#E6ECF2] shadow-xs p-4">
-          <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Trainees in View</span>
-          <strong className="text-2xl font-black text-[#042C51] mt-1 block">{visibleJourneys.length}</strong>
-          <span className="text-[10px] text-slate-400">Unique employees matching filters</span>
+      {/* Compact SiBS HRIS Metric Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-3">
+        <div className="flex min-h-[86px] sm:min-h-[92px] flex-col justify-between rounded-xl border border-[#E6ECF2] bg-white p-3 sm:p-3.5 shadow-xs transition-all hover:shadow-sm">
+          <div className="flex items-center justify-between gap-1.5">
+            <span className="text-[10px] font-black uppercase tracking-wider text-slate-700 truncate">
+              Trainees in View
+            </span>
+            <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-blue-100 bg-blue-50 text-blue-600">
+              <Users className="h-3.5 w-3.5" />
+            </div>
+          </div>
+          <div className="mt-1">
+            <div className="text-xl sm:text-2xl font-black tabular-nums tracking-tight text-[#042C51]">
+              {visibleJourneys.length}
+            </div>
+            <div className="mt-0.5 text-[10.5px] font-medium text-slate-500 truncate">
+              Active cohort matching filters
+            </div>
+          </div>
         </div>
 
-        <div className="bg-white rounded-xl border border-[#E6ECF2] shadow-xs p-4">
-          <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Completed Phase Scorecards</span>
-          <strong className="text-2xl font-black text-[#042C51] mt-1 block">{totalScored} / {totalDue}</strong>
-          <span className="text-[10px] text-slate-400">Requires Trainer + QA + TL scoring</span>
+        <div className="flex min-h-[86px] sm:min-h-[92px] flex-col justify-between rounded-xl border border-[#E6ECF2] bg-white p-3 sm:p-3.5 shadow-xs transition-all hover:shadow-sm">
+          <div className="flex items-center justify-between gap-1.5">
+            <span className="text-[10px] font-black uppercase tracking-wider text-emerald-700 truncate">
+              Completed Scorecards
+            </span>
+            <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-emerald-100 bg-emerald-50 text-emerald-600">
+              <CheckCircle2 className="h-3.5 w-3.5" />
+            </div>
+          </div>
+          <div className="mt-1">
+            <div className="text-xl sm:text-2xl font-black tabular-nums tracking-tight text-[#042C51]">
+              {totalScored} <span className="text-sm font-semibold text-slate-400">/ {totalDue}</span>
+            </div>
+            <div className="mt-0.5 text-[10.5px] font-medium text-slate-500 truncate">
+              Trainer + QA + TL combined
+            </div>
+          </div>
         </div>
 
-        <div className="bg-white rounded-xl border border-[#E6ECF2] shadow-xs p-4">
-          <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Needs-Support Phase Results</span>
-          <strong className="text-2xl font-black text-[#E74C3C] mt-1 block">{totalLow}</strong>
-          <span className="text-[10px] text-slate-400">Scored phase results below 70%</span>
+        <div className="flex min-h-[86px] sm:min-h-[92px] flex-col justify-between rounded-xl border border-[#E6ECF2] bg-white p-3 sm:p-3.5 shadow-xs transition-all hover:shadow-sm">
+          <div className="flex items-center justify-between gap-1.5">
+            <span className="text-[10px] font-black uppercase tracking-wider text-rose-700 truncate">
+              Needs Support
+            </span>
+            <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-rose-100 bg-rose-50 text-rose-600">
+              <AlertTriangle className="h-3.5 w-3.5" />
+            </div>
+          </div>
+          <div className="mt-1">
+            <div className="text-xl sm:text-2xl font-black tabular-nums tracking-tight text-[#E74C3C]">
+              {totalLow}
+            </div>
+            <div className="mt-0.5 text-[10.5px] font-medium text-slate-500 truncate">
+              Scorecards below 70% benchmark
+            </div>
+          </div>
         </div>
 
-        <div className="bg-white rounded-xl border border-[#E6ECF2] shadow-xs p-4">
-          <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Missing Phase Scorecards</span>
-          <strong className="text-2xl font-black text-[#E67E22] mt-1 block">{totalDue - totalScored}</strong>
-          <span className="text-[10px] text-slate-400">Due phase results lacking 1+ inputs</span>
+        <div className="flex min-h-[86px] sm:min-h-[92px] flex-col justify-between rounded-xl border border-[#E6ECF2] bg-white p-3 sm:p-3.5 shadow-xs transition-all hover:shadow-sm">
+          <div className="flex items-center justify-between gap-1.5">
+            <span className="text-[10px] font-black uppercase tracking-wider text-amber-700 truncate">
+              Pending Scorecards
+            </span>
+            <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-amber-100 bg-amber-50 text-amber-600">
+              <Clock className="h-3.5 w-3.5" />
+            </div>
+          </div>
+          <div className="mt-1">
+            <div className="text-xl sm:text-2xl font-black tabular-nums tracking-tight text-[#E67E22]">
+              {totalDue - totalScored}
+            </div>
+            <div className="mt-0.5 text-[10.5px] font-medium text-slate-500 truncate">
+              Due milestone results lacking inputs
+            </div>
+          </div>
+        </div>
+
+        {/* 5th KPI Card: Day 30 Trainer -> TL Handoffs */}
+        <div 
+          onClick={() => setShowOnlyHandoffDue(prev => !prev)}
+          className={`flex min-h-[86px] sm:min-h-[92px] flex-col justify-between rounded-xl border p-3 sm:p-3.5 shadow-xs transition-all hover:shadow-sm cursor-pointer col-span-2 sm:col-span-1 ${
+            pendingDay30HandoffsCount > 0 
+              ? "border-[#FF5C28] bg-orange-50/50 hover:bg-orange-50" 
+              : "border-[#E6ECF2] bg-white"
+          }`}
+          title="Click to filter by trainees needing Day 30 handoff"
+        >
+          <div className="flex items-center justify-between gap-1.5">
+            <span className="text-[10px] font-black uppercase tracking-wider text-[#FF5C28] truncate">
+              Day 30 TL Handoffs
+            </span>
+            <div className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border ${
+              pendingDay30HandoffsCount > 0 
+                ? "border-orange-200 bg-orange-100 text-[#FF5C28]" 
+                : "border-emerald-100 bg-emerald-50 text-emerald-600"
+            }`}>
+              <Award className="h-3.5 w-3.5" />
+            </div>
+          </div>
+          <div className="mt-1">
+            <div className="text-xl sm:text-2xl font-black tabular-nums tracking-tight text-[#042C51] flex items-center gap-1.5">
+              <span>{pendingDay30HandoffsCount}</span>
+              {pendingDay30HandoffsCount > 0 && (
+                <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-full bg-[#FF5C28] text-white uppercase tracking-wider">
+                  Action Due
+                </span>
+              )}
+            </div>
+            <div className="mt-0.5 text-[10.5px] font-medium text-slate-500 truncate">
+              {pendingDay30HandoffsCount > 0 ? "Trainer → TL transition needed" : "All handoffs up to date"}
+            </div>
+          </div>
         </div>
       </div>
 
@@ -396,55 +550,55 @@ export default function BenchmarkView({ onOpenLinkModal, onSwitchModule }: Bench
             <h2 className="text-sm font-extrabold text-[#042C51]">30–60–90 Milestone Benchmark</h2>
             <p className="text-xs text-slate-500">Each milestone uses scores recorded within that phase only. Day 30 emphasizes FST + PST results.</p>
           </div>
-          <span className="px-2.5 py-1 rounded-full text-[10px] font-bold sibs-tone-blue-bg sibs-tone-blue-text border sibs-tone-blue-border">
+          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold sibs-tone-blue-bg sibs-tone-blue-text border sibs-tone-blue-border">
             Sample data • {visibleJourneys.length} trainees
           </span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
           {[agg30, agg60, agg90]
             .filter(a => selectedPhaseFilter === "all" || String(a.day) === selectedPhaseFilter)
             .map(a => (
-              <div key={a.day} className="bg-white border border-[#E6ECF2] rounded-2xl p-5 shadow-xs space-y-3">
+              <div key={a.day} className="bg-white border border-[#E6ECF2] rounded-xl p-3.5 sm:p-4 shadow-xs space-y-2.5">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-extrabold text-[#042C51]">Day {a.day} Benchmark{a.day === 30 ? " • FST + PST" : ""}</h3>
-                  <span className="text-[10px] font-bold sibs-tone-blue-bg sibs-tone-blue-text border sibs-tone-blue-border px-2 py-0.5 rounded-full">
+                  <h3 className="text-xs font-bold text-[#042C51]">Day {a.day} Benchmark{a.day === 30 ? " • FST + PST" : ""}</h3>
+                  <span className="text-[9.5px] font-bold sibs-tone-blue-bg sibs-tone-blue-text border sibs-tone-blue-border px-2 py-0.5 rounded-full">
                     {a.eligibleCount} reached milestone
                   </span>
                 </div>
 
-                <div className="flex items-baseline justify-between my-2">
-                  <strong className="text-3xl font-black text-[#042C51]">
+                <div className="flex items-baseline justify-between">
+                  <strong className="text-2xl font-black tabular-nums text-[#042C51]">
                     {a.meanComp === null ? "—" : a.meanComp + "%"}
                   </strong>
-                  <span className="text-xs text-slate-500 font-semibold">{a.completeCount} complete scorecards</span>
+                  <span className="text-[11px] text-slate-500 font-semibold">{a.completeCount} scorecards</span>
                 </div>
 
-                <div className="w-full h-2 bg-[#E6EAF0] rounded-full overflow-hidden">
+                <div className="w-full h-1.5 bg-[#E6EAF0] rounded-full overflow-hidden">
                   <div className="h-full bg-gradient-to-r from-[#042C51] to-[#FF5C28] rounded-full" style={{ width: `${a.meanComp || 0}%` }} />
                 </div>
 
-                <div className="grid grid-cols-2 gap-2 my-2 text-xs">
-                  <div className="p-2 bg-[#F7F9FC] border border-[#E6ECF2] rounded-xl">
-                    <span className="text-[10px] text-slate-500 block">Independent QA</span>
-                    <strong className="text-base font-extrabold text-[#042C51] block mt-0.5">{a.meanQA === null ? "N/A" : a.meanQA + "%"}</strong>
+                <div className="grid grid-cols-2 gap-2 text-xs pt-0.5">
+                  <div className="p-2 bg-[#F7F9FC] border border-[#E6ECF2] rounded-lg">
+                    <span className="text-[9.5px] font-semibold text-slate-500 block">Independent QA</span>
+                    <strong className="text-sm font-bold text-[#042C51] block mt-0.5">{a.meanQA === null ? "N/A" : a.meanQA + "%"}</strong>
                   </div>
-                  <div className="p-2 bg-[#F7F9FC] border border-[#E6ECF2] rounded-xl">
-                    <span className="text-[10px] text-slate-500 block">Attendance*</span>
-                    <strong className="text-base font-extrabold text-[#042C51] block mt-0.5">{a.meanAtt === null ? "N/A" : a.meanAtt + "%"}</strong>
+                  <div className="p-2 bg-[#F7F9FC] border border-[#E6ECF2] rounded-lg">
+                    <span className="text-[9.5px] font-semibold text-slate-500 block">Attendance*</span>
+                    <strong className="text-sm font-bold text-[#042C51] block mt-0.5">{a.meanAtt === null ? "N/A" : a.meanAtt + "%"}</strong>
                   </div>
-                  <div className="p-2 bg-[#F7F9FC] border border-[#E6ECF2] rounded-xl">
-                    <span className="text-[10px] text-slate-500 block">High performers</span>
-                    <strong className="text-base font-extrabold text-[#042C51] block mt-0.5">{a.highCount} / {a.completeCount}</strong>
+                  <div className="p-2 bg-[#F7F9FC] border border-[#E6ECF2] rounded-lg">
+                    <span className="text-[9.5px] font-semibold text-slate-500 block">High performers</span>
+                    <strong className="text-sm font-bold text-emerald-600 block mt-0.5">{a.highCount} / {a.completeCount}</strong>
                   </div>
-                  <div className="p-2 bg-[#F7F9FC] border border-[#E6ECF2] rounded-xl">
-                    <span className="text-[10px] text-slate-500 block">Need support</span>
-                    <strong className="text-base font-extrabold text-[#042C51] block mt-0.5">{a.lowCount} / {a.completeCount}</strong>
+                  <div className="p-2 bg-[#F7F9FC] border border-[#E6ECF2] rounded-lg">
+                    <span className="text-[9.5px] font-semibold text-slate-500 block">Need support</span>
+                    <strong className="text-sm font-bold text-rose-600 block mt-0.5">{a.lowCount} / {a.completeCount}</strong>
                   </div>
                 </div>
 
-                <p className="text-[10px] text-slate-400">
-                  {a.totalAbsent} recorded absences • {a.totalExcused} excused days • {a.totalUnrecorded} missing records
+                <p className="text-[9.5px] text-slate-400 truncate">
+                  {a.totalAbsent} absences • {a.totalExcused} excused • {a.totalUnrecorded} missing records
                 </p>
               </div>
             ))}
@@ -453,7 +607,7 @@ export default function BenchmarkView({ onOpenLinkModal, onSwitchModule }: Bench
 
       {/* Consolidated Employee Comparison Table */}
       <div className="bg-white rounded-xl border border-[#E6ECF2] shadow-xs overflow-hidden">
-        <div className="p-4 border-b border-[#E6ECF2] flex items-center justify-between">
+        <div className="p-3.5 sm:p-4 border-b border-[#E6ECF2] flex items-center justify-between">
           <div>
             <h2 className="text-sm font-extrabold text-[#042C51]">Employee Milestone Comparison</h2>
             <p className="text-xs text-slate-500">
@@ -466,16 +620,25 @@ export default function BenchmarkView({ onOpenLinkModal, onSwitchModule }: Bench
           <table className="w-full text-left text-xs">
             <thead className="bg-[#FAFCFF] text-slate-500 font-bold text-[10px] uppercase border-b border-[#E6ECF2]">
               <tr>
-                <th className="py-3.5 px-4">Trainee</th>
-                <th className="py-3.5 px-3">Account / Site</th>
-                <th className="py-3.5 px-3">Trainer</th>
+                <th className="py-2.5 px-3">Trainee</th>
+                <th className="py-2.5 px-3">Account / Site</th>
+                <th className="py-2.5 px-3">Trainer</th>
                 {columns.map(d => (
-                  <th key={d} className="py-3.5 px-3 min-w-[180px]">Day {d}</th>
+                  <th key={d} className="py-2.5 px-3 min-w-[155px]">
+                    <div className="flex items-center gap-1.5">
+                      <span>Day {d}</span>
+                      {d === 30 && pendingDay30HandoffsCount > 0 && (
+                        <span className="px-1.5 py-0.2 rounded text-[8px] font-black bg-[#FF5C28] text-white">
+                          ⚠️ {pendingDay30HandoffsCount} ALERT
+                        </span>
+                      )}
+                    </div>
+                  </th>
                 ))}
-                <th className="py-3.5 px-3 min-w-[160px]">Journey Progress</th>
-                <th className="py-3.5 px-3">Reviews Due</th>
-                <th className="py-3.5 px-3">Open Actions</th>
-                <th className="py-3.5 px-4 text-right">Details</th>
+                <th className="py-2.5 px-3 min-w-[130px]">Journey Progress</th>
+                <th className="py-2.5 px-3">Reviews Due</th>
+                <th className="py-2.5 px-3">Open Actions</th>
+                <th className="py-2.5 px-3 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-slate-700">
@@ -499,40 +662,119 @@ export default function BenchmarkView({ onOpenLinkModal, onSwitchModule }: Bench
                       onClick={() => setSelectedJourney(e)}
                     >
                       {/* Trainee */}
-                      <td className="py-3.5 px-4">
-                        <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 rounded-full bg-[#E6EAF0] text-[#042C51] font-black text-xs flex items-center justify-center shrink-0">
+                      <td className="py-2.5 px-3">
+                        <div className="flex items-center gap-2">
+                          <div className="w-7 h-7 rounded-full bg-[#E6EAF0] text-[#042C51] font-black text-[11px] flex items-center justify-center shrink-0">
                             {e.fullName.split(" ").map(n => n[0]).slice(0, 2).join("")}
                           </div>
-                          <div>
-                            <strong className="text-xs text-[#042C51] block">{e.fullName}</strong>
-                            <span className="text-[10px] text-slate-400">{e.sibsEmployeeId || e.id}</span>
+                          <div className="min-w-0">
+                            <strong className="text-xs text-[#042C51] block truncate">{e.fullName}</strong>
+                            <span className="text-[10px] text-slate-400 block">{e.sibsEmployeeId || e.id}</span>
                           </div>
                         </div>
                       </td>
 
                       {/* Account / Site */}
-                      <td className="py-3.5 px-3">
-                        <strong className="text-xs text-[#042C51] block">{e.account}</strong>
-                        <span className="text-[10px] text-slate-400">{e.siteLocation}</span>
+                      <td className="py-2.5 px-3">
+                        <strong className="text-xs text-[#042C51] block truncate">{e.account}</strong>
+                        <span className="text-[10px] text-slate-400 block">{e.siteLocation}</span>
                       </td>
 
                       {/* Trainer */}
-                      <td className="py-3.5 px-3 font-semibold text-slate-800">
+                      <td className="py-2.5 px-3 font-semibold text-slate-700">
                         {e.trainerName || "Unassigned"}
                       </td>
 
                       {/* Milestone Columns (30, 60, 90) */}
                       {columns.map(day => {
                         const rec = getBenchmarkRecord(e, day);
+                        const handoff = e.day30Handoff || e.day30?.handoff;
+                        const inHandoffWindow = day === 30 && daysElapsed >= 20;
+
+                        // Renders prominent Day 30 Trainer -> TL Handoff Alert
+                        const renderDay30HandoffStatus = () => {
+                          if (!inHandoffWindow) return null;
+
+                          if (!handoff || handoff.status === "Pending") {
+                            return (
+                              <div 
+                                className="mt-1.5 p-1.5 rounded-lg bg-orange-50/90 border border-[#FF5C28] shadow-2xs hover:bg-orange-100 transition-colors cursor-pointer"
+                                onClick={(ev) => {
+                                  ev.stopPropagation();
+                                  setSelectedJourney(e);
+                                }}
+                                title="Click to open Day 30 Trainer → Team Leader handoff"
+                              >
+                                <div className="flex items-center justify-between gap-1">
+                                  <span className="inline-flex items-center gap-1 text-[9px] font-black text-[#FF5C28]">
+                                    <AlertTriangle className="w-3 h-3 text-[#FF5C28] shrink-0" />
+                                    Trainer → TL Handoff Due
+                                  </span>
+                                  <span className="px-1.5 py-0.2 rounded text-[8px] font-bold bg-[#FF5C28] text-white shrink-0">
+                                    Action →
+                                  </span>
+                                </div>
+                                <span className="text-[8.5px] text-slate-600 block mt-0.5 truncate font-medium">
+                                  {e.trainerName || "Trainer"} ➔ {e.tl || "Team Leader"}
+                                </span>
+                              </div>
+                            );
+                          }
+
+                          if (handoff.status === "Submitted") {
+                            return (
+                              <div 
+                                className="mt-1.5 p-1.5 rounded-lg bg-amber-50 border border-amber-300 shadow-2xs hover:bg-amber-100/70 transition-colors cursor-pointer"
+                                onClick={(ev) => {
+                                  ev.stopPropagation();
+                                  setSelectedJourney(e);
+                                }}
+                                title="Click to accept handoff as Team Leader"
+                              >
+                                <div className="flex items-center justify-between gap-1">
+                                  <span className="inline-flex items-center gap-1 text-[9px] font-bold text-amber-800">
+                                    <Clock className="w-3 h-3 text-amber-600 shrink-0" />
+                                    Awaiting TL Acceptance
+                                  </span>
+                                  <span className="px-1.5 py-0.2 rounded text-[8px] font-bold bg-amber-600 text-white shrink-0">
+                                    Sign-off →
+                                  </span>
+                                </div>
+                                <span className="text-[8.5px] text-amber-700 block mt-0.5 truncate font-medium">
+                                  Endorsed by {handoff.trainerName}
+                                </span>
+                              </div>
+                            );
+                          }
+
+                          if (handoff.status === "Accepted") {
+                            return (
+                              <div 
+                                className="mt-1 pt-1 border-t border-slate-100 text-[8.5px] text-emerald-700 font-semibold flex items-center gap-1 cursor-pointer hover:text-emerald-800"
+                                onClick={(ev) => {
+                                  ev.stopPropagation();
+                                  setSelectedJourney(e);
+                                }}
+                              >
+                                <CheckCircle2 className="w-2.5 h-2.5 text-emerald-600 shrink-0" />
+                                <span className="truncate">Handed off to TL {handoff.targetTlName || e.tl}</span>
+                              </div>
+                            );
+                          }
+
+                          return null;
+                        };
 
                         if (!rec.eligible) {
                           return (
-                            <td key={day} className="py-3.5 px-3" onClick={ev => ev.stopPropagation()}>
-                              <div className="p-2 rounded-xl border border-dashed border-slate-200 bg-[#FAFCFF] text-slate-400 space-y-1">
-                                <strong className="text-xs font-bold block">Upcoming</strong>
-                                <span className="text-[9.5px] block">{dateLabel(rec.end)}</span>
-                                <div className="w-full h-1.5 bg-[#E6EAF0] rounded-full" />
+                            <td key={day} className="py-2.5 px-3" onClick={ev => ev.stopPropagation()}>
+                              <div className="py-1">
+                                <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-500">
+                                  <Clock className="w-3 h-3 text-slate-400 shrink-0" />
+                                  Upcoming
+                                </span>
+                                <span className="text-[10px] text-slate-400 block">{dateLabel(rec.end)}</span>
+                                {renderDay30HandoffStatus()}
                               </div>
                             </td>
                           );
@@ -541,62 +783,59 @@ export default function BenchmarkView({ onOpenLinkModal, onSwitchModule }: Bench
                         const valid = rec.composite !== null;
 
                         return (
-                          <td key={day} className="py-3.5 px-3" onClick={ev => ev.stopPropagation()}>
-                            <div className="p-2.5 rounded-xl border border-[#E6ECF2] bg-[#F7F9FC] space-y-1">
-                              <div className="flex items-center justify-between gap-1">
-                                <strong className="text-sm font-black text-[#042C51]">
-                                  {valid ? rec.composite + "%" : "Not scored"}
+                          <td key={day} className="py-2.5 px-3" onClick={ev => ev.stopPropagation()}>
+                            <div className="py-1 space-y-0.5">
+                              <div className="flex items-center gap-1.5">
+                                <strong className="text-xs font-black tabular-nums text-[#042C51]">
+                                  {valid ? `${rec.composite}%` : "Not scored"}
                                 </strong>
                                 <span className={`px-1.5 py-0.2 rounded text-[9px] font-bold ${scoreCategoryTone(rec.composite)}`}>
                                   {valid ? (rec.composite! >= 85 ? "High" : rec.composite! >= 70 ? "Developing" : "Needs support") : "Incomplete"}
                                 </span>
                               </div>
 
-                              {/* Progress bar */}
-                              <div className="w-full h-1.5 bg-[#E6EAF0] rounded-full overflow-hidden">
+                              <div className="w-24 h-1 bg-[#E6EAF0] rounded-full overflow-hidden">
                                 {valid ? (
                                   <div className="h-full bg-gradient-to-r from-[#042C51] to-[#FF5C28] rounded-full" style={{ width: `${rec.composite}%` }} />
                                 ) : (
-                                  <div className="h-full w-full bg-slate-200" style={{ backgroundImage: "repeating-linear-gradient(45deg, #eef2f7, #eef2f7 6px, #e3e9f2 6px, #e3e9f2 12px)" }} />
+                                  <div className="h-full w-full bg-slate-200" />
                                 )}
                               </div>
 
-                              {/* Day 30 separate FST/PST sub-splits */}
-                              {day === 30 && (
-                                <div className="pt-1.5 border-t border-slate-200 space-y-1 text-[10px]">
-                                  <div className="flex justify-between font-semibold text-slate-700">
-                                    <span>FST assessment</span>
-                                    <span className="font-bold text-[#042C51]">{rec.fstScore !== null ? rec.fstScore + "%" : "Not scored"}</span>
-                                  </div>
-                                  <div className="flex justify-between font-semibold text-slate-700">
-                                    <span>PST assessment</span>
-                                    <span className="font-bold text-[#FF5C28]">{rec.pstScore !== null ? rec.pstScore + "%" : "Not scored"}</span>
-                                  </div>
+                              <div className="text-[9.5px] text-slate-500 flex items-center gap-1">
+                                <span>QA {rec.qaScore ?? "—"}%</span>
+                                <span>•</span>
+                                <span>Att {rec.attRate !== null ? `${rec.attRate}%` : "N/A"}</span>
+                              </div>
+
+                              {day === 30 && (rec.fstScore !== null || rec.pstScore !== null) && (
+                                <div className="text-[9px] text-slate-400">
+                                  FST {rec.fstScore ?? "—"}% • PST {rec.pstScore ?? "—"}%
                                 </div>
                               )}
 
-                              <div className="text-[10px] text-slate-500 pt-0.5">
-                                QA {rec.qaScore}% • Att {rec.attRate !== null ? rec.attRate + "%" : "N/A"}
-                              </div>
-                              <div className="text-[9.5px] font-semibold text-[#042C51]">
-                                {rec.reviewStatus}
-                              </div>
+                              {renderDay30HandoffStatus()}
                             </div>
                           </td>
                         );
                       })}
 
                       {/* Journey Progress */}
-                      <td className="py-3.5 px-3">
-                        <strong className="text-xs font-bold text-[#042C51] block">Day {daysElapsed} / 90</strong>
-                        <span className="text-[10px] text-slate-500 block truncate max-w-[140px]">{e.stage}</span>
-                        <div className="w-full h-1.5 bg-[#E6EAF0] rounded-full overflow-hidden mt-1">
-                          <div className="h-full bg-gradient-to-r from-[#042C51] to-[#FF5C28] rounded-full" style={{ width: `${progressPct}%` }} />
+                      <td className="py-2.5 px-3">
+                        <div className="w-28 space-y-0.5">
+                          <div className="flex justify-between text-[10.5px]">
+                            <strong className="font-bold text-[#042C51]">Day {daysElapsed}/90</strong>
+                            <span className="text-slate-400">{progressPct}%</span>
+                          </div>
+                          <div className="w-full h-1 bg-[#E6EAF0] rounded-full overflow-hidden">
+                            <div className="h-full bg-gradient-to-r from-[#042C51] to-[#FF5C28] rounded-full" style={{ width: `${progressPct}%` }} />
+                          </div>
+                          <span className="text-[9.5px] text-slate-400 block truncate">{e.stage}</span>
                         </div>
                       </td>
 
                       {/* Reviews Due */}
-                      <td className="py-3.5 px-3">
+                      <td className="py-2.5 px-3">
                         <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
                           pendingReviews ? "sibs-tone-amber-bg sibs-tone-amber-text border sibs-tone-amber-border" : "sibs-tone-green-bg sibs-tone-green-text border sibs-tone-green-border"
                         }`}>
@@ -605,7 +844,7 @@ export default function BenchmarkView({ onOpenLinkModal, onSwitchModule }: Bench
                       </td>
 
                       {/* Open Actions */}
-                      <td className="py-3.5 px-3">
+                      <td className="py-2.5 px-3">
                         <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
                           openActionsCount ? "sibs-tone-amber-bg sibs-tone-amber-text border sibs-tone-amber-border" : "sibs-tone-green-bg sibs-tone-green-text border sibs-tone-green-border"
                         }`}>
@@ -614,22 +853,24 @@ export default function BenchmarkView({ onOpenLinkModal, onSwitchModule }: Bench
                       </td>
 
                       {/* Details / Inspection Actions */}
-                      <td className="py-3.5 px-4 text-right" onClick={ev => ev.stopPropagation()}>
-                        <div className="space-y-1 text-right">
+                      <td className="py-2.5 px-3 text-right" onClick={ev => ev.stopPropagation()}>
+                        <div className="flex items-center justify-end gap-1.5">
                           <button
+                            type="button"
                             onClick={() => {
                               setInspectedEmpId(e.sibsEmployeeId || e.id);
                               setInspectedDay(selectedPhaseFilter === "all" ? (daysElapsed >= 90 ? 90 : daysElapsed >= 60 ? 60 : 30) : Number(selectedPhaseFilter));
                             }}
-                            className="text-xs font-bold text-[#042C51] hover:text-[#FF5C28] hover:underline block ml-auto transition-colors"
+                            className="px-2.5 py-1 text-[11px] font-semibold text-[#042C51] bg-white hover:bg-[#F7F9FC] border border-[#BECBDA] rounded-lg transition-colors cursor-pointer shadow-xs"
                           >
-                            Inspect scores
+                            Inspect
                           </button>
                           <button
+                            type="button"
                             onClick={() => setSelectedJourney(e)}
-                            className="text-xs font-bold text-[#FF5C28] hover:underline block ml-auto"
+                            className="px-2.5 py-1 text-[11px] font-semibold text-white bg-[#FF5C28] hover:bg-[#e04f20] rounded-lg transition-colors cursor-pointer shadow-xs"
                           >
-                            View journey →
+                            Journey →
                           </button>
                         </div>
                       </td>
@@ -644,15 +885,15 @@ export default function BenchmarkView({ onOpenLinkModal, onSwitchModule }: Bench
 
       {/* Trainee Checkpoint Drill-Down Inspection Card */}
       {inspectedJourney && inspectedRecord && (
-        <div id="benchmark-detail" className="bg-white rounded-2xl border-2 border-[#042C51] p-6 shadow-xs space-y-5">
+        <div id="benchmark-detail" className="bg-white rounded-xl border border-[#E6ECF2] p-4 sm:p-5 shadow-xs space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
             <div>
               <span className="text-[10px] font-black uppercase text-[#FF5C28] tracking-widest block">TRAINEE CHECKPOINT DRILL-DOWN</span>
-              <h2 className="text-lg font-extrabold text-[#042C51]">
+              <h2 className="text-base font-extrabold text-[#042C51]">
                 {inspectedJourney.fullName} — Day {inspectedDay}{inspectedDay === 30 ? " (FST + PST)" : ""}
               </h2>
               <p className="text-xs text-slate-500">
-                {inspectedJourney.sibsEmployeeId || inspectedJourney.id} • {inspectedJourney.account} • {inspectedJourney.siteLocation} • Trainer {inspectedJourney.trainerName || "Unassigned"}
+                {inspectedJourney.sibsEmployeeId || inspectedJourney.id} • {inspectedJourney.account} • {inspectedJourney.siteLocation} • Trainer: {inspectedJourney.trainerName || "Unassigned"}
               </p>
             </div>
 
@@ -666,6 +907,7 @@ export default function BenchmarkView({ onOpenLinkModal, onSwitchModule }: Bench
               </span>
 
               <button
+                type="button"
                 onClick={() => setSelectedJourney(inspectedJourney)}
                 className="px-3.5 py-1.5 rounded-xl bg-[#FF5C28] hover:bg-[#e04f20] text-white text-xs font-semibold cursor-pointer shadow-xs transition-colors"
               >
@@ -676,9 +918,9 @@ export default function BenchmarkView({ onOpenLinkModal, onSwitchModule }: Bench
 
           {/* 4 Drilldown KPI Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            <div className="p-3.5 rounded-xl border border-[#E6ECF2] bg-[#F7F9FC]">
+            <div className="p-3 rounded-xl border border-[#E6ECF2] bg-[#F7F9FC]">
               <span className="text-[10px] text-slate-500 font-bold block">Phase Performance Score</span>
-              <strong className="text-2xl font-black text-[#042C51] my-1 block">
+              <strong className="text-xl font-black text-[#042C51] my-0.5 block">
                 {inspectedRecord.composite === null ? "N/A" : inspectedRecord.composite + "%"}
               </strong>
               <p className="text-[10px] text-slate-500">
@@ -686,9 +928,9 @@ export default function BenchmarkView({ onOpenLinkModal, onSwitchModule }: Bench
               </p>
             </div>
 
-            <div className="p-3.5 rounded-xl border border-[#E6ECF2] bg-[#F7F9FC]">
+            <div className="p-3 rounded-xl border border-[#E6ECF2] bg-[#F7F9FC]">
               <span className="text-[10px] text-slate-500 font-bold block">Trainer / QA / Simulation</span>
-              <strong className="text-2xl font-black text-[#042C51] my-1 block">
+              <strong className="text-xl font-black text-[#042C51] my-0.5 block">
                 {inspectedRecord.trScore}% / {inspectedRecord.qaScore}% / {inspectedRecord.simScore}%
               </strong>
               <p className="text-[10px] text-slate-500">
@@ -696,9 +938,9 @@ export default function BenchmarkView({ onOpenLinkModal, onSwitchModule }: Bench
               </p>
             </div>
 
-            <div className="p-3.5 rounded-xl border border-[#E6ECF2] bg-[#F7F9FC]">
+            <div className="p-3 rounded-xl border border-[#E6ECF2] bg-[#F7F9FC]">
               <span className="text-[10px] text-slate-500 font-bold block">Attendance / Record Coverage</span>
-              <strong className="text-2xl font-black text-[#042C51] my-1 block">
+              <strong className="text-xl font-black text-[#042C51] my-0.5 block">
                 {inspectedRecord.attRate === null ? "N/A" : inspectedRecord.attRate + "%"}{" "}
                 <span className="text-xs font-semibold text-slate-500">({inspectedRecord.coverage ?? 0}% covered)</span>
               </strong>
@@ -707,9 +949,9 @@ export default function BenchmarkView({ onOpenLinkModal, onSwitchModule }: Bench
               </p>
             </div>
 
-            <div className="p-3.5 rounded-xl border border-[#E6ECF2] bg-[#F7F9FC]">
+            <div className="p-3 rounded-xl border border-[#E6ECF2] bg-[#F7F9FC]">
               <span className="text-[10px] text-slate-500 font-bold block">Training Activities</span>
-              <strong className="text-2xl font-black text-[#042C51] my-1 block">
+              <strong className="text-xl font-black text-[#042C51] my-0.5 block">
                 {inspectedRecord.verifiedAssigns} / {inspectedRecord.phaseAssignsCount} verified
               </strong>
               <p className="text-[10px] text-slate-500">
@@ -720,7 +962,7 @@ export default function BenchmarkView({ onOpenLinkModal, onSwitchModule }: Bench
 
           {/* Day 30 FST & PST breakdown bars if Day 30 */}
           {inspectedDay === 30 && (
-            <div className="p-4 rounded-xl border border-[#E6ECF2] bg-[#F7F9FC] space-y-2">
+            <div className="p-3.5 rounded-xl border border-[#E6ECF2] bg-[#F7F9FC] space-y-2">
               <strong className="text-xs font-bold text-[#042C51] block">First 30 days: FST and PST assessments (separate sample evidence)</strong>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                 <div>
@@ -728,7 +970,7 @@ export default function BenchmarkView({ onOpenLinkModal, onSwitchModule }: Bench
                     <span>FST assessment</span>
                     <span className="text-[#042C51]">{inspectedRecord.fstScore !== null ? inspectedRecord.fstScore + "%" : "Not scored"}</span>
                   </div>
-                  <div className="w-full h-2 bg-[#E6EAF0] rounded-full overflow-hidden mt-1">
+                  <div className="w-full h-1.5 bg-[#E6EAF0] rounded-full overflow-hidden mt-1">
                     <div className="h-full bg-[#042C51] rounded-full" style={{ width: `${inspectedRecord.fstScore || 0}%` }} />
                   </div>
                 </div>
@@ -738,7 +980,7 @@ export default function BenchmarkView({ onOpenLinkModal, onSwitchModule }: Bench
                     <span>PST assessment</span>
                     <span className="text-[#FF5C28]">{inspectedRecord.pstScore !== null ? inspectedRecord.pstScore + "%" : "Not scored"}</span>
                   </div>
-                  <div className="w-full h-2 bg-[#E6EAF0] rounded-full overflow-hidden mt-1">
+                  <div className="w-full h-1.5 bg-[#E6EAF0] rounded-full overflow-hidden mt-1">
                     <div className="h-full bg-[#FF5C28] rounded-full" style={{ width: `${inspectedRecord.pstScore || 0}%` }} />
                   </div>
                 </div>
@@ -747,21 +989,21 @@ export default function BenchmarkView({ onOpenLinkModal, onSwitchModule }: Bench
           )}
 
           {/* Evidence and Checkpoint Details */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2 border-t border-slate-100 text-xs">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pt-2 border-t border-slate-100 text-xs">
             <div>
               <h3 className="font-extrabold text-[#042C51] mb-2">Phase Evidence</h3>
-              <p className="text-[11px] text-slate-500 mb-3">{dateLabel(inspectedRecord.start)} – {dateLabel(inspectedRecord.end)}</p>
+              <p className="text-[11px] text-slate-500 mb-2.5">{dateLabel(inspectedRecord.start)} – {dateLabel(inspectedRecord.end)}</p>
 
-              <div className="space-y-2">
-                <div className="flex justify-between border-b border-slate-100 pb-1.5">
+              <div className="space-y-1.5">
+                <div className="flex justify-between border-b border-slate-100 pb-1">
                   <span className="font-bold text-slate-700">Training Assessment</span>
                   <span className="text-slate-600">{inspectedRecord.trScore}% • {inspectedJourney.trainerName || "Trainer"}</span>
                 </div>
-                <div className="flex justify-between border-b border-slate-100 pb-1.5">
+                <div className="flex justify-between border-b border-slate-100 pb-1">
                   <span className="font-bold text-slate-700">Independent QA Audit</span>
                   <span className="text-slate-600">{inspectedRecord.qaScore}% • {inspectedJourney.qa || "QA Lead"}</span>
                 </div>
-                <div className="flex justify-between border-b border-slate-100 pb-1.5">
+                <div className="flex justify-between border-b border-slate-100 pb-1">
                   <span className="font-bold text-slate-700">Work Simulation</span>
                   <span className="text-slate-600">{inspectedRecord.simScore}% • {inspectedJourney.tl || "Team Leader"}</span>
                 </div>
@@ -770,19 +1012,19 @@ export default function BenchmarkView({ onOpenLinkModal, onSwitchModule }: Bench
 
             <div>
               <h3 className="font-extrabold text-[#042C51] mb-2">Checkpoint & Development</h3>
-              <div className="space-y-2">
-                <div className="flex justify-between border-b border-slate-100 pb-1.5">
+              <div className="space-y-1.5">
+                <div className="flex justify-between border-b border-slate-100 pb-1">
                   <span className="font-bold text-slate-700">HR Checkpoint</span>
                   <span className="font-bold text-[#042C51]">{inspectedRecord.reviewStatus}</span>
                 </div>
-                <div className="flex justify-between border-b border-slate-100 pb-1.5">
+                <div className="flex justify-between border-b border-slate-100 pb-1">
                   <span className="font-bold text-slate-700">Open Coaching Actions</span>
                   <span className="font-bold text-slate-700">
                     {coachingActions.filter(a => (a.emp === inspectedJourney.sibsEmployeeId || a.emp === inspectedJourney.id) && a.status !== "Done").length}
                   </span>
                 </div>
               </div>
-              <p className="text-[10px] text-slate-400 mt-4 leading-relaxed">
+              <p className="text-[10px] text-slate-400 mt-3 leading-relaxed">
                 Attendance is contextual evidence and is not weighted into performance composite. Missing records never count as absences. Final employment decisions remain with HR.
               </p>
             </div>

@@ -3,36 +3,26 @@ import React, { useState } from "react";
 import { useNHO } from "./NHOContext";
 import { NHORole } from "./nhoTypes";
 import { 
-  Users, 
-  UserCheck, 
-  Server, 
-  ShieldCheck, 
   RotateCcw, 
-  HelpCircle, 
   Sparkles, 
   CheckCircle, 
   AlertTriangle,
   ChevronDown,
-  Info,
-  Smartphone,
-  Monitor,
-  MapPin,
-  GraduationCap,
-  BookOpenCheck
+  Info
 } from "lucide-react";
 
 interface NHORoleHeaderProps {
   onOpenWalkthrough: () => void;
   subTab?: string;
   onSubTabChange?: (tab: string) => void;
+  sectionHeader: { badge: string; title: string; description: string };
 }
 
-export default function NHORoleHeader({ onOpenWalkthrough, subTab, onSubTabChange }: NHORoleHeaderProps) {
+export default function NHORoleHeader({ onOpenWalkthrough, subTab, onSubTabChange, sectionHeader }: NHORoleHeaderProps) {
   const {user} = useDemoAuth();
   const isAdminPreview = user?.role === 'Super Admin';
   const { 
     role, 
-    setRole, 
     selectedApplicantId, 
     setSelectedApplicantId, 
     applicants, 
@@ -43,128 +33,85 @@ export default function NHORoleHeader({ onOpenWalkthrough, subTab, onSubTabChang
     toast
   } = useNHO();
 
+  // Workflow pipeline role sequence for QDS -> Trainer -> WFM handoff (QDS and Trainer hidden from UI)
+  const rolesList: { id: NHORole; label: string; hidden?: boolean }[] = [
+    { id: "TA", label: "Talent Acquisition (TA)" },
+    { id: "Applicant", label: "Applicant Portal" },
+    { id: "IT", label: "IT Operations" },
+    { id: "QDS", label: "QDS", hidden: true },
+    { id: "Trainer", label: "Trainer", hidden: true },
+    { id: "WFM", label: "Workforce Planning (WFM)" },
+    { id: "HR", label: "HR Operations" }
+  ];
+
   const [isScenarioDropdownOpen, setIsScenarioDropdownOpen] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
 
-  const rolesList: { id: NHORole; label: string; icon: React.ComponentType<{ className?: string }>; description: string }[] = [
-    { 
-      id: "TA", 
-      label: "Talent Acquisition (TA)", 
-      icon: Users,
-      description: "Attendance, Uploaded Majors Verification, Agreement Verification, IT Endorsements" 
-    },
-    { 
-      id: "Applicant", 
-      label: "Applicant Portal", 
-      icon: UserCheck,
-      description: "Temp Access, Orientation Slides & Quiz, E-Signing Agreements, Doc Uploads" 
-    },
-    { 
-      id: "IT", 
-      label: "IT Manager", 
-      icon: Server,
-      description: "ID Creation Queue, Permitted Field Edits, Manual Kronos ID Provisioning" 
-    },
-    { 
-      id: "QDS", 
-      label: "QDS", 
-      icon: BookOpenCheck,
-      description: "Assign Trainer & Training Materials Package, Dispatch to Trainer (Quality Dev)" 
-    },
-    { 
-      id: "Trainer", 
-      label: "Trainer", 
-      icon: GraduationCap,
-      description: "Review Assigned Materials & Accept Trainee Responsibility (L&D / Ops)" 
-    },
-    { 
-      id: "WFM", 
-      label: "Workforce Management (WFM)", 
-      icon: MapPin,
-      description: "Production Floor Wing & Workstation Assignment (admin_access = 9)" 
-    },
-    { 
-      id: "HR", 
-      label: "HR Operations", 
-      icon: ShieldCheck,
-      description: "NHO Handoff Acceptance / Return, 14-Day Non-Major Oversight" 
-    }
-  ];
-
   return (
-    <div className="bg-white border-b border-[#E6ECF2] shadow-xs sticky top-16 z-20">
-      {/* Toast Notification Banner */}
+    <div className="relative z-20 px-4 pt-4 sm:px-6">
+      {/* Preserve workflow notifications while adopting the standard HRIS page chrome. */}
       {toast && (
-        <div 
-          className={`px-4 py-2.5 text-xs font-semibold flex items-center justify-between transition-all ${
-            toast.type === "success" 
-              ? "bg-[#2ECC71]/15 text-[#1b7a42] border-b border-[#2ECC71]/30" 
-              : toast.type === "error"
-                ? "bg-[#E74C3C]/15 text-[#a82415] border-b border-[#E74C3C]/30"
-                : "bg-[#4B9DFE]/15 text-[#1a5fb4] border-b border-[#4B9DFE]/30"
-          }`}
-        >
-          <div className="flex items-center gap-2 max-w-5xl mx-auto w-full">
-            {toast.type === "success" && <CheckCircle className="w-4 h-4 text-[#2ECC71] shrink-0" />}
-            {toast.type === "error" && <AlertTriangle className="w-4 h-4 text-[#E74C3C] shrink-0" />}
-            {toast.type === "info" && <Info className="w-4 h-4 text-[#4B9DFE] shrink-0" />}
-            <span>{toast.message}</span>
-          </div>
+        <div role="status" className={`mb-3 flex items-center gap-2 rounded-xl border px-4 py-3 text-xs font-semibold ${
+          toast.type === "success"
+            ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+            : toast.type === "error"
+              ? "border-red-200 bg-red-50 text-red-800"
+              : "border-blue-200 bg-blue-50 text-blue-800"
+        }`}>
+          {toast.type === "success" ? <CheckCircle className="h-4 w-4 shrink-0" /> : toast.type === "error" ? <AlertTriangle className="h-4 w-4 shrink-0" /> : <Info className="h-4 w-4 shrink-0" />}
+          {toast.message}
         </div>
       )}
 
-      {/* Top Banner: Master Mode & Quick Walkthrough bar */}
-      <div className="bg-[#042C51] text-white px-4 py-2 flex flex-wrap items-center justify-between gap-3 text-xs">
-        <div className="flex items-center gap-2.5">
-          <span className="px-2 py-0.5 rounded font-black text-[10px] tracking-wider uppercase bg-[#FF5C28] text-white">
-            NHO V1 Prototype
-          </span>
-          <span className="font-semibold text-slate-200 hidden sm:inline">
-            SiBS 360 HRIS: New Hire Orientation Interactive Wireframe
-          </span>
-        </div>
-
-        <div className="flex items-center gap-2">
-          {/* Controllable Demo Date Selector */}
-          <div className="flex items-center gap-1.5 bg-[#0B365F] px-2.5 py-1 rounded-lg border border-[#1A4C7B] text-[11px]">
-            <span className="text-slate-300 font-medium hidden md:inline">Simulated Date (Asia/Manila):</span>
-            <input
-              type="date"
-              value={simulatedCurrentDate}
-              onChange={e => setSimulatedCurrentDate(e.target.value)}
-              className="bg-transparent text-white font-bold font-mono focus:outline-none cursor-pointer"
-              title="Change simulated date to test overdue deadlines or notice periods"
-            />
+      {/* Same accent header, title hierarchy, and white surface as Employee Directory. */}
+      <section className="overflow-visible rounded-xl border border-[#E6ECF2] bg-white shadow-sm">
+        <div className="h-[3.5px] rounded-t-xl bg-gradient-to-r from-[#042C51] via-[#C24B30] to-[#FF5C28]" />
+        <div className="flex flex-wrap items-center justify-between gap-4 px-4 py-4 sm:px-5 sm:py-5">
+          <div className="min-w-0">
+            <span className="mb-2 inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50/80 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wider text-[#042C51]">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#FF5C28]" />
+              {sectionHeader.badge}
+            </span>
+            <h1 className="text-xl font-black tracking-tight text-[#042C51]">{sectionHeader.title}</h1>
+            <p className="mt-1 text-xs font-medium text-slate-500">{sectionHeader.description}</p>
           </div>
-
-          {/* Walkthrough Guide Button */}
-          {isAdminPreview && <button
-            onClick={onOpenWalkthrough}
-            className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-[#13406D] hover:bg-[#1A4C7B] text-[#FAFCFF] font-semibold transition-colors cursor-pointer text-xs"
-            title="Step-by-step interactive walkthrough guide"
-          >
-            <Sparkles className="w-3.5 h-3.5 text-[#FF5C28]" />
-            <span>Interactive Walkthrough (Steps 1–16)</span>
-          </button>}
-
-          {/* Quick Scenario Selector */}
+          <div className="flex max-w-full flex-wrap items-center gap-2">
+            <label className="flex items-center gap-2 rounded-xl border border-[#E6ECF2] bg-white px-3 py-2 text-xs text-[#042C51]">
+              <span className="font-medium text-slate-500">Demo date</span>
+              <input
+                type="date"
+                value={simulatedCurrentDate}
+                onChange={e => setSimulatedCurrentDate(e.target.value)}
+                className="max-w-[135px] bg-transparent font-semibold text-[#042C51] outline-none cursor-pointer"
+                aria-label="Simulated NHO date (Asia/Manila)"
+                title="Simulated date (Asia/Manila) to test notice periods and deadlines"
+              />
+            </label>
+                      {/* Quick Scenario Selector */}
           <div className="relative">
             <button
+              type="button"
+              aria-label="Select NHO demo scenario"
+              aria-haspopup="listbox"
+              aria-expanded={isScenarioDropdownOpen}
               onClick={() => setIsScenarioDropdownOpen(prev => !prev)}
-              className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-[#0B365F] hover:bg-[#13406D] text-slate-200 font-medium transition-colors cursor-pointer text-xs border border-[#1A4C7B]"
+              className="flex items-center gap-1.5 rounded-xl border border-[#E6ECF2] bg-white px-3 py-2 text-xs font-semibold text-[#042C51] transition-colors hover:border-[#FF5C28] cursor-pointer"
             >
-              <span>Scenario: <strong className="text-white">{activeApplicant.fullName.split(" ")[0]}</strong></span>
+              <span>Scenario: <strong className="text-[#FF5C28]">{activeApplicant.fullName.split(" ")[0]}</strong></span>
               <ChevronDown className="w-3.5 h-3.5" />
             </button>
 
             {isScenarioDropdownOpen && (
-              <div className="absolute right-0 top-full mt-1.5 w-80 bg-white rounded-xl shadow-xl border border-slate-200 text-slate-800 z-50 py-2 divide-y divide-slate-100 text-xs">
+              <div role="listbox" aria-label="NHO demo candidates" className="absolute right-0 top-full mt-1.5 w-80 max-w-[90vw] bg-white rounded-xl shadow-xl border border-slate-200 text-slate-800 z-50 py-2 divide-y divide-slate-100 text-xs">
                 <div className="px-3 py-1.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
                   Select Test Scenario Candidate
                 </div>
                 {applicants.map((cand, idx) => (
                   <button
                     key={cand.id}
+                    type="button"
+                    role="option"
+                    aria-selected={cand.id === selectedApplicantId}
                     onClick={() => {
                       setSelectedApplicantId(cand.id);
                       setIsScenarioDropdownOpen(false);
@@ -197,230 +144,76 @@ export default function NHORoleHeader({ onOpenWalkthrough, subTab, onSubTabChang
             )}
           </div>
 
-          {/* Demo Reset Button */}
-          {isAdminPreview && <button
-            onClick={() => setShowResetConfirm(true)}
-            className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-red-950/60 hover:bg-red-900 text-red-200 font-semibold transition-colors cursor-pointer text-xs border border-red-800/50"
-            title="Reset all applicant states to default"
-          >
-            <RotateCcw className="w-3.5 h-3.5" />
-            <span className="hidden md:inline">Reset Demo</span>
-          </button>}
-        </div>
-      </div>
 
-      {/* Role Switcher Toolbar */}
-      <div className="px-4 py-2.5 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2 overflow-x-auto py-0.5">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mr-1 hidden lg:inline">
-            Active Role:
-          </span>
-          {/* Visible roles in NHO interface (QDS and Trainer are managed in the separate QDS application) */}
-          {(isAdminPreview ? rolesList : rolesList.filter(r=>r.id===role)).map(r => {
-            const Icon = r.icon;
-            const isActive = role === r.id;
-            return (
-              <button
-                key={r.id}
-                onClick={() => {if(isAdminPreview) setRole(r.id);}}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-xl font-bold text-xs transition-all cursor-pointer ${
-                  isActive
-                    ? "bg-[#042C51] text-white shadow-xs"
-                    : "bg-[#F7F9FC] text-slate-600 hover:text-[#042C51] hover:bg-slate-100 border border-[#E6ECF2]"
-                }`}
-              >
-                <Icon className={`w-3.5 h-3.5 ${isActive ? "text-[#FF5C28]" : "text-slate-400"}`} />
-                <span>{r.label}</span>
-                {isActive && (
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#FF5C28]" />
-                )}
+            {isAdminPreview && (
+              <button type="button" onClick={onOpenWalkthrough} className="inline-flex items-center gap-1.5 rounded-xl border border-[#E6ECF2] bg-white px-3 py-2 text-xs font-semibold text-[#042C51] transition-colors hover:border-[#FF5C28]">
+                <Sparkles className="h-3.5 w-3.5 text-[#FF5C28]" />
+                Walkthrough
               </button>
-            );
-          })}
-
-        </div>
-
-        {/* Current Applicant Preview & Simulated Profile Pill */}
-        <div className="flex items-center gap-2.5 text-xs">
-          <div className="bg-[#F7F9FC] border border-[#E6ECF2] px-3 py-1 rounded-lg flex items-center gap-2">
-            <span className="text-slate-400 text-[11px]">Active Applicant:</span>
-            <span className="font-bold text-[#042C51]">{activeApplicant.fullName}</span>
-            <span className="text-[10px] text-slate-400">({activeApplicant.applicantNumber})</span>
-            <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-              activeApplicant.attendance === "Show"
-                ? "bg-green-100 text-green-800"
-                : activeApplicant.attendance === "No Show"
-                  ? "bg-red-100 text-red-800"
-                  : "bg-amber-100 text-amber-800"
-            }`}>
-              {activeApplicant.attendance === "Show" ? "Attendance: Show" : `Attendance: ${activeApplicant.attendance}`}
-            </span>
+            )}
+            {isAdminPreview && (
+              <button type="button" onClick={() => setShowResetConfirm(true)} className="inline-flex items-center gap-1.5 rounded-xl border border-red-200 bg-white px-3 py-2 text-xs font-semibold text-red-600 transition-colors hover:bg-red-50" title="Reset demonstration records">
+                <RotateCcw className="h-3.5 w-3.5" />
+                Reset demo
+              </button>
+            )}
           </div>
         </div>
-      </div>
-
-      {/* Role-Specific Sub-Navigation Bar */}
-      {subTab && onSubTabChange && (
-        <div className="px-4 py-1.5 bg-[#FAFCFF] border-t border-[#E6ECF2] flex items-center gap-2 overflow-x-auto text-xs">
-          {role === "TA" && (
-            <>
-              {[
-                { id: "dashboard", label: "1. NHO Dashboard" },
-                { id: "attendance", label: "2. NHO Attendance" },
-                { id: "applicant-details", label: "3. Applicant NHO Details" },
-                { id: "doc-verification", label: "4. Document Verification" },
-                { id: "it-endorsements", label: "5. IT Endorsements" },
-                { id: "handoffs", label: "6. NHO Handoffs" }
-              ].map(t => (
-                <button
-                  key={t.id}
-                  onClick={() => onSubTabChange(t.id)}
-                  className={`px-3 py-1 rounded-lg font-semibold transition-colors cursor-pointer shrink-0 ${
-                    subTab === t.id
-                      ? "bg-[#FF5C28] text-white shadow-xs"
-                      : "text-slate-600 hover:text-[#042C51] hover:bg-slate-100"
-                  }`}
-                >
-                  {t.label}
-                </button>
-              ))}
-            </>
-          )}
-
-          {role === "Applicant" && (
-            <>
-              {[
-                { id: "overview", label: "1. My NHO Overview" },
-                { id: "majors", label: "2. Major Requirements (4)" },
-                { id: "orientation", label: "3. SiBS Orientation" },
-                { id: "agreements", label: "4. Essential Agreements (3)" },
-                { id: "requirements", label: "5. Non-Major Requirements" },
-                { id: "profile", label: "6. Personal Information" },
-                { id: "login-sim", label: "Auth & Temporary Access Demo" }
-              ].map(t => (
-                <button
-                  key={t.id}
-                  onClick={() => onSubTabChange(t.id)}
-                  className={`px-3 py-1 rounded-lg font-semibold transition-colors cursor-pointer shrink-0 ${
-                    subTab === t.id
-                      ? "bg-[#FF5C28] text-white shadow-xs"
-                      : "text-slate-600 hover:text-[#042C51] hover:bg-slate-100"
-                  }`}
-                >
-                  {t.label}
-                </button>
-              ))}
-            </>
-          )}
-
-          {role === "IT" && (
-            <>
-              {[
-                { id: "queue", label: "1. ID Creation Requests" },
-                { id: "details", label: "2. Request Details & Editing" },
-                { id: "provisioning", label: "3. Manual Kronos Provisioning" }
-              ].map(t => (
-                <button
-                  key={t.id}
-                  onClick={() => onSubTabChange(t.id)}
-                  className={`px-3 py-1 rounded-lg font-semibold transition-colors cursor-pointer shrink-0 ${
-                    subTab === t.id
-                      ? "bg-[#FF5C28] text-white shadow-xs"
-                      : "text-slate-600 hover:text-[#042C51] hover:bg-slate-100"
-                  }`}
-                >
-                  {t.label}
-                </button>
-              ))}
-            </>
-          )}
-
-          {role === "Trainer" && (
-            <>
-              {[
-                { id: "queue", label: "1. Trainee Assignment Queue" },
-                { id: "acceptance", label: "2. Trainee Acceptance Form" }
-              ].map(t => (
-                <button
-                  key={t.id}
-                  onClick={() => onSubTabChange(t.id)}
-                  className={`px-3 py-1 rounded-lg font-semibold transition-colors cursor-pointer shrink-0 ${
-                    subTab === t.id
-                      ? "bg-[#FF5C28] text-white shadow-xs"
-                      : "text-slate-600 hover:text-[#042C51] hover:bg-slate-100"
-                  }`}
-                >
-                  {t.label}
-                </button>
-              ))}
-            </>
-          )}
-
-          {role === "QDS" && (
-            <>
-              {[
-                { id: "queue", label: "1. Training Materials Queue" },
-                { id: "materials", label: "2. Assign & Finalize Materials" }
-              ].map(t => (
-                <button
-                  key={t.id}
-                  onClick={() => onSubTabChange(t.id)}
-                  className={`px-3 py-1 rounded-lg font-semibold transition-colors cursor-pointer shrink-0 ${
-                    subTab === t.id
-                      ? "bg-[#FF5C28] text-white shadow-xs"
-                      : "text-slate-600 hover:text-[#042C51] hover:bg-slate-100"
-                  }`}
-                >
-                  {t.label}
-                </button>
-              ))}
-            </>
-          )}
-
-          {role === "WFM" && (
-            <>
-              {[
-                { id: "queue", label: "1. Production Seating Queue" },
-                { id: "assignment", label: "2. Seat Assignment Form" }
-              ].map(t => (
-                <button
-                  key={t.id}
-                  onClick={() => onSubTabChange(t.id)}
-                  className={`px-3 py-1 rounded-lg font-semibold transition-colors cursor-pointer shrink-0 ${
-                    subTab === t.id
-                      ? "bg-[#FF5C28] text-white shadow-xs"
-                      : "text-slate-600 hover:text-[#042C51] hover:bg-slate-100"
-                  }`}
-                >
-                  {t.label}
-                </button>
-              ))}
-            </>
-          )}
-
-          {role === "HR" && (
-            <>
-              {[
-                { id: "handoffs", label: "1. NHO Handoffs" },
-                { id: "review", label: "2. Handoff Review & Acceptance" },
-                { id: "pending-reqs", label: "3. Pending Requirements (14-Day)" }
-              ].map(t => (
-                <button
-                  key={t.id}
-                  onClick={() => onSubTabChange(t.id)}
-                  className={`px-3 py-1 rounded-lg font-semibold transition-colors cursor-pointer shrink-0 ${
-                    subTab === t.id
-                      ? "bg-[#FF5C28] text-white shadow-xs"
-                      : "text-slate-600 hover:text-[#042C51] hover:bg-slate-100"
-                  }`}
-                >
-                  {t.label}
-                </button>
-              ))}
-            </>
-          )}
-        </div>
-      )}
+        {subTab && onSubTabChange && (
+          <nav aria-label="New Hire Orientation sections" className="nho-tabs flex min-w-0 gap-3 overflow-x-auto border-t border-[#E6ECF2] px-4 sm:px-5">
+            {(role === "TA"
+          ? [
+              { id: "dashboard", label: "NHO Dashboard" },
+              { id: "attendance", label: "NHO Attendance" },
+              { id: "applicant-details", label: "Applicant Details" },
+              { id: "doc-verification", label: "Document Verification" },
+              { id: "it-endorsements", label: "IT Endorsements" },
+              { id: "handoffs", label: "NHO Handoffs" }
+            ]
+          : role === "Applicant"
+            ? [
+                { id: "overview", label: "My NHO Overview" },
+                { id: "majors", label: "Major Requirements (4)" },
+                { id: "orientation", label: "SiBS Orientation" },
+                { id: "agreements", label: "Essential Agreements (3)" },
+                { id: "requirements", label: "Non-Major Requirements" },
+                { id: "profile", label: "Personal Information" },
+                { id: "login-sim", label: "Temporary Access Demo" }
+              ]
+            : role === "IT"
+              ? [
+                  { id: "queue", label: "ID Creation Requests" },
+                  { id: "details", label: "Request Details & Editing" },
+                  { id: "provisioning", label: "Manual Kronos Provisioning" }
+                ]
+              : role === "WFM"
+                ? [
+                    { id: "queue", label: "Production Seating Queue" },
+                    { id: "assignment", label: "Seat Assignment Form" }
+                  ]
+                : [
+                    { id: "handoffs", label: "NHO Handoffs" },
+                    { id: "review", label: "Handoff Review & Acceptance" },
+                    { id: "pending-reqs", label: "Pending Requirements (14-Day)" }
+                  ]
+        ).map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            onClick={() => onSubTabChange(tab.id)}
+            aria-current={subTab === tab.id ? "page" : undefined}
+            className={`shrink-0 border-b-2 px-2.5 py-3 text-xs font-bold transition-colors ${
+              subTab === tab.id
+                ? "border-[#FF5C28] text-[#FF5C28]"
+                : "border-transparent text-slate-500 hover:text-[#042C51]"
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+          </nav>
+        )}
+      </section>
 
       {/* Reset Confirmation Dialog */}
       {showResetConfirm && (

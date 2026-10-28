@@ -11,14 +11,23 @@ import {
   ArrowRight,
   Info,
   CheckCircle2,
-  X
+  X,
+  ChevronLeft
 } from "lucide-react";
 
 interface NHOITEndorsementViewProps {
   onSelectApplicant?: (app: NHOApplicant) => void;
+  onBack?: () => void;
+  onOpenDetails?: (app: NHOApplicant) => void;
+  onOpenAttendance?: (app: NHOApplicant) => void;
 }
 
-export default function NHOITEndorsementView({ onSelectApplicant }: NHOITEndorsementViewProps) {
+export default function NHOITEndorsementView({
+  onSelectApplicant,
+  onBack,
+  onOpenDetails,
+  onOpenAttendance
+}: NHOITEndorsementViewProps) {
   const { applicants, activeApplicant, setSelectedApplicantId, checkITEndorsementEligibility, endorseToIT } = useNHO();
   const [showConfirmModal, setShowConfirmModal] = useState(false);
 
@@ -30,34 +39,102 @@ export default function NHOITEndorsementView({ onSelectApplicant }: NHOITEndorse
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
-          <h1 className="text-lg font-bold text-[#042C51] tracking-tight">
-            IT Endorsement Readiness & Dispatch
-          </h1>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Strict validation of all 9 mandatory NHO conditions before initiating the ID Creation Request.
-          </p>
+    <div className="space-y-5">
+      {/* Applicant Details Header Card - follows Image 3 style */}
+      <section className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-[#E6ECF2] bg-white p-4 shadow-xs sm:p-5">
+        <div className="flex items-center gap-3">
+          {onBack && (
+            <button
+              onClick={onBack}
+              className="p-1.5 rounded-xl bg-white border border-[#E6ECF2] hover:bg-slate-100 text-slate-600 transition-colors cursor-pointer"
+              title="Back to Dashboard"
+              aria-label="Back to NHO Dashboard"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+          )}
+          <div>
+            <div className="flex items-center gap-2">
+              <h2 className="text-lg font-bold text-[#042C51]">{activeApplicant.fullName}</h2>
+              <span className="text-xs font-mono text-slate-400 bg-slate-100 px-2 py-0.5 rounded">
+                {activeApplicant.applicantNumber}
+              </span>
+              <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${
+                activeApplicant.outcome === "Withdrawn"
+                  ? "bg-red-100 text-red-800"
+                  : activeApplicant.outcome === "Completed Handoff"
+                    ? "bg-green-100 text-green-800"
+                    : activeApplicant.itEndorsed
+                      ? "bg-emerald-100 text-emerald-800"
+                      : "bg-blue-100 text-blue-800"
+              }`}>
+                {activeApplicant.itEndorsed ? `IT: ${activeApplicant.itRequestStatus}` : activeApplicant.outcome}
+              </span>
+            </div>
+            <p className="text-xs text-slate-500">
+              {activeApplicant.position} • {activeApplicant.department} ({activeApplicant.account})
+            </p>
+          </div>
         </div>
 
-        {/* Applicant Switcher for this view */}
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-slate-500">Applicant:</span>
-          <select
-            value={activeApplicant.id}
-            onChange={e => setSelectedApplicantId(e.target.value)}
-            className="p-1.5 bg-white border border-[#E6ECF2] rounded-xl text-xs font-bold text-[#042C51] focus:outline-none"
-          >
-            {applicants.map(a => (
-              <option key={a.id} value={a.id}>
-                {a.fullName} ({a.applicantNumber})
-              </option>
-            ))}
-          </select>
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Quick Applicant Selector */}
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs text-slate-500 font-medium">Applicant:</span>
+            <select
+              value={activeApplicant.id}
+              onChange={e => {
+                const found = applicants.find(a => a.id === e.target.value);
+                if (found) {
+                  setSelectedApplicantId(found.id);
+                  if (onSelectApplicant) onSelectApplicant(found);
+                }
+              }}
+              className="px-2.5 py-1.5 bg-white border border-[#BECBDA] rounded-xl text-xs font-bold text-[#042C51] hover:border-[#FF5C28] transition-colors focus:outline-none cursor-pointer"
+            >
+              {applicants.map(a => (
+                <option key={a.id} value={a.id}>
+                  {a.fullName} ({a.applicantNumber})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {onOpenAttendance && (
+            <button
+              onClick={() => onOpenAttendance(activeApplicant)}
+              className="px-3 py-1.5 rounded-xl bg-white border border-[#BECBDA] text-[#042C51] hover:bg-[#F7F9FC] font-semibold text-xs cursor-pointer transition-colors"
+            >
+              Update Attendance / Majors
+            </button>
+          )}
+
+          {(!activeApplicant.itEndorsed || activeApplicant.itRequestStatus === "Needs Correction") ? (
+            <button
+              disabled={!isEligible}
+              onClick={() => setShowConfirmModal(true)}
+              className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 disabled:hover:bg-emerald-600 text-white font-bold text-xs shadow-xs transition-all cursor-pointer disabled:cursor-not-allowed flex items-center gap-1.5"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>{activeApplicant.itRequestStatus === "Needs Correction" ? "Re-Endorse to IT" : "Endorse to IT"}</span>
+            </button>
+          ) : (
+            <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200">
+              <CheckCircle className="w-3.5 h-3.5 text-emerald-600" />
+              <span>Dispatched to IT ({activeApplicant.itRequestStatus})</span>
+            </div>
+          )}
+
+          {onOpenDetails && (
+            <button
+              onClick={() => onOpenDetails(activeApplicant)}
+              className="px-3 py-1.5 rounded-xl bg-white border border-[#BECBDA] text-[#042C51] hover:bg-[#F7F9FC] font-semibold text-xs cursor-pointer transition-colors"
+            >
+              Applicant Details
+            </button>
+          )}
         </div>
-      </div>
+      </section>
 
       {/* 9-Point Mandatory Readiness Checklist */}
       <div className="bg-white rounded-xl border border-[#E6ECF2] p-6 shadow-xs space-y-5">

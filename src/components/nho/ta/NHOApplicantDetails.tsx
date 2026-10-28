@@ -60,19 +60,19 @@ export default function NHOApplicantDetails({
 
   return (
     <div className="space-y-6">
-      {/* Top Breadcrumb & Action bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      {/* Applicant identity and actions remain a record-level card below the one shared page header. */}
+      <section className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-[#E6ECF2] bg-white p-4 shadow-sm sm:p-5">
         <div className="flex items-center gap-3">
           <button
             onClick={onBack}
             className="p-1.5 rounded-xl bg-white border border-[#E6ECF2] hover:bg-slate-100 text-slate-600 transition-colors cursor-pointer"
-            title="Back to Dashboard"
+            title="Back to Dashboard" aria-label="Back to NHO Dashboard"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-lg font-bold text-[#042C51]">{applicant.fullName}</h1>
+              <h2 className="text-lg font-bold text-[#042C51]">{applicant.fullName}</h2>
               <span className="text-xs font-mono text-slate-400 bg-slate-100 px-2 py-0.5 rounded">
                 {applicant.applicantNumber}
               </span>
@@ -92,7 +92,7 @@ export default function NHOApplicantDetails({
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {applicant.outcome === "In Progress" && (
             <>
               <button
@@ -131,7 +131,7 @@ export default function NHOApplicantDetails({
             </>
           )}
         </div>
-      </div>
+      </section>
 
       {/* Tabs */}
       <div className="bg-white rounded-xl border border-[#E6ECF2] shadow-xs overflow-hidden">

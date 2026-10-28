@@ -13,6 +13,28 @@ export type JourneyStage =
 
 export type MilestoneStatus = "Pending" | "In Progress" | "Completed" | "At Risk" | "Extended";
 
+export interface Day30TrainerHandoff {
+  status: "Pending" | "Submitted" | "Accepted";
+  trainerId?: string;
+  trainerName: string;
+  targetTlId?: string;
+  targetTlName: string;
+  submittedAt?: string;
+  acceptedAt?: string;
+  acceptedBy?: string;
+  readinessRating: "Floor Ready" | "Developing with Support" | "Conditional Ramp" | "At Risk";
+  coreStrengths: string[];
+  focusAreas: string[];
+  fstScore?: number;
+  pstScore?: number;
+  qaScore?: number;
+  attendanceRate?: number;
+  trainerNotes: string;
+  tlAcceptanceNotes?: string;
+  recommendedNestingWing?: string;
+  recommendedStation?: string;
+}
+
 export interface Day30Milestone {
   status: MilestoneStatus;
   targetDate: string;
@@ -30,6 +52,7 @@ export interface Day30Milestone {
   trainerEndorsement?: "Floor Ready" | "Requires Coaching" | "At Risk";
   trainerNotes?: string;
   actionPlan?: string;
+  handoff?: Day30TrainerHandoff;
 }
 
 export interface Day60Milestone {
@@ -109,6 +132,8 @@ export interface TrainingAssignment {
   duration: string;
   priority: "Normal" | "High";
   owner: string;
+  /** Trainer assigned specifically to this activity; when absent, show cohort trainer as a fallback. */
+  trainer?: string;
   url?: string;
   created: string;
 }
@@ -229,6 +254,48 @@ export interface QDSFollowUpRequest {
   closed?: string;
 }
 
+
+/** Read-only ESEP coaching evidence; separate from official QA, FST/PST grades and HR milestones. */
+export interface ESEPCoachingSession {
+  id: number;
+  emp: string;
+  date: string;
+  facilitator: string;
+  facilitatorRole: string;
+  coachDesignation?: string;
+  coacheeSupervisor?: string;
+  taskOrder?: string;
+  auditWeek?: string;
+  reasons?: string[];
+  qaCallCaseId?: string;
+  qaLob?: string;
+  qaParameters?: string[];
+  type: string;
+  goal: string;
+  reality: string;
+  options: string;
+  will: string;
+  overview?: string;
+  actionPlan?: string;
+  commitment?: string;
+  due: string;
+  source?: string;
+  status: string;
+}
+
+export interface ESEPCoachingEvaluation {
+  id: number;
+  sessionId: number;
+  date: string;
+  owner: string;
+  source: string;
+  notes: string;
+  before?: number | null;
+  after?: number | null;
+  metricName?: string;
+  unit?: string;
+}
+
 export interface ReviewRecord {
   decision: string;
   notes: string;
@@ -276,6 +343,7 @@ export interface EmployeeJourney {
   // Readiness & Handoff flags
   readiness?: boolean;
   handoff?: boolean;
+  day30Handoff?: Day30TrainerHandoff;
 
   // Unified Milestone Reviews (Day 30, Day 60, Day 90)
   reviews: Record<number, ReviewRecord>;

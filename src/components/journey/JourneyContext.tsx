@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useMemo, ReactNo
 import { 
   EmployeeJourney, 
   Day30Milestone, 
+  Day30TrainerHandoff,
   Day60Milestone, 
   Day90Milestone, 
   JourneyTouchpoint, 
@@ -17,7 +18,9 @@ import {
   CoachingAction,
   NotificationEvent,
   QDSFollowUpRequest,
-  ReviewRecord
+  ReviewRecord,
+  ESEPCoachingSession,
+  ESEPCoachingEvaluation
 } from "./journeyTypes";
 import { 
   INITIAL_JOURNEYS,
@@ -32,7 +35,9 @@ import {
   INITIAL_COACHING_ACTIONS,
   INITIAL_NOTIFICATIONS,
   INITIAL_QDS_REQUESTS,
-  SNAPSHOT_DATE
+  SNAPSHOT_DATE,
+  INITIAL_ESEP_SESSIONS,
+  INITIAL_ESEP_EVALUATIONS
 } from "./journeyInitialData";
 import { NHOApplicant } from "../nho/nhoTypes";
 
@@ -56,8 +61,11 @@ interface JourneyContextType {
   evidence: EvidenceItem[];
   checkIns: CheckInItem[];
   coachingActions: CoachingAction[];
+  esepSessions: ESEPCoachingSession[];
+  esepEvaluations: ESEPCoachingEvaluation[];
   notifications: NotificationEvent[];
   qdsRequests: QDSFollowUpRequest[];
+  pendingDay30HandoffsCount: number;
 
   // Actions & Mutations
   createOrLinkJourneyFromNHO: (
@@ -66,6 +74,8 @@ interface JourneyContextType {
     simulatedCurrentDate?: string
   ) => { success: boolean; journey: EmployeeJourney; isNew: boolean };
   updateDay30Milestone: (journeyId: string, updates: Partial<Day30Milestone>) => boolean;
+  submitTrainerToTlHandoff: (journeyId: string, handoffUpdates: Partial<Day30TrainerHandoff>) => boolean;
+  acceptTrainerToTlHandoff: (journeyId: string, acceptedBy: string, notes?: string) => boolean;
   updateDay60Milestone: (journeyId: string, updates: Partial<Day60Milestone>) => boolean;
   updateDay90Milestone: (journeyId: string, updates: Partial<Day90Milestone>) => boolean;
   updateJourneyReview: (journeyId: string, milestoneDay: 30 | 60 | 90, review: ReviewRecord) => boolean;
@@ -80,6 +90,7 @@ interface JourneyContextType {
     trainerName?: string,
     hireDate?: string
   ) => boolean;
+  addTrainingAssignment: (assignment: Omit<TrainingAssignment, "id" | "created">) => void;
   submitAssignment: (assignmentId: number, emp: string, note?: string) => void;
   verifyAssignment: (assignmentId: number, emp: string, status: "Verified" | "Revision requested", reviewer: string, feedback?: string) => void;
   saveAssessmentGrade: (grade: AssessmentGrade) => void;
@@ -315,6 +326,8 @@ export function JourneyProvider({ children }: { children: ReactNode }) {
   const [evidence, setEvidence] = useState<EvidenceItem[]>(() => loadStorage("evidence", INITIAL_EVIDENCE));
   const [checkIns, setCheckIns] = useState<CheckInItem[]>(() => loadStorage("checkins", INITIAL_CHECKINS));
   const [coachingActions, setCoachingActions] = useState<CoachingAction[]>(() => loadStorage("coaching", INITIAL_COACHING_ACTIONS));
+  const [esepSessions, setEsepSessions] = useState<ESEPCoachingSession[]>(() => loadStorage("esep_sessions", INITIAL_ESEP_SESSIONS));
+  const [esepEvaluations, setEsepEvaluations] = useState<ESEPCoachingEvaluation[]>(() => loadStorage("esep_evaluations", INITIAL_ESEP_EVALUATIONS));
   const [notifications, setNotifications] = useState<NotificationEvent[]>(() => loadStorage("notifications", INITIAL_NOTIFICATIONS));
   const [qdsRequests, setQdsRequests] = useState<QDSFollowUpRequest[]>(() => loadStorage("qds_requests", INITIAL_QDS_REQUESTS));
 
@@ -355,6 +368,8 @@ export function JourneyProvider({ children }: { children: ReactNode }) {
   useEffect(() => { try { localStorage.setItem(STORAGE_PREFIX + "evidence", JSON.stringify(evidence)); } catch {} }, [evidence]);
   useEffect(() => { try { localStorage.setItem(STORAGE_PREFIX + "checkins", JSON.stringify(checkIns)); } catch {} }, [checkIns]);
   useEffect(() => { try { localStorage.setItem(STORAGE_PREFIX + "coaching", JSON.stringify(coachingActions)); } catch {} }, [coachingActions]);
+  useEffect(() => { try { localStorage.setItem(STORAGE_PREFIX + "esep_sessions", JSON.stringify(esepSessions)); } catch {} }, [esepSessions]);
+  useEffect(() => { try { localStorage.setItem(STORAGE_PREFIX + "esep_evaluations", JSON.stringify(esepEvaluations)); } catch {} }, [esepEvaluations]);
   useEffect(() => { try { localStorage.setItem(STORAGE_PREFIX + "notifications", JSON.stringify(notifications)); } catch {} }, [notifications]);
   useEffect(() => { try { localStorage.setItem(STORAGE_PREFIX + "qds_requests", JSON.stringify(qdsRequests)); } catch {} }, [qdsRequests]);
 
@@ -381,7 +396,8 @@ export function JourneyProvider({ children }: { children: ReactNode }) {
               title: m.title,
               type: "Material",
               description: m.description || m.fileOrLinkRef,
-              owner: applicant.assignedTrainerName || "Assigned Trainer",
+              owner: applicant.assignedTrainerName || "Unassigned owner",
+              trainer: applicant.assignedTrainerName || undefined,
               duration: "30 mins",
               priority: "Normal",
               details: m.description || m.fileOrLinkRef,
@@ -415,6 +431,130 @@ export function JourneyProvider({ children }: { children: ReactNode }) {
         ]
       };
     }));
+    return true;
+  };
+
+  const submitTrainerToTlHandoff = (journeyId: string, handoffUpdates: Partial<Day30TrainerHandoff>) => {
+    let affectedEmployeeName = "";
+    const nowStr = `${simulatedCurrentDate} ` + new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
+    
+    setJourneys(prev => prev.map(j => {
+      if (j.id !== journeyId) return j;
+      affectedEmployeeName = j.fullName;
+      const targetTl = handoffUpdates.targetTlName || j.tl || "Anton Reyes";
+      const trainer = handoffUpdates.trainerName || j.trainerName || "Maria Cruz";
+      
+      const newHandoff: Day30TrainerHandoff = {
+        status: handoffUpdates.status || "Submitted",
+        trainerId: j.trainerId,
+        trainerName: trainer,
+        targetTlId: undefined,
+        targetTlName: targetTl,
+        submittedAt: nowStr,
+        readinessRating: handoffUpdates.readinessRating || "Floor Ready",
+        coreStrengths: handoffUpdates.coreStrengths || ["Customer Communication", "Systems Navigation"],
+        focusAreas: handoffUpdates.focusAreas || ["AHT pacing"],
+        fstScore: handoffUpdates.fstScore,
+        pstScore: handoffUpdates.pstScore,
+        qaScore: handoffUpdates.qaScore,
+        attendanceRate: handoffUpdates.attendanceRate,
+        trainerNotes: handoffUpdates.trainerNotes || "Trainer endorsed Day 30 handoff to Team Leader for ramp operations.",
+        recommendedNestingWing: handoffUpdates.recommendedNestingWing || j.wfmSeating?.wing,
+        recommendedStation: handoffUpdates.recommendedStation || j.wfmSeating?.seatNumber,
+        ...handoffUpdates
+      };
+
+      const updated30: Day30Milestone = {
+        ...j.day30,
+        trainerEndorsement: handoffUpdates.readinessRating === "Floor Ready" ? "Floor Ready" : handoffUpdates.readinessRating === "At Risk" ? "At Risk" : "Requires Coaching",
+        trainerNotes: handoffUpdates.trainerNotes || j.day30.trainerNotes,
+        handoff: newHandoff
+      };
+
+      return {
+        ...j,
+        day30: updated30,
+        day30Handoff: newHandoff,
+        auditTrail: [
+          {
+            date: nowStr,
+            action: `Day 30 Handoff Endorsed (${trainer} → ${targetTl})`,
+            actor: trainer,
+            details: `Readiness: ${newHandoff.readinessRating}. ${newHandoff.trainerNotes}`
+          },
+          ...j.auditTrail
+        ]
+      };
+    }));
+
+    if (affectedEmployeeName) {
+      addNotification({
+        emp: journeyId,
+        text: `Day 30 Handoff Endorsed: Trainer endorsed ${affectedEmployeeName} for Team Leader transfer.`,
+        date: simulatedCurrentDate,
+        role: "HR / Operations"
+      });
+    }
+
+    return true;
+  };
+
+  const acceptTrainerToTlHandoff = (journeyId: string, acceptedBy: string, notes?: string) => {
+    let affectedEmployeeName = "";
+    const nowStr = `${simulatedCurrentDate} ` + new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
+
+    setJourneys(prev => prev.map(j => {
+      if (j.id !== journeyId) return j;
+      affectedEmployeeName = j.fullName;
+      const currentHandoff = j.day30Handoff || j.day30?.handoff;
+      
+      const updatedHandoff: Day30TrainerHandoff = {
+        trainerName: currentHandoff?.trainerName || j.trainerName || "Assigned Trainer",
+        targetTlName: currentHandoff?.targetTlName || j.tl || "Team Leader",
+        readinessRating: currentHandoff?.readinessRating || "Floor Ready",
+        coreStrengths: currentHandoff?.coreStrengths || ["Customer Communication", "Systems Navigation"],
+        focusAreas: currentHandoff?.focusAreas || ["AHT pacing"],
+        trainerNotes: currentHandoff?.trainerNotes || "Trainer endorsed.",
+        submittedAt: currentHandoff?.submittedAt || nowStr,
+        acceptedAt: nowStr,
+        acceptedBy: acceptedBy,
+        tlAcceptanceNotes: notes || "Team Leader accepted operational custody of employee.",
+        ...currentHandoff,
+        status: "Accepted"
+      };
+
+      const updated30: Day30Milestone = {
+        ...j.day30,
+        status: "Completed",
+        completedDate: simulatedCurrentDate,
+        handoff: updatedHandoff
+      };
+
+      return {
+        ...j,
+        day30: updated30,
+        day30Handoff: updatedHandoff,
+        auditTrail: [
+          {
+            date: nowStr,
+            action: `Day 30 Handoff Formally Accepted`,
+            actor: acceptedBy,
+            details: `Operational custody transferred. Notes: ${notes || "Accepted"}`
+          },
+          ...j.auditTrail
+        ]
+      };
+    }));
+
+    if (affectedEmployeeName) {
+      addNotification({
+        emp: journeyId,
+        text: `Day 30 Handoff Accepted: ${acceptedBy} assumed operational custody for ${affectedEmployeeName}.`,
+        date: simulatedCurrentDate,
+        role: "HR / Operations"
+      });
+    }
+
     return true;
   };
 
@@ -593,6 +733,11 @@ export function JourneyProvider({ children }: { children: ReactNode }) {
     return true;
   };
 
+  // Prototype-only authored assignments. Persist alongside existing assignments without reseeding.
+  const addTrainingAssignment = (assignment: Omit<TrainingAssignment, "id" | "created">) => {
+    setAssignments(prev => [...prev, { ...assignment, id: Date.now() + Math.floor(Math.random() * 1000), created: simulatedCurrentDate }]);
+  };
+
   // Trainee & Trainer Learning verification actions
   const submitAssignment = (assignmentId: number, emp: string, note: string = "Trainee completed material") => {
     setProgress(prev => {
@@ -712,7 +857,7 @@ export function JourneyProvider({ children }: { children: ReactNode }) {
 
   const resetJourneysToDefault = () => {
     localStorage.removeItem(JOURNEY_STORAGE_KEY);
-    const keys = ["journeys", "assignments", "progress", "assessment_grades", "attendance", "evidence", "checkins", "coaching", "notifications", "qds_requests"];
+    const keys = ["journeys", "assignments", "progress", "assessment_grades", "attendance", "evidence", "checkins", "coaching", "esep_sessions", "esep_evaluations", "notifications", "qds_requests"];
     keys.forEach(k => localStorage.removeItem(STORAGE_PREFIX + k));
     setJourneys(INITIAL_JOURNEYS);
     setSelectedJourney(null);
@@ -723,6 +868,8 @@ export function JourneyProvider({ children }: { children: ReactNode }) {
     setEvidence(INITIAL_EVIDENCE);
     setCheckIns(INITIAL_CHECKINS);
     setCoachingActions(INITIAL_COACHING_ACTIONS);
+    setEsepSessions(INITIAL_ESEP_SESSIONS);
+    setEsepEvaluations(INITIAL_ESEP_EVALUATIONS);
     setNotifications(INITIAL_NOTIFICATIONS);
     setQdsRequests(INITIAL_QDS_REQUESTS);
   };
@@ -730,6 +877,15 @@ export function JourneyProvider({ children }: { children: ReactNode }) {
   const getJourneyByNhoApplicantId = (applicantId: string) => {
     return journeys.find(j => j.nhoApplicantId === applicantId);
   };
+
+  const pendingDay30HandoffsCount = useMemo(() => {
+    return journeys.filter(j => {
+      const days = j.daysElapsed || 1;
+      const handoff = j.day30Handoff || j.day30?.handoff;
+      // An employee has handoff pending if days >= 20 and handoff status is not Accepted
+      return days >= 20 && (!handoff || handoff.status !== "Accepted");
+    }).length;
+  }, [journeys]);
 
   const value = useMemo(() => ({
     journeys,
@@ -746,10 +902,15 @@ export function JourneyProvider({ children }: { children: ReactNode }) {
     evidence,
     checkIns,
     coachingActions,
+    esepSessions,
+    esepEvaluations,
     notifications,
     qdsRequests,
+    pendingDay30HandoffsCount,
     createOrLinkJourneyFromNHO,
     updateDay30Milestone,
+    submitTrainerToTlHandoff,
+    acceptTrainerToTlHandoff,
     updateDay60Milestone,
     updateDay90Milestone,
     updateJourneyReview,
@@ -757,6 +918,7 @@ export function JourneyProvider({ children }: { children: ReactNode }) {
     acknowledgeReview,
     addTouchpoint,
     linkEmployeeProfile,
+    addTrainingAssignment,
     submitAssignment,
     verifyAssignment,
     saveAssessmentGrade,
@@ -784,6 +946,8 @@ export function JourneyProvider({ children }: { children: ReactNode }) {
     evidence,
     checkIns,
     coachingActions,
+    esepSessions,
+    esepEvaluations,
     notifications,
     qdsRequests
   ]);

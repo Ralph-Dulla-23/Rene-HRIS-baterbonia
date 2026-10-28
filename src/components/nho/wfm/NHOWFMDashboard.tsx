@@ -89,22 +89,8 @@ export default function NHOWFMDashboard({ subTab = "queue", onSubTabChange }: NH
 
   return (
     <div className="space-y-6">
-      {/* Header & Access Mapping */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-lg font-bold text-[#042C51] tracking-tight">
-              Workforce Management (WFM): Production Seat Assignment
-            </h1>
-            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#13406D] text-white">
-              admin_access = 9
-            </span>
-          </div>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Assign production floor wings and workstation numbers for candidates with completed IT Kronos IDs before HR handoff acceptance.
-          </p>
-        </div>
-
+      {/* Keep WFM demo action without a redundant page heading. */}
+      <div className="flex flex-wrap items-center justify-end gap-4">
         {/* Quick Demo Pre-fill shortcut for Juan Carlos */}
         {selectedApp && selectedApp.id === "nho-app-01" && (
           <button

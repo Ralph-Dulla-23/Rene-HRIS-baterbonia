@@ -109,125 +109,91 @@ export default function NHODocumentVerificationQueue() {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
-          <h1 className="text-lg font-bold text-[#042C51] tracking-tight">
-            TA Consolidated Document Verification Queue
-          </h1>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Audit and verify uploaded Major Pre-Employment Requirements, Essential Agreements, and NHO documentation across applicants.
-          </p>
-        </div>
+    <div className="min-w-0 space-y-5">
+      {/* HRIS metric cards: compact sizing and hierarchy */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
+        {[
+          { label: "For Verification", value: metrics.pendingVerification, note: "Requires TA review", icon: Clock, tone: "text-amber-600", background: "bg-amber-50 border-amber-100" },
+          { label: "Pending Majors", value: metrics.majorsCount, note: "Major requirements in queue", icon: FileText, tone: "text-[#FF5C28]", background: "bg-orange-50 border-orange-100" },
+          { label: "Verified Records", value: metrics.verified, note: "Approved by TA / HR", icon: CheckCircle, tone: "text-emerald-600", background: "bg-emerald-50 border-emerald-100" },
+          { label: "Needs Correction", value: metrics.needsCorrection, note: "Returned to applicant", icon: AlertTriangle, tone: "text-red-600", background: "bg-red-50 border-red-100" }
+        ].map(card => {
+          const Icon = card.icon;
+          return (
+            <div
+              key={card.label}
+              className="flex min-h-[86px] sm:min-h-[92px] flex-col justify-between rounded-xl border border-[#E6ECF2] bg-white p-3 shadow-xs transition-all hover:shadow-sm"
+            >
+              <div className="flex items-center justify-between gap-1.5">
+                <span className={`text-[10px] font-black uppercase tracking-wider ${card.tone} truncate`}>
+                  {card.label}
+                </span>
+                <div className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border ${card.background} ${card.tone}`}>
+                  <Icon className="h-3.5 w-3.5" />
+                </div>
+              </div>
+              <div className="mt-1">
+                <div className="text-xl sm:text-2xl font-black tabular-nums tracking-tight text-[#042C51]">
+                  {card.value}
+                </div>
+                <div className="mt-0.5 text-[10.5px] font-medium text-slate-500 truncate" title={card.note}>
+                  {card.note}
+                </div>
+              </div>
+            </div>
+          );
+        })}
       </div>
 
-      {/* KPI Cards Row */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-        <div className="bg-white rounded-xl p-4 border border-[#E6ECF2] shadow-xs">
-          <span className="text-[10px] font-bold text-amber-700 uppercase tracking-wider block">
-            For Verification
-          </span>
-          <div className="text-xl font-black text-amber-600 mt-1">{metrics.pendingVerification}</div>
-          <span className="text-[10px] text-slate-500">Requires TA action</span>
+      {/* Filters and records are grouped into one HRIS-style records card. */}
+      <section className="min-w-0 rounded-xl border border-[#E6ECF2] bg-white p-4 shadow-sm sm:p-5">
+        <div className="mb-4">
+          <h2 className="text-base font-bold tracking-tight text-[#042C51]">Document Verification Records</h2>
+          <p className="mt-0.5 text-xs font-medium text-slate-500">Review submitted requirements, verify eligible documents, or request corrections.</p>
         </div>
-
-        <div className="bg-white rounded-xl p-4 border border-[#E6ECF2] shadow-xs">
-          <span className="text-[10px] font-bold text-[#FF5C28] uppercase tracking-wider block">
-            Pending Majors
-          </span>
-          <div className="text-xl font-black text-[#FF5C28] mt-1">{metrics.majorsCount}</div>
-          <span className="text-[10px] text-slate-500">Major requirements</span>
+        <div className="mb-4 grid grid-cols-1 items-end gap-3 sm:grid-cols-2 xl:grid-cols-12">
+          <label className="space-y-1 sm:col-span-2 xl:col-span-5">
+            <span className="block text-xs font-semibold text-slate-700">Search</span>
+            <span className="relative block">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <input type="search" placeholder="Search applicant, requirement, or file name..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="w-full rounded-xl border border-[#E6ECF2] bg-white py-2.5 pl-9 pr-3 text-xs text-[#042C51] focus:border-[#FF5C28] focus:outline-none focus:ring-1 focus:ring-[#FF5C28]" />
+            </span>
+          </label>
+          <label className="space-y-1 xl:col-span-2">
+            <span className="block text-xs font-semibold text-slate-700">Category</span>
+            <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)} className="w-full rounded-xl border border-[#E6ECF2] bg-white px-3 py-2.5 text-xs font-semibold text-[#042C51] focus:border-[#FF5C28] focus:outline-none">
+              <option value="all">All Categories</option><option value="major">Major Requirements (4)</option><option value="agreement">Essential Agreements (3)</option><option value="other">Other Non-Majors</option>
+            </select>
+          </label>
+          <label className="space-y-1 xl:col-span-2">
+            <span className="block text-xs font-semibold text-slate-700">Status</span>
+            <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="w-full rounded-xl border border-[#E6ECF2] bg-white px-3 py-2.5 text-xs font-semibold text-[#042C51] focus:border-[#FF5C28] focus:outline-none">
+              <option value="all">All Statuses</option><option value="For Verification">For Verification Only</option><option value="Verified">Verified</option><option value="Needs Correction">Needs Correction</option>
+            </select>
+          </label>
+          <label className="space-y-1 xl:col-span-3">
+            <span className="block text-xs font-semibold text-slate-700">Applicant</span>
+            <select value={selectedApplicantFilter} onChange={e => setSelectedApplicantFilter(e.target.value)} className="w-full rounded-xl border border-[#E6ECF2] bg-white px-3 py-2.5 text-xs font-semibold text-[#042C51] focus:border-[#FF5C28] focus:outline-none">
+              <option value="all">All Applicants</option>
+              {applicants.map(a => <option key={a.id} value={a.id}>{a.fullName}</option>)}
+            </select>
+          </label>
         </div>
-
-        <div className="bg-white rounded-xl p-4 border border-[#E6ECF2] shadow-xs">
-          <span className="text-[10px] font-bold text-green-700 uppercase tracking-wider block">
-            Verified Records
-          </span>
-          <div className="text-xl font-black text-green-600 mt-1">{metrics.verified}</div>
-          <span className="text-[10px] text-slate-500">Approved by TA / HR</span>
-        </div>
-
-        <div className="bg-white rounded-xl p-4 border border-[#E6ECF2] shadow-xs">
-          <span className="text-[10px] font-bold text-red-700 uppercase tracking-wider block">
-            Needs Correction
-          </span>
-          <div className="text-xl font-black text-red-600 mt-1">{metrics.needsCorrection}</div>
-          <span className="text-[10px] text-slate-500">Returned to applicant</span>
-        </div>
-      </div>
-
-      {/* Filters Bar */}
-      <div className="bg-white rounded-xl border border-[#E6ECF2] p-4 shadow-xs flex flex-wrap items-center justify-between gap-3 text-xs">
-        <div className="flex flex-wrap items-center gap-2.5 flex-1 min-w-[300px]">
-          {/* Search */}
-          <div className="relative flex-1 min-w-[200px]">
-            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              placeholder="Search applicant, requirement, or file name..."
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              className="w-full pl-8 pr-3 py-1.5 rounded-xl border border-[#E6ECF2] text-xs focus:outline-none focus:border-[#042C51]"
-            />
+        <div className="min-w-0 overflow-hidden rounded-xl border border-[#E6ECF2] bg-white">
+          <div className="flex items-center justify-between gap-2 border-b border-[#E6ECF2] px-4 pt-2">
+            <div className="flex items-center gap-2 border-b-2 border-[#FF5C28] px-1 pb-3 pt-1 text-xs font-extrabold text-[#FF5C28]">
+              <FileCheck className="h-3.5 w-3.5" /> REQUIREMENTS
+              <span className="rounded-full bg-[#042C51] px-2 py-0.5 text-[10px] font-black text-white">{filteredItems.length}</span>
+            </div>
+            <span className="pb-2 text-[11px] font-medium text-slate-500">{filteredItems.length} of {allItems.length} records</span>
           </div>
-
-          {/* Category Filter */}
-          <select
-            value={categoryFilter}
-            onChange={e => setCategoryFilter(e.target.value)}
-            className="p-1.5 bg-[#F7F9FC] border border-[#E6ECF2] rounded-xl text-xs font-semibold text-slate-700 focus:outline-none cursor-pointer"
-          >
-            <option value="all">All Categories</option>
-            <option value="major">Major Requirements (4)</option>
-            <option value="agreement">Essential Agreements (3)</option>
-            <option value="other">Other Non-Majors</option>
-          </select>
-
-          {/* Status Filter */}
-          <select
-            value={statusFilter}
-            onChange={e => setStatusFilter(e.target.value)}
-            className="p-1.5 bg-[#F7F9FC] border border-[#E6ECF2] rounded-xl text-xs font-semibold text-slate-700 focus:outline-none cursor-pointer"
-          >
-            <option value="all">All Statuses</option>
-            <option value="For Verification">For Verification Only</option>
-            <option value="Verified">Verified</option>
-            <option value="Needs Correction">Needs Correction</option>
-          </select>
-
-          {/* Applicant Filter */}
-          <select
-            value={selectedApplicantFilter}
-            onChange={e => setSelectedApplicantFilter(e.target.value)}
-            className="p-1.5 bg-[#F7F9FC] border border-[#E6ECF2] rounded-xl text-xs font-semibold text-slate-700 focus:outline-none cursor-pointer"
-          >
-            <option value="all">All Applicants</option>
-            {applicants.map(a => (
-              <option key={a.id} value={a.id}>{a.fullName}</option>
-            ))}
-          </select>
-        </div>
-
-        <span className="text-[11px] text-slate-400">
-          Showing <strong>{filteredItems.length}</strong> items in queue
-        </span>
-      </div>
-
-      {/* Verification Queue Table */}
-      <div className="bg-white rounded-xl border border-[#E6ECF2] shadow-xs overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse text-xs">
-            <thead>
-              <tr className="bg-[#042C51] text-white border-b border-[#0B365F] text-[11px] font-semibold tracking-wider uppercase">
-                <th className="py-3 px-4">Applicant</th>
-                <th className="py-3 px-3">Requirement Name</th>
-                <th className="py-3 px-3">Category</th>
-                <th className="py-3 px-3">Submission Details</th>
-                <th className="py-3 px-3">Status</th>
-                <th className="py-3 px-4 text-right">Verification Actions</th>
-              </tr>
-            </thead>
+          <div className="max-w-full overflow-x-auto">
+            <table className="w-full min-w-[1080px] border-collapse text-left text-xs">
+              <thead><tr className="border-b border-[#E6ECF2] bg-slate-50/70 text-[11px] font-black uppercase tracking-wider text-slate-500">
+                <th className="px-4 py-3">Applicant</th><th className="px-3 py-3">Requirement Name</th>
+                <th className="px-3 py-3">Category</th><th className="px-3 py-3">Submission Details</th>
+                <th className="px-3 py-3">Status</th><th className="px-4 py-3 text-right">Verification Actions</th>
+              </tr></thead>
             <tbody className="divide-y divide-[#E6ECF2]">
               {filteredItems.length === 0 ? (
                 <tr>
@@ -317,6 +283,7 @@ export default function NHODocumentVerificationQueue() {
                           {/* Preview modal button */}
                           <button
                             onClick={() => setActiveModalItem({ applicant, document })}
+                            aria-label={`Preview ${document.name} for ${applicant.fullName}`}
                             className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors cursor-pointer"
                             title="Inspect File Preview & Audit"
                           >
@@ -357,9 +324,10 @@ export default function NHODocumentVerificationQueue() {
                 })
               )}
             </tbody>
-          </table>
+            </table>
+          </div>
         </div>
-      </div>
+      </section>
 
       {/* Modal Audit Inspection */}
       {activeModalItem && (

@@ -132,35 +132,32 @@ export default function EmployeeJourneyDrawer({ journey, isOpen, onClose }: Empl
     <div className="fixed inset-0 z-50 bg-[#042C51]/60 backdrop-blur-xs flex justify-end">
       <div className="w-full max-w-4xl bg-[#FAFCFF] h-full shadow-2xl flex flex-col overflow-hidden text-slate-800 animate-in slide-in-from-right duration-200">
         
-        {/* Top Header */}
-        <div className="bg-[#042C51] text-white p-5 border-b border-[#0B365F] relative">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex items-start gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center overflow-hidden shrink-0">
-                {journey.avatarUrl ? (
-                  <img src={journey.avatarUrl} alt={journey.fullName} className="w-full h-full object-cover" />
-                ) : (
-                  <User className="w-8 h-8 text-white/80" />
-                )}
+        {/* Top Header - SiBS HRIS Standard */}
+        <div className="bg-white border-b border-[#E6ECF2] relative shrink-0">
+          <div className="h-[3.5px] w-full bg-gradient-to-r from-[#042C51] via-[#c24b30] to-[#FF5C28]" />
+          <div className="p-4 sm:p-5 flex items-start justify-between gap-4">
+            <div className="flex items-start gap-3.5">
+              <div className="w-12 h-12 rounded-xl bg-[#042C51] text-white font-black text-sm flex items-center justify-center shrink-0 shadow-xs">
+                {journey.fullName.split(" ").map(n => n[0]).slice(0, 2).join("")}
               </div>
               <div>
                 <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="text-lg font-bold text-white tracking-tight">{journey.fullName}</h2>
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#FF5C28] text-white shadow-xs">
+                  <h2 className="text-lg font-black text-[#042C51] tracking-tight">{journey.fullName}</h2>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-orange-50 border border-orange-200 text-[#FF5C28]">
                     Kronos: {journey.kronosId}
                   </span>
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-white/20 text-white">
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 border border-blue-200 text-[#042C51]">
                     {journey.stage}
                   </span>
                 </div>
-                <div className="text-xs text-white/80 mt-1 flex flex-wrap items-center gap-x-4 gap-y-1">
-                  <span>{journey.roleTitle} &bull; <strong>{journey.account}</strong></span>
+                <div className="text-xs text-slate-500 mt-1 flex flex-wrap items-center gap-x-4 gap-y-1">
+                  <span>{journey.roleTitle} &bull; <strong className="text-[#042C51]">{journey.account}</strong></span>
                   <span>{journey.siteLocation}</span>
-                  <span>Preserved Hire Date: <strong>{journey.hireDate}</strong></span>
+                  <span>Preserved Hire Date: <strong className="text-[#042C51]">{journey.hireDate}</strong></span>
                 </div>
                 {journey.nhoAcceptedBy && (
-                  <div className="text-[11px] text-white/60 mt-1 flex items-center gap-1.5">
-                    <ShieldCheck className="w-3.5 h-3.5 text-[#2ECC71]" />
+                  <div className="text-[11px] text-slate-400 mt-1 flex items-center gap-1.5">
+                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
                     <span>NHO Accepted by {journey.nhoAcceptedBy} on {journey.nhoAcceptedAt}</span>
                   </div>
                 )}
@@ -169,25 +166,28 @@ export default function EmployeeJourneyDrawer({ journey, isOpen, onClose }: Empl
 
             <button 
               onClick={onClose} 
-              className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white cursor-pointer transition-colors"
+              className="p-1.5 rounded-xl text-slate-400 hover:text-[#042C51] hover:bg-slate-100 cursor-pointer transition-colors"
+              title="Close drawer"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
 
           {/* Progress bar */}
-          <div className="mt-4 pt-3 border-t border-white/10 flex items-center justify-between text-xs text-white/80">
-            <div className="flex items-center gap-2">
-              <Activity className="w-4 h-4 text-[#FF5C28]" />
-              <span>Journey Trajectory: <strong>Day {journey.daysElapsed} of 90</strong></span>
+          <div className="px-4 sm:px-5 pb-3">
+            <div className="flex items-center justify-between text-xs text-slate-500 mb-1">
+              <div className="flex items-center gap-1.5">
+                <Activity className="w-3.5 h-3.5 text-[#FF5C28]" />
+                <span>Journey Trajectory: <strong className="text-[#042C51]">Day {journey.daysElapsed} of 90</strong></span>
+              </div>
+              <span className="font-bold text-[#042C51] tabular-nums">{journey.overallProgressPct}% Completed</span>
             </div>
-            <span className="font-bold text-white tabular-nums">{journey.overallProgressPct}% Completed</span>
-          </div>
-          <div className="w-full bg-white/20 h-2 rounded-full mt-1.5 overflow-hidden">
-            <div 
-              className="bg-gradient-to-r from-[#4B9DFE] to-[#FF5C28] h-full rounded-full transition-all duration-500" 
-              style={{ width: `${journey.overallProgressPct}%` }}
-            />
+            <div className="w-full bg-[#E6EAF0] h-2 rounded-full overflow-hidden">
+              <div 
+                className="bg-gradient-to-r from-[#042C51] to-[#FF5C28] h-full rounded-full transition-all duration-500" 
+                style={{ width: `${journey.overallProgressPct}%` }}
+              />
+            </div>
           </div>
         </div>
 

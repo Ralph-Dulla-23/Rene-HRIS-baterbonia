@@ -11,7 +11,9 @@ import {
   CheckInItem, 
   CoachingAction, 
   NotificationEvent, 
-  QDSFollowUpRequest 
+  QDSFollowUpRequest,
+  ESEPCoachingSession,
+  ESEPCoachingEvaluation
 } from "./journeyTypes";
 
 export const SNAPSHOT_DATE = "2026-10-14";
@@ -72,6 +74,19 @@ export const INITIAL_JOURNEYS: EmployeeJourney[] = [
       outstandingDocsCleared: true,
       trainerEndorsement: "Floor Ready"
     },
+    day30Handoff: {
+      status: "Pending",
+      trainerName: "Maria Cruz",
+      targetTlName: "Anton Reyes",
+      readinessRating: "Floor Ready",
+      coreStrengths: ["High Empathy", "Quick Systems Navigation", "Accurate Dispositioning"],
+      focusAreas: ["Average Handle Time (AHT) pacing during complex visa inquiries"],
+      fstScore: 82,
+      pstScore: 84,
+      qaScore: 84,
+      attendanceRate: 96.5,
+      trainerNotes: "Alyssa has demonstrated remarkable communication skills and adherence to visa protocols during nesting. Ready for operational transfer with bi-weekly AHT spot checks."
+    },
     day60: { status: "Pending", targetDate: "2026-11-17" },
     day90: { status: "Pending", targetDate: "2026-12-17" },
     touchpoints: [],
@@ -128,6 +143,23 @@ export const INITIAL_JOURNEYS: EmployeeJourney[] = [
     qdsMaterials: [],
     outstandingNhoDocuments: [],
     day30: { status: "Completed", targetDate: "2026-09-30", completedDate: "2026-09-30", outstandingDocsCleared: true },
+    day30Handoff: {
+      status: "Accepted",
+      trainerName: "Maria Cruz",
+      targetTlName: "Anton Reyes",
+      submittedAt: "2026-09-30 10:00 AM",
+      acceptedAt: "2026-09-30 02:15 PM",
+      acceptedBy: "Anton Reyes (Team Leader)",
+      readinessRating: "Floor Ready",
+      coreStrengths: ["First Contact Resolution", "Documentation Quality"],
+      focusAreas: ["Multi-case Handling"],
+      fstScore: 84,
+      pstScore: 91,
+      qaScore: 88,
+      attendanceRate: 100,
+      trainerNotes: "Excellent performance in both FST and PST. Fully endorsed for ramp.",
+      tlAcceptanceNotes: "Accepted into Production Pod 4. Anton Reyes assuming operational management."
+    },
     day60: { status: "In Progress", targetDate: "2026-10-30" },
     day90: { status: "Pending", targetDate: "2026-11-29" },
     touchpoints: [],
@@ -186,6 +218,23 @@ export const INITIAL_JOURNEYS: EmployeeJourney[] = [
     qdsMaterials: [],
     outstandingNhoDocuments: [],
     day30: { status: "Completed", targetDate: "2026-08-30", completedDate: "2026-08-30", outstandingDocsCleared: true },
+    day30Handoff: {
+      status: "Accepted",
+      trainerName: "Kim Ramos",
+      targetTlName: "Sarah Santos",
+      submittedAt: "2026-08-29 11:30 AM",
+      acceptedAt: "2026-08-29 03:00 PM",
+      acceptedBy: "Sarah Santos (Team Leader)",
+      readinessRating: "Floor Ready",
+      coreStrengths: ["Active Listening", "Tone Modulation"],
+      focusAreas: ["PST Knowledge retention"],
+      fstScore: 71,
+      pstScore: 66,
+      qaScore: 84,
+      attendanceRate: 97,
+      trainerNotes: "Completed 30 days nesting. Handed over to TL.",
+      tlAcceptanceNotes: "Accepted into Team Alpha."
+    },
     day60: { status: "Completed", targetDate: "2026-09-29", completedDate: "2026-09-29", outstandingDocsCleared: true },
     day90: { status: "In Progress", targetDate: "2026-10-29" },
     touchpoints: [],
@@ -232,6 +281,23 @@ export const INITIAL_JOURNEYS: EmployeeJourney[] = [
     qdsMaterials: [],
     outstandingNhoDocuments: [],
     day30: { status: "Completed", targetDate: "2026-08-14", completedDate: "2026-08-14", outstandingDocsCleared: true },
+    day30Handoff: {
+      status: "Accepted",
+      trainerName: "Kim Ramos",
+      targetTlName: "Rico Torres",
+      submittedAt: "2026-08-14 09:00 AM",
+      acceptedAt: "2026-08-14 01:00 PM",
+      acceptedBy: "Rico Torres (Team Leader)",
+      readinessRating: "Floor Ready",
+      coreStrengths: ["Technical Aptitude", "Compliance Adherence"],
+      focusAreas: ["Call Pace"],
+      fstScore: 83,
+      pstScore: 89,
+      qaScore: 88,
+      attendanceRate: 100,
+      trainerNotes: "Solid foundation across all modules.",
+      tlAcceptanceNotes: "Accepted by Rico Torres."
+    },
     day60: { status: "Completed", targetDate: "2026-09-13", completedDate: "2026-09-13", outstandingDocsCleared: true },
     day90: { status: "In Progress", targetDate: "2026-10-14" },
     touchpoints: [],
@@ -284,6 +350,15 @@ export const INITIAL_JOURNEYS: EmployeeJourney[] = [
     ],
     outstandingNhoDocuments: [],
     day30: { status: "Pending", targetDate: "2026-11-05", outstandingDocsCleared: true },
+    day30Handoff: {
+      status: "Pending",
+      trainerName: "Maria Cruz",
+      targetTlName: "Anton Reyes",
+      readinessRating: "Floor Ready",
+      coreStrengths: ["Curiosity", "Punctuality"],
+      focusAreas: ["Tool familiarity"],
+      trainerNotes: "Currently in FST phase (Day 9). Handoff will occur upon Day 30 completion."
+    },
     day60: { status: "Pending", targetDate: "2026-12-05" },
     day90: { status: "Pending", targetDate: "2027-01-04" },
     touchpoints: [],
@@ -335,6 +410,21 @@ export const INITIAL_JOURNEYS: EmployeeJourney[] = [
     qdsMaterials: [],
     outstandingNhoDocuments: [],
     day30: { status: "In Progress", targetDate: "2026-10-01", outstandingDocsCleared: true },
+    day30Handoff: {
+      status: "Submitted",
+      trainerName: "Kim Ramos",
+      targetTlName: "Rico Torres",
+      submittedAt: "2026-10-01 02:00 PM",
+      readinessRating: "Developing with Support",
+      coreStrengths: ["Reliable Attendance", "Customer De-escalation"],
+      focusAreas: ["Independent QA Compliance", "Knowledge Base Navigation"],
+      fstScore: 65,
+      pstScore: 68,
+      qaScore: 62,
+      attendanceRate: 91,
+      trainerNotes: "Omar needs close monitoring on QA compliance and mandatory coaching sessions during early ramp. Endorsed with structured action plan.",
+      tlAcceptanceNotes: ""
+    },
     day60: { status: "Pending", targetDate: "2026-10-31" },
     day90: { status: "Pending", targetDate: "2026-11-30" },
     touchpoints: [],
@@ -426,6 +516,19 @@ export const INITIAL_JOURNEYS: EmployeeJourney[] = [
       outstandingDocsCleared: false,
       trainerEndorsement: "Floor Ready"
     },
+    day30Handoff: {
+      status: "Pending",
+      trainerName: "Carlos Mendoza (L&D Specialist)",
+      targetTlName: "Danilo Morales",
+      readinessRating: "Floor Ready",
+      coreStrengths: ["Compliance Awareness", "Fast Typing"],
+      focusAreas: ["Complex Case Resolution"],
+      fstScore: 80,
+      pstScore: 85,
+      qaScore: 88,
+      attendanceRate: 97.5,
+      trainerNotes: "Fintech tier 1 nesting in progress. Handoff due on Day 30."
+    },
     day60: { status: "Pending", targetDate: "2026-11-23" },
     day90: { status: "Pending", targetDate: "2026-12-23" },
     touchpoints: [],
@@ -500,6 +603,7 @@ export const INITIAL_ASSIGNMENTS: TrainingAssignment[] = [
     duration: "25 min",
     priority: "High",
     owner: "Maria Cruz",
+    trainer: "Maria Cruz",
     created: "2026-10-14"
   },
   {
@@ -542,6 +646,7 @@ export const INITIAL_ASSIGNMENTS: TrainingAssignment[] = [
     duration: "30 min",
     priority: "High",
     owner: "Maria Cruz",
+    trainer: "Maria Cruz",
     created: "2026-10-14"
   },
   {
@@ -584,6 +689,7 @@ export const INITIAL_ASSIGNMENTS: TrainingAssignment[] = [
     duration: "20 min",
     priority: "Normal",
     owner: "Maria Cruz",
+    trainer: "Maria Cruz",
     created: "2026-10-13"
   },
   {
@@ -850,5 +956,134 @@ export const INITIAL_QDS_REQUESTS: QDSFollowUpRequest[] = [
     due: "2026-10-18",
     status: "Open",
     created: "2026-10-12"
+  }
+];
+
+// Illustrative, read-only ESEP records based on the supplied October 2026 HTML reference.
+// These records are not sourced from HRIS, QDS audit logs, or a live coaching app.
+export const INITIAL_ESEP_SESSIONS: ESEPCoachingSession[] = [
+  {
+    "id": 8201,
+    "emp": "SIBS-2901",
+    "date": "2026-10-12",
+    "facilitator": "Anton Reyes",
+    "facilitatorRole": "Team Leader",
+    "coachDesignation": "Team Leader",
+    "coacheeSupervisor": "Anton Reyes",
+    "taskOrder": "TO04 PAC",
+    "auditWeek": "Week 2",
+    "reasons": [
+      "QA Score",
+      "Average Handle Time",
+      "Attendance - Tardiness"
+    ],
+    "qaCallCaseId": "PAC-24187",
+    "qaLob": "Call",
+    "qaParameters": [
+      "1.1 Professionalism and courteousness",
+      "1.2 Proper Tone of voice and confidence in message delivery",
+      "1.4 Proper Pace and volume",
+      "1.5 Active Listening",
+      "1.7 Understanding and Empathy",
+      "2.1 Correct and complete resolution and offer self service options wherever applicable",
+      "2.3 Effective investigation of process-specific cases and demonstrate proper history checking",
+      "2.4 Creation of profile when no existing account is found",
+      "2.5 Conformance to Opening and Closing spiel guidelines",
+      "2.6 Conformance proper deactivation guidelines",
+      "2.7 Call log updated with complete & accurate notes",
+      "3.1 Adherence to scripts / canned responses",
+      "3.5 Adherence to data protection policy",
+      "3.7 Refrain from proactively providing any profile-related information to the caller, whether it's the applicant or a third-party"
+    ],
+    "type": "Weekly 1:1",
+    "goal": "Improve case resolution confidence",
+    "reality": "Needs support during unusual interactions and misses a few documentation and probing elements during complex PAC calls.",
+    "options": "Shadow a peer, review job aids and repeat guided call practice on exception scenarios.",
+    "will": "Practice two case scenarios with TL and apply the documentation checklist on the next monitored call.",
+    "overview": "Coaching focused on QA score recovery, call control and better call-note completeness. The agent was receptive and understood the need to improve probing and timely resolution.",
+    "actionPlan": "Complete two guided mock calls, use the PAC documentation checklist, and review one recorded call before next follow-up.",
+    "commitment": "I will follow the probing flow, improve my call notes and use the checklist on every PAC interaction.",
+    "due": "2026-10-16",
+    "source": "Routine TL one-to-one",
+    "status": "Completed"
+  },
+  {
+    "id": 8202,
+    "emp": "SIBS-2903",
+    "date": "2026-10-13",
+    "facilitator": "Ella Lim",
+    "facilitatorRole": "QDS / QA",
+    "coachDesignation": "Quality Development Specialist",
+    "coacheeSupervisor": "Kim Ramos",
+    "taskOrder": "TO10 SEASIA",
+    "auditWeek": "Week 2",
+    "reasons": [
+      "QA Score",
+      "Call Outs/Escalations"
+    ],
+    "qaCallCaseId": "SEA-39012",
+    "qaLob": "Case (Email)",
+    "qaParameters": [
+      "1.1 Professionalism and courteousness",
+      "1.3 Vocabulary and Grammar",
+      "1.8 Timely Resolution",
+      "2.2 Escalation of critical process-related concerns when no suitable responses are available by following the escalation process per Task Order",
+      "2.7 Call log updated with complete & accurate notes",
+      "2.8 Adherence to proper email format",
+      "3.1 Adherence to scripts / canned responses",
+      "3.5 Adherence to data protection policy",
+      "3.6 Adherence to proper caller authentication process"
+    ],
+    "type": "QA-triggered",
+    "goal": "Improve completeness of case notes",
+    "reality": "Audit identified inconsistent fields and incomplete case documentation in email handling.",
+    "options": "Review examples, run supervised self-audit and use the standard response checklist.",
+    "will": "Rework three sample case notes and submit one validated sample for review.",
+    "overview": "QDS coaching was triggered by a QA audit that found missing documentation steps and inconsistent adherence to the email format.",
+    "actionPlan": "Review two best-practice cases, complete three corrected mock notes and repeat the email-format checklist before sending responses.",
+    "commitment": "I will document all required fields completely and validate my email format before sending.",
+    "due": "2026-10-16",
+    "source": "Independent QA observation",
+    "status": "Completed"
+  },
+  {
+    "id": 8203,
+    "emp": "SIBS-2902",
+    "date": "2026-10-14",
+    "facilitator": "Anton Reyes",
+    "facilitatorRole": "Team Leader",
+    "coachDesignation": "Team Leader",
+    "coacheeSupervisor": "Anton Reyes",
+    "taskOrder": "TO12 NICE",
+    "auditWeek": "Week 2",
+    "reasons": [
+      "Other: Development readiness"
+    ],
+    "qaCallCaseId": "",
+    "qaLob": "",
+    "qaParameters": [],
+    "type": "Weekly 1:1",
+    "goal": "Maintain stable quality and confidence",
+    "reality": "Good quality scores; wants advanced case practice and readiness for higher-complexity scenarios.",
+    "options": "Peer demonstration, targeted feedback and review of advanced workflow scenarios.",
+    "will": "Demonstrate advanced case workflow and share three learning takeaways.",
+    "overview": "This developmental coaching session focused on readiness and confidence building rather than QA score recovery.",
+    "actionPlan": "Observe one advanced workflow demo, summarize the process and demonstrate it in a guided walkthrough.",
+    "commitment": "I will practice the advanced workflow and apply the same structure when handling live scenarios.",
+    "due": "2026-10-21",
+    "source": "Weekly scheduled contact",
+    "status": "Completed"
+  }
+];
+export const INITIAL_ESEP_EVALUATIONS: ESEPCoachingEvaluation[] = [
+  {
+    "id": 8301,
+    "sessionId": 8201,
+    "date": "2026-10-14",
+    "owner": "Anton Reyes",
+    "source": "Sample post-coaching case review (illustrative)",
+    "before": 78,
+    "after": 84,
+    "notes": "Employee completed case-scenario practice and demonstrated clearer escalation decisions in the sample follow-up review."
   }
 ];

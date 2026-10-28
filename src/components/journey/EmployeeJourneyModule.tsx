@@ -87,11 +87,12 @@ export default function EmployeeJourneyModule({
       {/* View Content Renderer */}
       {isPersonalView && !personalJourney ? <div className="rounded-2xl bg-white p-7 border border-[#E6ECF2]"><h2 className="font-bold text-[#042C51]">No Employee Journey linked yet</h2><p className="text-sm text-slate-500 mt-2">This demo account is not linked to an employee Journey. An HR demo account can set up the sample record before it appears here.</p></div> : null}
       {(!isPersonalView || personalJourney) && activeView === "trainee-dashboard" && <TraineeDashboardView onSwitchModule={onSwitchModule} />}
-      {canAccessJourneyTab(currentRole,'benchmark') && activeView === "benchmark" && <BenchmarkView onOpenLinkModal={j => setLinkingJourney(j)} onSwitchModule={onSwitchModule} />}
-      {canAccessJourneyTab(currentRole,'trainer-monitoring') && activeView === "trainer-monitoring" && <TrainerMonitoringView onSwitchModule={onSwitchModule} />}
-      {canAccessJourneyTab(currentRole,'qds-dashboard') && activeView === "qds-dashboard" && <QDSDashboardView onSwitchModule={onSwitchModule} />}
+      {canAccessJourneyTab(currentRole, 'benchmark') && activeView === "benchmark" && <BenchmarkView onOpenLinkModal={j => setLinkingJourney(j)} onSwitchModule={onSwitchModule} />}
+      {canAccessJourneyTab(currentRole, 'trainer-monitoring') && activeView === "trainer-monitoring" && <TrainerMonitoringView onSwitchModule={onSwitchModule} />}
+      {canAccessJourneyTab(currentRole, 'qds-dashboard') && activeView === "qds-dashboard" && <QDSDashboardView onSwitchModule={onSwitchModule} />}
       {canAccessJourneyTab(currentRole,'notifications') && activeView === "notifications" && <NotificationsView onSwitchModule={onSwitchModule} />}
       {canAccessJourneyTab(currentRole,'configuration') && activeView === "configuration" && <ConfigurationView onSwitchModule={onSwitchModule} />}
+
 
       {/* Full 7-Tab Employee Journey Drill-Down Modal/Drawer */}
       {selectedJourney && (

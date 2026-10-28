@@ -44,10 +44,13 @@ export default function SibsLoginLandingPage({ onNavigateToPublicApp, onNavigate
   };
 
   const filteredAccounts = DEMO_ACCOUNTS.filter(a =>
-    a.role.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    a.sibsId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    a.name.toLowerCase().includes(searchTerm.toLowerCase())
+    a.role !== 'QDS' && a.role !== 'Trainer' && (
+      a.role.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      a.sibsId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      a.name.toLowerCase().includes(searchTerm.toLowerCase())
+    )
   );
+
 
   const field = 'w-full rounded-lg border border-slate-200 bg-[#E9F0FC] px-3.5 py-3 text-sm text-[#042C51] placeholder:text-slate-400 outline-none transition focus:border-[#FF5C28] focus:ring-2 focus:ring-[#FF5C28]/20';
 

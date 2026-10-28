@@ -40,6 +40,7 @@ import {
   Bell
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
+import { useJourney } from "./journey/JourneyContext";
 
 interface SidebarProps {
   currentModule: string;
@@ -72,6 +73,14 @@ export default function Sidebar({ currentModule, role, onModuleChange, activeTab
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isSettingsPopupOpen, setIsSettingsPopupOpen] = useState<boolean>(false);
   
+  let pendingDay30HandoffsCount = 0;
+  try {
+    const journeyCtx = useJourney();
+    pendingDay30HandoffsCount = journeyCtx.pendingDay30HandoffsCount;
+  } catch {
+    // Outside provider fallback
+  }
+
   // All workspace groups are expanded by default to match the reference images
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
 
@@ -153,12 +162,13 @@ export default function Sidebar({ currentModule, role, onModuleChange, activeTab
       icon: Award,
       items: [
         { name: "30 / 60 / 90 Benchmark", icon: Award, isEnabled: true, moduleKey: "Employee Journey", tabKey: "benchmark", badge: "ROSTER" },
-        { name: "Trainee Dashboard", icon: User, isEnabled: true, moduleKey: "Employee Journey", tabKey: "trainee-dashboard" },
         { name: "Trainer Monitoring", icon: Users, isEnabled: true, moduleKey: "Employee Journey", tabKey: "trainer-monitoring" },
         { name: "QDS Dashboard", icon: ShieldAlert, isEnabled: true, moduleKey: "Employee Journey", tabKey: "qds-dashboard" },
+        { name: "Trainee Dashboard", icon: User, isEnabled: true, moduleKey: "Employee Journey", tabKey: "trainee-dashboard" },
         { name: "Journey Notifications", icon: Bell, isEnabled: true, moduleKey: "Employee Journey", tabKey: "notifications" },
         { name: "Journey Configuration", icon: Settings, isEnabled: true, moduleKey: "Employee Journey", tabKey: "configuration" },
       ]
+
     },
     {
       id: "recruitment-operations",
@@ -431,7 +441,12 @@ export default function Sidebar({ currentModule, role, onModuleChange, activeTab
                                     {item.displayName || item.name}
                                   </span>
                                 </div>
-                                {item.badge && (
+                                {item.tabKey === "benchmark" && pendingDay30HandoffsCount > 0 ? (
+                                  <span className="px-1.5 py-0.5 text-[8.5px] font-black rounded uppercase tracking-wider shrink-0 bg-[#FF5C28] text-white flex items-center gap-1 shadow-xs animate-pulse">
+                                    <span>⚠️</span>
+                                    <span>{pendingDay30HandoffsCount} HANDOFF DUE</span>
+                                  </span>
+                                ) : item.badge && (
                                   <span className={`px-1.5 py-0.5 text-[8.5px] font-black rounded uppercase tracking-wider shrink-0 ${
                                     item.badge === "RAMPS"
                                       ? "bg-[#063560] text-blue-200 border border-blue-400/30"

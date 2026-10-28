@@ -1,4 +1,8 @@
 import React, { useState } from "react";
+import { useDemoAuth } from "../../../auth/DemoAuthContext";
+import type { EmployeeJourney } from "../journeyTypes";
+import TrainerCoachingDetailsModal from "../TrainerCoachingDetailsModal";
+import { coachingForEmployee, coachingSummary, coachingStatus, evaluationFor, averageAvailable, displayPercent } from "../trainerCoachingUtils";
 import { useJourney } from "../JourneyContext";
 import { 
   ShieldAlert, 
@@ -24,11 +28,17 @@ interface QDSDashboardViewProps {
 }
 
 export default function QDSDashboardView({ onSwitchModule }: QDSDashboardViewProps) {
+  const { user } = useDemoAuth();
+  const canManageQdsRequests = user?.role === "QDS";
   const { 
     journeys, 
-    phaseTrainingScores, 
+    phaseTrainingScores,
+    assessmentGrades,
+    assessments,
     evidence, 
-    qdsRequests, 
+    qdsRequests,
+    esepSessions,
+    esepEvaluations,
     attendance,
     assignments,
     progress,
@@ -39,6 +49,7 @@ export default function QDSDashboardView({ onSwitchModule }: QDSDashboardViewPro
   } = useJourney();
 
   const [selectedTrainerFilter, setSelectedTrainerFilter] = useState<string>("All trainers");
+  const [coachingEmployee, setCoachingEmployee] = useState<EmployeeJourney | null>(null);
   const [showNewRequestModal, setShowNewRequestModal] = useState(false);
   const [targetEmp, setTargetEmp] = useState(journeys[0]?.sibsEmployeeId || journeys[0]?.id || "SIBS-2901");
   const [requestType, setRequestType] = useState<"Independent QA recheck" | "Trainer coaching review" | "Targeted trainee support">("Independent QA recheck");
@@ -57,62 +68,57 @@ export default function QDSDashboardView({ onSwitchModule }: QDSDashboardViewPro
     return d.toISOString().slice(0, 10);
   };
 
-  // Trainee performance helper
-  const getTraineePerf = (j: any) => {
-    const empKey = j.sibsEmployeeId || j.id;
-    const fst = phaseTrainingScores.find(s => (s.emp === empKey || s.emp === j.id) && s.phase === "FST")?.score;
-    const pst = phaseTrainingScores.find(s => (s.emp === empKey || s.emp === j.id) && s.phase === "PST")?.score;
-    const nestingQa = j.day30?.nestingQaScore;
-
-    const trScore = fst !== undefined && pst !== undefined ? Math.round((fst + pst) / 2) : (fst ?? pst ?? nestingQa ?? null);
-    const qaEvid = evidence.filter(e => (e.emp === empKey || e.emp === j.id) && e.type === "QDS / QA");
-    const qaScore = qaEvid.length > 0 ? Math.round(qaEvid.reduce((acc, e) => acc + (e.score || 85), 0) / qaEvid.length) : (nestingQa ?? null);
-    const simScore = j.day60?.coreProductionScore ?? j.day90?.compositeScore ?? null;
-
-    const validScores = [trScore, qaScore, simScore].filter((s): s is number => s !== null);
-    const composite = validScores.length > 0 ? Math.round(validScores.reduce((a, b) => a + b, 0) / validScores.length) : 0;
-    const delta = j.id === "SIBS-2901" ? 4 : j.id === "SIBS-2902" ? 3 : 0;
-
-    // Attendance
-    const attRecords = attendance.filter(a => (a.emp === empKey || a.emp === j.id));
-    const recent14 = Array.from({ length: 14 }, (_, i) => dayOffset(simulatedCurrentDate, -i)).filter(dStr => {
-      if (!j.hireDate || dStr < j.hireDate) return false;
-      const w = new Date(dStr + "T12:00:00Z").getUTCDay();
-      return w !== 0 && w !== 6;
+  // Use the same complete-evidence weighting as Trainer Monitoring.
+  const getTraineePerf = (j: EmployeeJourney) => {
+    const ids = [j.sibsEmployeeId, j.id];
+    const phaseScore = (phase: 'FST' | 'PST') => {
+      const stored = phaseTrainingScores.filter(s => ids.includes(s.emp) && s.phase === phase);
+      const scored = assessmentGrades.flatMap(g => {
+        const item = assessments.find(a => a.id === g.assessmentId && a.phase === phase);
+        return item && ids.includes(g.emp) ? [{ score: g.score, date: g.date }] : [];
+      });
+      return [...stored, ...scored].sort((a, b) => b.date.localeCompare(a.date))[0]?.score ?? null;
+    };
+    const trScore = averageAvailable([phaseScore('FST'), phaseScore('PST')]);
+    const qaEvid = evidence.filter(e => ids.includes(e.emp) && e.type === 'QDS / QA' && typeof e.score === 'number' && Number.isFinite(e.score));
+    const qaScore = qaEvid.sort((a, b) => b.date.localeCompare(a.date))[0]?.score ?? j.day30?.nestingQaScore ?? null;
+    const simScore = j.day60?.coreProductionScore ?? null;
+    const composite = trScore !== null && qaScore !== null && simScore !== null
+      ? Math.round(trScore * .35 + qaScore * .40 + simScore * .25) : null;
+    const attRecords = attendance.filter(a => ids.includes(a.emp));
+    const dates = Array.from({ length: 14 }, (_, i) => dayOffset(simulatedCurrentDate, -i)).filter(date => {
+      if (!j.hireDate || date < j.hireDate) return false;
+      return ![0, 6].includes(new Date(date + 'T12:00:00Z').getUTCDay());
     });
-    let present = 0, late = 0, absent = 0, excused = 0, missing = 0;
-    recent14.forEach(dStr => {
-      const match = attRecords.find(a => a.date === dStr);
-      const st = match?.status || "Unrecorded";
-      if (st === "Present") present++;
-      else if (st === "Late") late++;
-      else if (st === "Absent") absent++;
-      else if (st === "Excused") excused++;
-      else missing++;
+    let present=0, late=0, absent=0, excused=0, missing=0;
+    dates.forEach(date => {
+      const status = attRecords.find(a => a.date === date)?.status ?? 'Unrecorded';
+      if(status === 'Present') present++; else if(status === 'Late') late++;
+      else if(status === 'Absent') absent++; else if(status === 'Excused') excused++; else missing++;
     });
-    const covered = present + late + absent + excused;
-    const attRate = covered ? Math.round(((present + late) / covered) * 100) : 100;
-
-    return { trScore, qaScore, simScore, composite, delta, attRate, absentCount: absent + excused, missingAttCount: missing };
+    const recorded = present + late + absent + excused;
+    const attRate = recorded ? Math.round((present + late) / recorded * 100) : null;
+    return { trScore, qaScore, simScore, composite, attRate, absentCount: absent + excused, missingAttCount: missing };
   };
 
   const trainerSummaries = allTrainers.map(tName => {
     const trainees = journeys.filter(j => j.trainerName === tName);
     const perfs = trainees.map(j => getTraineePerf(j));
-    const meanComp = perfs.length ? Math.round(perfs.reduce((a, p) => a + p.composite, 0) / perfs.length) : 0;
-    const meanQA = perfs.length ? Math.round(perfs.reduce((a, p) => a + p.qaScore, 0) / perfs.length) : 0;
-    const meanTR = perfs.length ? Math.round(perfs.reduce((a, p) => a + p.trScore, 0) / perfs.length) : 0;
-    const highCount = perfs.filter(p => p.composite >= 85).length;
-    const supportCount = perfs.filter(p => p.composite < 70).length;
-    const attMean = perfs.length ? Math.round(perfs.reduce((a, p) => a + p.attRate, 0) / perfs.length) : 100;
+    const meanComp = averageAvailable(perfs.map(p => p.composite));
+    const meanQA = averageAvailable(perfs.map(p => p.qaScore));
+    const meanTR = averageAvailable(perfs.map(p => p.trScore));
+    const highCount = perfs.filter(p => p.composite !== null && p.composite >= 85).length;
+    const supportCount = perfs.filter(p => p.composite !== null && p.composite < 70).length;
+    const attMean = averageAvailable(perfs.map(p => p.attRate));
     const totalAbsences = perfs.reduce((a, p) => a + p.absentCount, 0);
     const totalMissing = perfs.reduce((a, p) => a + p.missingAttCount, 0);
     const pendingReqs = qdsRequests.filter(q => q.trainer === tName && q.status !== "Closed").length;
-    const gap = meanTR - meanQA;
+    const gap = meanTR !== null && meanQA !== null ? meanTR - meanQA : null;
 
     return {
       tName,
       trainees,
+      scoredCount: perfs.filter(p => p.composite !== null).length,
       meanComp,
       meanQA,
       meanTR,
@@ -132,11 +138,13 @@ export default function QDSDashboardView({ onSwitchModule }: QDSDashboardViewPro
     : journeys.filter(j => j.trainerName === selectedTrainerFilter);
 
   const allPerfs = journeys.map(j => getTraineePerf(j));
-  const overallHigh = allPerfs.filter(p => p.composite >= 85).length;
-  const overallLow = allPerfs.filter(p => p.composite < 70).length;
+  const overallScored = allPerfs.filter(p => p.composite !== null).length;
+  const overallHigh = allPerfs.filter(p => p.composite !== null && p.composite >= 85).length;
+  const overallLow = allPerfs.filter(p => p.composite !== null && p.composite < 70).length;
 
   const handleCreateRequest = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!canManageQdsRequests) return;
     const targetJourney = journeys.find(j => (j.sibsEmployeeId || j.id) === targetEmp);
     addQDSRequest({
       emp: targetEmp,
@@ -154,30 +162,45 @@ export default function QDSDashboardView({ onSwitchModule }: QDSDashboardViewPro
 
   return (
     <div className="space-y-6">
-      {/* Hero Banner (aligned to SiBS HRIS Deep Navy theme) */}
-      <div className="bg-gradient-to-r from-[#042C51] via-[#0B365F] to-[#13406D] text-white p-6 rounded-2xl shadow-xs border border-[#13406D] flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div>
-          <span className="text-[10px] font-black uppercase tracking-widest text-[#FF5C28]">
-            MONITORING SIDE 2 • QDS MANAGER TO TRAINER + TRAINEE
-          </span>
-          <h2 className="text-xl sm:text-2xl font-black text-white mt-1 mb-2 tracking-tight">
-            QDS Manager quality oversight
-          </h2>
-          <p className="text-xs text-[#E6EAF0] max-w-3xl leading-relaxed">
-            Independently evaluate trainee results by Trainer, monitor high/low performance trends, verify QA findings, and request training or quality follow-ups without replacing HR review decisions.
-          </p>
-        </div>
+      {/* SiBS HRIS Standard Header: White card with top accent gradient bar */}
+      <section className="overflow-hidden rounded-xl border border-[#E6ECF2] bg-white shadow-xs">
+        <div className="h-[3.5px] w-full bg-gradient-to-r from-[#042C51] via-[#c24b30] to-[#FF5C28]" />
+        <div className="flex flex-wrap items-center justify-between gap-4 p-4 sm:p-5">
+          <div className="space-y-1">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-blue-100 bg-[#E9F0FC] px-2.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wide text-[#042C51]">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#FF5C28]" />
+              Quality Development & Standards • Independent Oversight
+            </span>
+            <h1 className="text-xl sm:text-2xl font-black tracking-tight text-[#042C51]">
+              QDS Quality Oversight
+            </h1>
+            <p className="text-xs text-[#667085] max-w-3xl leading-normal">
+              Independently evaluate trainee results by Trainer, monitor high/low performance trends, verify QA audit findings, and log quality follow-ups.
+            </p>
+          </div>
 
-        <div className="flex items-center gap-2 shrink-0">
-          <button
-            onClick={() => setShowNewRequestModal(true)}
-            className="px-3.5 py-2 rounded-xl bg-[#FF5C28] hover:bg-[#e04f20] text-white text-xs font-semibold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
-          >
-            <Plus className="w-4 h-4" />
-            <span>New Quality Request</span>
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            {canManageQdsRequests && <button
+              onClick={() => setShowNewRequestModal(true)}
+              className="px-3.5 py-2 rounded-xl bg-[#FF5C28] hover:bg-[#e04f20] text-white text-xs font-semibold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              <span>New Quality Request</span>
+            </button>}
+
+            {onSwitchModule && (
+              <button
+                type="button"
+                onClick={() => onSwitchModule("New Hire Orientation (NHO)")}
+                className="px-3.5 py-2 rounded-xl border border-[#BECBDA] hover:bg-[#F7F9FC] text-[#042C51] font-semibold text-xs flex items-center gap-1.5 cursor-pointer shadow-xs transition-colors shrink-0"
+              >
+                <Layers className="w-4 h-4 text-[#FF5C28]" />
+                <span>Back to NHO</span>
+              </button>
+            )}
+          </div>
         </div>
-      </div>
+      </section>
 
       {toastMessage && (
         <div className="sibs-tone-green-bg border sibs-tone-green-border sibs-tone-green-text text-xs px-4 py-2.5 rounded-xl flex items-center justify-between shadow-xs">
@@ -198,24 +221,24 @@ export default function QDSDashboardView({ onSwitchModule }: QDSDashboardViewPro
 
         <div className="bg-white rounded-xl border border-[#E6ECF2] shadow-xs p-4">
           <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Eligible Trainee Scorecards</span>
-          <strong className="text-2xl font-black text-[#042C51] mt-1 block">{journeys.length}</strong>
-          <span className="text-[10px] text-slate-400">3 independent inputs present</span>
+          <strong className="text-2xl font-black text-[#042C51] mt-1 block">{overallScored}</strong>
+          <span className="text-[10px] text-slate-400">of {journeys.length} · all three sources recorded</span>
         </div>
 
         <div className="bg-white rounded-xl border border-[#E6ECF2] shadow-xs p-4">
           <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">High Performance Rate</span>
           <strong className="text-2xl font-black text-[#2ECC71] mt-1 block">
-            {journeys.length ? Math.round((100 * overallHigh) / journeys.length) + "%" : "0%"}
+            {overallScored ? Math.round((100 * overallHigh) / overallScored) + "%" : "Not assessed"}
           </strong>
-          <span className="text-[10px] text-slate-400">{overallHigh} of {journeys.length} eligible • ≥ 85%</span>
+          <span className="text-[10px] text-slate-400">{overallHigh} of {overallScored} scored • ≥ 85%</span>
         </div>
 
         <div className="bg-white rounded-xl border border-[#E6ECF2] shadow-xs p-4">
           <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Low Performance Rate</span>
           <strong className="text-2xl font-black text-[#E74C3C] mt-1 block">
-            {journeys.length ? Math.round((100 * overallLow) / journeys.length) + "%" : "0%"}
+            {overallScored ? Math.round((100 * overallLow) / overallScored) + "%" : "Not assessed"}
           </strong>
-          <span className="text-[10px] text-slate-400">{overallLow} of {journeys.length} eligible • below 70%</span>
+          <span className="text-[10px] text-slate-400">{overallLow} of {overallScored} scored • below 70%</span>
         </div>
       </div>
 
@@ -260,14 +283,14 @@ export default function QDSDashboardView({ onSwitchModule }: QDSDashboardViewPro
                 </div>
 
                 <p className="text-xs text-slate-500">
-                  {t.trainees.length} assigned trainees • {t.trainees.length} complete scorecards
+                  {t.trainees.length} assigned trainees • {t.scoredCount} complete scorecards
                 </p>
 
                 {/* Attendance Strip */}
                 <div className="grid grid-cols-3 gap-2 p-2.5 bg-[#F7F9FC] border border-[#E6ECF2] rounded-xl text-xs text-center">
                   <div>
                     <span className="text-[9.5px] text-slate-400 font-bold block">Attendance rate</span>
-                    <strong className="font-extrabold text-[#042C51]">{t.attMean}%</strong>
+                    <strong className="font-extrabold text-[#042C51]">{displayPercent(t.attMean)}</strong>
                   </div>
                   <div>
                     <span className="text-[9.5px] text-slate-400 font-bold block">Absences</span>
@@ -283,11 +306,11 @@ export default function QDSDashboardView({ onSwitchModule }: QDSDashboardViewPro
                 <div className="grid grid-cols-3 gap-2 text-center text-xs">
                   <div className="p-2.5 border border-[#E6ECF2] rounded-xl bg-[#FAFCFF]">
                     <span className="text-[10px] text-slate-500 block">Average QA audit</span>
-                    <strong className="text-base font-black text-[#042C51] mt-0.5 block">{t.meanQA}%</strong>
+                    <strong className="text-base font-black text-[#042C51] mt-0.5 block">{displayPercent(t.meanQA)}</strong>
                   </div>
                   <div className="p-2.5 border border-[#E6ECF2] rounded-xl bg-[#FAFCFF]">
                     <span className="text-[10px] text-slate-500 block">Avg. composite</span>
-                    <strong className="text-base font-black text-[#042C51] mt-0.5 block">{t.meanComp}%</strong>
+                    <strong className="text-base font-black text-[#042C51] mt-0.5 block">{displayPercent(t.meanComp)}</strong>
                   </div>
                   <div className="p-2.5 border border-[#E6ECF2] rounded-xl bg-[#FAFCFF]">
                     <span className="text-[10px] text-slate-500 block">High / Needs support</span>
@@ -296,14 +319,14 @@ export default function QDSDashboardView({ onSwitchModule }: QDSDashboardViewPro
                 </div>
 
                 <p className="text-[10.5px] text-slate-500 leading-relaxed bg-[#F7F9FC] p-2.5 rounded-xl border border-[#E6ECF2]">
-                  High performer rate: {t.trainees.length ? Math.round((100 * t.highCount) / t.trainees.length) + "%" : "N/A"} • Trainer score minus independent QA:{" "}
-                  <strong className={t.gap >= 10 ? "text-[#E74C3C] font-black" : "text-[#042C51]"}>
-                    {t.gap > 0 ? "+" : ""}{t.gap} pp
-                  </strong>. {t.gap >= 10 ? "A large gap warrants calibration review." : "Well-calibrated cohort."}
+                  High performer rate: {t.scoredCount ? Math.round((100 * t.highCount) / t.scoredCount) + "%" : "Not assessed"} • Trainer score minus independent QA:{" "}
+                  <strong className={t.gap !== null && t.gap >= 10 ? "text-[#E74C3C] font-black" : "text-[#042C51]"}>
+                    {t.gap === null ? 'Insufficient data' : `${t.gap > 0 ? '+' : ''}${t.gap} pp`}
+                  </strong>. {t.gap !== null && t.gap >= 10 ? "A large gap warrants calibration review." : "Comparison requires two recorded sources."}
                 </p>
 
                 <div className="flex items-center justify-between text-xs font-semibold text-slate-500 pt-1">
-                  <span>Cohort composite change: <strong className="text-[#042C51]">+3 pp</strong></span>
+                  <span>Composite trend: <strong className="text-[#042C51]">No comparable baseline</strong></span>
                   <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
                     t.pendingReqs 
                       ? "sibs-tone-amber-bg sibs-tone-amber-text border sibs-tone-amber-border" 
@@ -344,7 +367,7 @@ export default function QDSDashboardView({ onSwitchModule }: QDSDashboardViewPro
             <tbody className="divide-y divide-slate-100 text-slate-700">
               {displayedTrainees.map(j => {
                 const perf = getTraineePerf(j);
-                const gap = perf.trScore - perf.qaScore;
+                const gap = perf.trScore !== null && perf.qaScore !== null ? perf.trScore - perf.qaScore : null;
 
                 return (
                   <tr key={j.id} className="hover:bg-[#F7F9FC] transition-colors">
@@ -353,20 +376,20 @@ export default function QDSDashboardView({ onSwitchModule }: QDSDashboardViewPro
                       <div className="text-[10px] text-slate-400 font-normal">{j.sibsEmployeeId || j.id} • {j.account}</div>
                     </td>
                     <td className="py-3.5 px-3 font-semibold text-slate-800">{j.trainerName || "Unassigned"}</td>
-                    <td className="py-3.5 px-3 font-extrabold text-[#042C51]">{perf.trScore}%</td>
-                    <td className="py-3.5 px-3 font-extrabold text-[#042C51]">{perf.qaScore}%</td>
-                    <td className="py-3.5 px-3 font-extrabold text-[#042C51]">{perf.simScore}%</td>
-                    <td className="py-3.5 px-3 font-black text-[#042C51]">{perf.composite}%</td>
+                    <td className="py-3.5 px-3 font-extrabold text-[#042C51]">{displayPercent(perf.trScore)}</td>
+                    <td className="py-3.5 px-3 font-extrabold text-[#042C51]">{displayPercent(perf.qaScore)}</td>
+                    <td className="py-3.5 px-3 font-extrabold text-[#042C51]">{displayPercent(perf.simScore)}</td>
+                    <td className="py-3.5 px-3 font-black text-[#042C51]">{displayPercent(perf.composite)}</td>
                     <td className="py-3.5 px-3">
                       <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                        gap >= 10 
+                        gap !== null && gap >= 10 
                           ? "sibs-tone-red-bg sibs-tone-red-text border sibs-tone-red-border" 
                           : "sibs-tone-green-bg sibs-tone-green-text border sibs-tone-green-border"
                       }`}>
-                        {gap > 0 ? "+" : ""}{gap} pp
+                        {gap === null ? 'N/A' : `${gap > 0 ? '+' : ''}${gap} pp`}
                       </span>
                     </td>
-                    <td className="py-3.5 px-3 font-semibold text-slate-800">{perf.attRate}%</td>
+                    <td className="py-3.5 px-3 font-semibold text-slate-800">{displayPercent(perf.attRate)}</td>
                     <td className="py-3.5 px-4 text-right">
                       <button
                         onClick={() => setSelectedJourney(j)}
@@ -390,12 +413,12 @@ export default function QDSDashboardView({ onSwitchModule }: QDSDashboardViewPro
             <h2 className="text-sm font-extrabold text-[#042C51]">Quality & Coaching Follow-up Queue</h2>
             <p className="text-xs text-slate-500">Active QDS recheck requests and trainer coaching follow-ups.</p>
           </div>
-          <button
+          {canManageQdsRequests && <button
             onClick={() => setShowNewRequestModal(true)}
             className="px-3 py-1.5 rounded-xl bg-[#FF5C28] hover:bg-[#e04f20] text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
           >
             + Create Follow-up
-          </button>
+          </button>}
         </div>
 
         <div className="space-y-3">
@@ -421,7 +444,7 @@ export default function QDSDashboardView({ onSwitchModule }: QDSDashboardViewPro
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0">
-                  {req.status !== "Closed" && (
+                  {canManageQdsRequests && req.status !== "Closed" && (
                     <button
                       onClick={() => {
                         updateQDSRequestStatus(req.id, "Closed", "Quality review complete.");
@@ -440,8 +463,32 @@ export default function QDSDashboardView({ onSwitchModule }: QDSDashboardViewPro
         </div>
       </div>
 
+      {/* Independent QDS visibility of recorded ESEP sessions. No QA scores are modified. */}
+      <section className="rounded-xl border border-[#E6ECF2] bg-white p-4 shadow-xs sm:p-5" aria-label="QDS coaching evidence">
+        <div className="mb-4"><span className="text-[10px] font-bold uppercase text-[#FF5C28]">ESEP · DEVELOPMENT EVIDENCE</span><h2 className="text-base font-extrabold text-[#042C51]">Trainee coaching results</h2><p className="text-xs text-slate-500">Recorded sessions and follow-up outcomes; facilitator attribution remains with the actual Team Leader or QDS, not the assigned trainer.</p></div>
+        {(() => { const summary = coachingSummary(displayedTrainees, esepSessions, esepEvaluations, simulatedCurrentDate);
+          return <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+            {[
+              ['Trainees coached', `${summary.coached} / ${summary.total}`],
+              ['Evaluated follow-ups', `${summary.evaluated} / ${summary.sessions.length}`],
+              ['Numeric KPI comparisons', summary.measured],
+              ['Overdue reviews', summary.overdue]
+            ].map(([label, value]) => <div key={label} className="rounded-xl border border-[#E6ECF2] bg-[#F7F9FC] p-3"><div className="text-[10px] font-bold uppercase text-slate-500">{label}</div><div className="mt-1 text-xl font-black tabular-nums text-[#042C51]">{value}</div></div>)}
+          </div>;
+        })()}
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+          {displayedTrainees.map(j => { const rows = coachingForEmployee(esepSessions, j);
+            const evaluated = rows.filter(r => evaluationFor(r, esepEvaluations)).length;
+            const overdue = rows.filter(r => coachingStatus(r, esepEvaluations, simulatedCurrentDate) === 'Overdue').length;
+            return <div key={j.id} className="rounded-xl border border-[#E6ECF2] p-3"><div className="flex items-center justify-between gap-2"><strong className="text-xs text-[#042C51]">{j.fullName}</strong><span className="text-[10px] text-slate-500">{rows.length} sessions</span></div><p className="mt-1 text-[11px] text-slate-500">{evaluated} evaluated · {overdue} overdue · {j.trainerName ?? 'Trainer not assigned'}</p><button type="button" onClick={() => setCoachingEmployee(j)} className="mt-3 rounded-lg border border-[#BECBDA] px-3 py-2 text-xs font-bold text-[#042C51] hover:bg-[#E9F0FC]">View coaching results →</button></div>;
+          })}
+        </div>
+        <p className="mt-3 text-[11px] text-slate-500">These recorded coaching outcomes must not be averaged into QDS audit grades or used as automatic Trainer ratings.</p>
+      </section>
+      {coachingEmployee && <TrainerCoachingDetailsModal employee={coachingEmployee} sessions={esepSessions} evaluations={esepEvaluations} asOf={simulatedCurrentDate} onClose={() => setCoachingEmployee(null)} />}
+
       {/* New QDS Request Modal */}
-      {showNewRequestModal && (
+      {canManageQdsRequests && showNewRequestModal && (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-xl border border-[#E6ECF2]">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">

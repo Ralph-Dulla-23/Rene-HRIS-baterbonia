@@ -2977,6 +2977,26 @@ export const NHOProvider: React.FC<{ children: React.ReactNode; initialRole?: NH
 
       const defaultTrainerName = a.assignedTrainerName || "Maria Elena Garcia (Senior Trainer)";
       const defaultTrainerId = a.assignedTrainerId || "TRN-001";
+      const initialMaterials = (a.qdsMaterials && a.qdsMaterials.length > 0) ? a.qdsMaterials : [
+        {
+          id: `qds-mat-${Date.now()}-1`,
+          title: "Core Operations Handbook 2026",
+          type: "PDF Document" as const,
+          fileOrLinkRef: "Core_Ops_2026.pdf",
+          description: "Essential operating principles, SLAs, and escalation protocols",
+          assignedAt: timestamp,
+          assignedBy: "Carla Villanueva (Lead QDS)"
+        },
+        {
+          id: `qds-mat-${Date.now()}-2`,
+          title: "Fintech Compliance & Data Privacy Guidelines",
+          type: "PDF Document" as const,
+          fileOrLinkRef: "Fintech_Compliance_2026.pdf",
+          description: "Regulatory controls, PCI-DSS compliance, and privacy rules",
+          assignedAt: timestamp,
+          assignedBy: "Carla Villanueva (Lead QDS)"
+        }
+      ];
 
       return {
         ...a,
@@ -2985,15 +3005,22 @@ export const NHOProvider: React.FC<{ children: React.ReactNode; initialRole?: NH
         itCompletedAt: timestamp,
         itCredentialsNotifiedToQds: true,
         itCredentialsNotifiedAt: timestamp,
-        // Post-IT Parallel Department Activation
-        trainerStatus: a.trainerStatus === "Accepted" ? "Accepted" : "Pending Acceptance",
+        // Post-IT Department Activation - automated since QDS and Trainer roles are hidden from UI
+        trainerStatus: "Accepted",
         assignedTrainerId: defaultTrainerId,
         assignedTrainerName: defaultTrainerName,
+        trainerAcceptedById: defaultTrainerId,
+        trainerAcceptedBy: defaultTrainerName,
+        trainerReviewedMaterials: true,
         trainerAssignedAt: a.trainerAssignedAt || timestamp,
-        qdsStatus: a.qdsStatus === "Completed" ? "Completed" : "Pending",
+        trainerAcceptedAt: a.trainerAcceptedAt || timestamp,
+        qdsStatus: "Completed",
+        qdsCompletedAt: a.qdsCompletedAt || timestamp,
+        qdsCompletedBy: a.qdsCompletedBy || "Carla Villanueva (Lead QDS)",
         qdsAssignedAt: a.qdsAssignedAt || timestamp,
+        qdsMaterials: initialMaterials,
         wfmStatus: a.wfmStatus === "Assigned" ? "Assigned" : "Pending WFM Assignment",
-        handoffStatus: "Waiting for Departments",
+        handoffStatus: a.wfmStatus === "Assigned" ? "Pending HR Acceptance" : "Waiting for Departments",
         auditLogs: [audit, ...a.auditLogs]
       };
     }));

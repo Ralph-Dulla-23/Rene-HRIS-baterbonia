@@ -9,7 +9,10 @@
     "start": "node server.ts",
     "lint": "tsc --noEmit",
     "test": "tsx scripts/test-regression.ts",
-    "test:auth": "tsx scripts/test-demo-auth.ts"
+    "test:auth": "tsx scripts/test-demo-auth.ts",
+    "test:coaching": "tsx scripts/test-trainer-coaching.ts",
+    "test:calendar": "tsx scripts/test-trainee-calendar.ts",
+    "test:handoff": "tsx scripts/test-day30-handoff.ts"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",

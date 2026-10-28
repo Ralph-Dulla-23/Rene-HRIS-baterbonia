@@ -164,23 +164,23 @@ export default function NHODemoWalkthrough({ isOpen, onClose, onNavigateToTab }:
     },
     {
       step: 12,
-      title: "Step 1 — QDS: Assign Trainer & Training Materials Package",
-      role: "QDS",
-      subTab: "queue",
-      description: "Switch to Quality Development Specialist (QDS). Juan Carlos appears in the Materials Queue. Select designated Trainer Maria Elena Garcia alongside the Fintech Playbook and core training resources, and click 'Send Assignment & Materials to Trainer'.",
-      actionLabel: "Open QDS Materials & Trainer Assignment",
-      actionHint: "Directs to QDS module with Juan Carlos selected",
-      onAction: () => navigateTo("QDS", "queue")
+      title: "Step 1 — Training Curriculum & Schedule Alignment",
+      role: "HR",
+      subTab: "review",
+      description: "Inspect Juan Carlos's assigned 2-week PST & FST training schedule and foundation materials. Curriculum alignment between training operations and workforce planning is automated.",
+      actionLabel: "View Training Schedule & Milestones",
+      actionHint: "Directs to HR Operations handoff review with schedule matrix",
+      onAction: () => navigateTo("HR", "review")
     },
     {
       step: 13,
-      title: "Step 2 — Trainer: Review Materials & Accept Trainee",
-      role: "Trainer",
-      subTab: "queue",
-      description: "Switch to Trainer view. Juan Carlos appears with assigned curriculum dispatched by QDS. Open his record, confirm review of all training materials, and click 'Accept Trainee Responsibility'.",
-      actionLabel: "Open Trainer Trainee Queue",
-      actionHint: "Directs to Trainer module with Juan Carlos selected",
-      onAction: () => navigateTo("Trainer", "queue")
+      title: "Step 2 — Training Cohort & Trainee Responsibility Confirmation",
+      role: "HR",
+      subTab: "review",
+      description: "Verify assigned session trainer and confirmed training schedule in the 2-week PST & FST matrix before proceeding to WFM workstation assignment.",
+      actionLabel: "Confirm Trainee Alignment",
+      actionHint: "Directs to HR Operations handoff review",
+      onAction: () => navigateTo("HR", "review")
     },
     {
       step: 14,

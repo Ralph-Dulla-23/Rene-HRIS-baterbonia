@@ -23,6 +23,9 @@ export default function NHOHandoffsView({ onOpenApplicantDetails }: NHOHandoffsV
   const [resolutionRemarks, setResolutionRemarks] = React.useState<string>("");
 
   const handoffApplicants = applicants.filter(a => a.itRequestStatus === "Completed" || a.handoffStatus !== "Not Ready");
+  const pendingCount = handoffApplicants.filter(a => a.handoffStatus === "Pending HR Acceptance" || a.handoffStatus === "Resubmitted").length;
+  const acceptedCount = handoffApplicants.filter(a => a.handoffStatus === "Accepted").length;
+  const correctionCount = handoffApplicants.filter(a => a.handoffStatus === "Returned for Correction").length;
 
   const handleConfirmResubmit = (appId: string) => {
     if (!resolutionRemarks.trim()) {
@@ -34,25 +37,53 @@ export default function NHOHandoffsView({ onOpenApplicantDetails }: NHOHandoffsV
   };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-lg font-bold text-[#042C51] tracking-tight">
-          NHO Handoffs to HR Operations
-        </h1>
-        <p className="text-xs text-slate-500 mt-0.5">
-          Review packages endorsed by IT with assigned Kronos IDs awaiting formal HR acceptance.
-        </p>
+    <div className="min-w-0 space-y-5">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
+        {[
+          { label: "In Handoff Pipeline", value: handoffApplicants.length, note: "IT-completed or handed off", icon: FileText, tone: "text-blue-600", background: "bg-blue-50 border-blue-100" },
+          { label: "Awaiting HR", value: pendingCount, note: "Pending review / resubmitted", icon: Clock, tone: "text-amber-600", background: "bg-amber-50 border-amber-100" },
+          { label: "Accepted", value: acceptedCount, note: "HR handoff completed", icon: CheckCircle, tone: "text-emerald-600", background: "bg-emerald-50 border-emerald-100" },
+          { label: "Needs Correction", value: correctionCount, note: "Returned for follow-up", icon: AlertTriangle, tone: "text-red-600", background: "bg-red-50 border-red-100" }
+        ].map(card => {
+          const Icon = card.icon;
+          return (
+            <div
+              key={card.label}
+              className="flex min-h-[86px] sm:min-h-[92px] flex-col justify-between rounded-xl border border-[#E6ECF2] bg-white p-3 shadow-xs transition-all hover:shadow-sm"
+            >
+              <div className="flex items-center justify-between gap-1.5">
+                <span className={`text-[10px] font-black uppercase tracking-wider ${card.tone} truncate`}>
+                  {card.label}
+                </span>
+                <div className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border ${card.background} ${card.tone}`}>
+                  <Icon className="h-3.5 w-3.5" />
+                </div>
+              </div>
+              <div className="mt-1">
+                <div className="text-xl sm:text-2xl font-black tabular-nums tracking-tight text-[#042C51]">
+                  {card.value}
+                </div>
+                <div className="mt-0.5 text-[10.5px] font-medium text-slate-500 truncate" title={card.note}>
+                  {card.note}
+                </div>
+              </div>
+            </div>
+          );
+        })}
       </div>
-
-      <div className="bg-white rounded-xl border border-[#E6ECF2] shadow-xs overflow-hidden">
-        <div className="p-4 border-b border-[#E6ECF2] flex items-center justify-between">
-          <span className="text-xs font-bold text-[#042C51] uppercase tracking-wider">
-            Active Handoff Pipeline ({handoffApplicants.length})
-          </span>
-          <span className="text-[11px] text-slate-500">
-            Pending HR Acceptance transfers ongoing 14-day document ownership to HR
-          </span>
+      <section className="min-w-0 rounded-xl border border-[#E6ECF2] bg-white p-4 shadow-sm sm:p-5">
+        <div className="mb-4">
+          <h2 className="text-base font-bold tracking-tight text-[#042C51]">Handoff Records</h2>
+          <p className="mt-0.5 text-xs font-medium text-slate-500">Track prepared HR handoffs, Trainer and QDS confirmation, WFM seating and outstanding corrections.</p>
         </div>
+        <div className="overflow-hidden rounded-xl border border-[#E6ECF2] bg-white">
+          <div className="flex items-center justify-between gap-2 border-b border-[#E6ECF2] px-4 pt-2">
+            <span className="flex items-center gap-2 border-b-2 border-[#FF5C28] px-1 pb-3 pt-1 text-xs font-extrabold text-[#FF5C28]">
+              <ShieldCheck className="h-3.5 w-3.5" /> HANDOFFS
+              <span className="rounded-full bg-[#042C51] px-2 py-0.5 text-[10px] font-black text-white">{handoffApplicants.length}</span>
+            </span>
+            <span className="pb-2 text-[11px] font-medium text-slate-500">{handoffApplicants.length} records</span>
+          </div>
 
         <div className="divide-y divide-[#E6ECF2] text-xs">
           {handoffApplicants.length === 0 ? (
@@ -153,8 +184,9 @@ export default function NHOHandoffsView({ onOpenApplicantDetails }: NHOHandoffsV
               </div>
             ))
           )}
+          </div>
         </div>
-      </div>
+      </section>
     </div>
   );
 }
