@@ -24,6 +24,24 @@ interface Day30HandoffCardProps {
   compact?: boolean;
 }
 
+export interface TeamLeaderOption {
+  id: string;
+  name: string;
+  title: string;
+  pod: string;
+  email: string;
+}
+
+export const AVAILABLE_TEAM_LEADERS: TeamLeaderOption[] = [
+  { id: "TL-001", name: "Anton Reyes", title: "Operations Team Leader", pod: "Pod 4 • US Visa Operations", email: "anton.reyes@sibs.com" },
+  { id: "TL-002", name: "Sarah Santos", title: "Customer Care Lead", pod: "Pod 2 • Customer Care Operations", email: "sarah.santos@sibs.com" },
+  { id: "TL-003", name: "Rico Torres", title: "Technical Support Lead", pod: "Pod 1 • Technical Support", email: "rico.torres@sibs.com" },
+  { id: "TL-004", name: "Mark Sarmiento", title: "Healthcare Operations Lead", pod: "Pod 3 • Healthcare Operations", email: "mark.sarmiento@sibs.com" },
+  { id: "TL-005", name: "Renz Torres", title: "BPO Operations Lead", pod: "Pod 5 • BPO Operations", email: "renz.torres@sibs.com" },
+  { id: "TL-006", name: "Patricia Gomez", title: "Fintech Support Lead", pod: "Pod 6 • Financial Services", email: "patricia.gomez@sibs.com" },
+  { id: "TL-007", name: "Karlo Dela Rosa", title: "Escalations Team Leader", pod: "Pod 7 • Tier 2 Support", email: "karlo.delarosa@sibs.com" },
+];
+
 const AVAILABLE_STRENGTHS = [
   "High Customer Empathy",
   "Quick Systems Navigation",
@@ -75,7 +93,7 @@ export default function Day30HandoffCard({
   // Local Form States
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [trainerName, setTrainerName] = useState(currentHandoff?.trainerName || journey.trainerName || "Maria Cruz (Senior Trainer)");
-  const [targetTlName, setTargetTlName] = useState(currentHandoff?.targetTlName || journey.tl || "Anton Reyes (Team Leader)");
+  const [targetTlName, setTargetTlName] = useState(currentHandoff?.targetTlName || journey.tl || "Anton Reyes");
   const [readinessRating, setReadinessRating] = useState<Day30TrainerHandoff["readinessRating"]>(
     currentHandoff?.readinessRating || (qaVal >= 80 ? "Floor Ready" : "Developing with Support")
   );
@@ -97,6 +115,28 @@ export default function Day30HandoffCard({
     currentHandoff?.tlAcceptanceNotes || 
     `Operational custody accepted by ${targetTlName}. Trainee scheduled for live queue ramp and assigned to Pod A supervisor rotation.`
   );
+
+  const selectedTlObj = AVAILABLE_TEAM_LEADERS.find(
+    t => t.name.toLowerCase() === targetTlName.toLowerCase() || targetTlName.toLowerCase().includes(t.name.toLowerCase())
+  ) || AVAILABLE_TEAM_LEADERS[0];
+
+  const handleQuickTlChange = (newTlName: string) => {
+    setTargetTlName(newTlName);
+    submitTrainerToTlHandoff(journey.id, {
+      status: currentHandoff?.status || "Pending",
+      trainerName,
+      targetTlName: newTlName,
+      readinessRating,
+      coreStrengths,
+      focusAreas,
+      fstScore: fstVal,
+      pstScore: pstVal,
+      qaScore: qaVal,
+      attendanceRate: attVal,
+      trainerNotes
+    });
+    onUpdateSuccess?.(`Incoming Team Leader set to ${newTlName}!`);
+  };
 
   const toggleStrength = (st: string) => {
     setCoreStrengths(prev => 
@@ -232,15 +272,39 @@ export default function Day30HandoffCard({
             </div>
             <div className="flex items-center gap-2.5 pt-0.5">
               <div className="w-8 h-8 rounded-full bg-[#FF5C28] text-white font-bold text-xs flex items-center justify-center shrink-0">
-                {(currentHandoff?.targetTlName || journey.tl || "AR").split(" ").map(n => n[0]).slice(0, 2).join("")}
+                {(targetTlName || "AR").split(" ").map(n => n[0]).slice(0, 2).join("")}
               </div>
-              <div className="min-w-0">
-                <strong className="text-xs font-extrabold text-[#042C51] block truncate">
-                  {currentHandoff?.targetTlName || journey.tl || "Anton Reyes"}
-                </strong>
-                <span className="text-[10.5px] text-slate-500 block truncate">
-                  Operations Team Leader • Pod 4
-                </span>
+              <div className="min-w-0 flex-1">
+                {status !== "Accepted" ? (
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-1.5">
+                      <select
+                        aria-label="Choose Team Leader for Handoff"
+                        value={targetTlName}
+                        onChange={(e) => handleQuickTlChange(e.target.value)}
+                        className="w-full text-xs font-black text-[#042C51] bg-[#FAFCFF] border border-[#BECBDA] rounded-lg px-2 py-1 outline-none focus:border-[#FF5C28] cursor-pointer hover:border-[#042C51] transition-colors"
+                      >
+                        {AVAILABLE_TEAM_LEADERS.map((tl) => (
+                          <option key={tl.id} value={tl.name}>
+                            {tl.name} — {tl.pod.split("•")[0].trim()}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <span className="text-[10px] text-slate-500 block truncate">
+                      {selectedTlObj?.title || "Operations Team Leader"} • {selectedTlObj?.pod || "Production Operations"}
+                    </span>
+                  </div>
+                ) : (
+                  <div>
+                    <strong className="text-xs font-extrabold text-[#042C51] block truncate">
+                      {targetTlName}
+                    </strong>
+                    <span className="text-[10.5px] text-slate-500 block truncate">
+                      {selectedTlObj?.title || "Operations Team Leader"} • {selectedTlObj?.pod || "Production Operations"}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
             {currentHandoff?.acceptedAt ? (
@@ -249,7 +313,7 @@ export default function Day30HandoffCard({
               </span>
             ) : (
               <span className="text-[9.5px] text-amber-700 font-semibold block pt-1 border-t border-slate-100">
-                ⏳ Pending formal acceptance
+                ⏳ Pending formal acceptance • Target TL: <strong className="text-[#042C51]">{targetTlName}</strong>
               </span>
             )}
           </div>
@@ -490,13 +554,21 @@ export default function Day30HandoffCard({
 
                 <div>
                   <label className="block font-bold text-[#042C51] mb-1">Target Team Leader (TL)</label>
-                  <input
-                    type="text"
+                  <select
                     value={targetTlName}
                     onChange={e => setTargetTlName(e.target.value)}
-                    className="w-full p-2.5 rounded-xl border border-[#BECBDA] text-[#042C51] font-semibold text-xs outline-none focus:border-[#FF5C28]"
+                    className="w-full p-2.5 rounded-xl border border-[#BECBDA] text-[#042C51] font-semibold text-xs outline-none focus:border-[#FF5C28] bg-white cursor-pointer"
                     required
-                  />
+                  >
+                    {AVAILABLE_TEAM_LEADERS.map(tl => (
+                      <option key={tl.id} value={tl.name}>
+                        {tl.name} ({tl.pod})
+                      </option>
+                    ))}
+                  </select>
+                  <p className="mt-1 text-[10px] text-slate-500">
+                    Target Pod: <strong className="text-[#042C51]">{selectedTlObj?.pod}</strong>
+                  </p>
                 </div>
               </div>
 

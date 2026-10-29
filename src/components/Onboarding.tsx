@@ -37,6 +37,7 @@ import {
   Users
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
+import { useJourney } from "./journey/JourneyContext";
 
 // ==========================================
 // STORAGE KEYS FOR CROSS-MODULE SYNC
@@ -47,6 +48,19 @@ export const PIPELINE_CANDIDATES_STORAGE_KEY = "pipeline_candidates_data";
 export const EMPLOYEE_DIRECTORY_STORAGE_KEY = "employee_directory_records";
 export const TALENT_POOL_STORAGE_KEY = "talent_pool_records";
 export const PIPELINE_SYNC_EVENTS_KEY = "pipeline_sync_events";
+
+export const ONBOARDING_STAGES = [
+  "Offer Accepted / Pre-Boarding",
+  "Document Clearance",
+  "NHO Orientation",
+  "IT & Workstation Provisioning",
+  "Day 1 - Handed Off to Training",
+  "Completed Onboarding",
+  "No Show",
+  "Pre-start Withdrawal",
+] as const;
+
+export type OnboardingStageType = typeof ONBOARDING_STAGES[number];
 
 interface OnboardingProps {
   userEmail?: string;
@@ -65,14 +79,52 @@ export interface OnboardingRecord {
   expectedStartDate: string;
   actualStartDate?: string;
   daysToStart?: number; // Pre-start calculation
-  showStatus: "Pending" | "Show" | "No Show" | "Withdrawn";
-  finalOutcome: "Pending Start" | "True Hire" | "No Show" | "Pre-start Withdrawal";
+  onboardingStage?: OnboardingStageType | string;
+  showStatus?: "Pending" | "Show" | "No Show" | "Withdrawn";
+  finalOutcome?: "Pending Start" | "True Hire" | "No Show" | "Pre-start Withdrawal";
+  handoffStatus?: string;
+  assessmentStatus?: string;
+  coachingStatus?: string;
   owner: string; // Recruiter/Owner
   feedbackRating?: number; // 1 to 5 stars
   withdrawalReason?: string;
   withdrawalNotes?: string;
-  convertedEmployeeId?: string; // SIB-2026-XXX ID when converted
+  convertedEmployeeId?: string; // SIB-2026-XXX or SIBS-XXXX ID when converted
   auditTrail: { date: string; action: string; user: string }[];
+}
+
+export function getRecordOnboardingStage(record: OnboardingRecord): string {
+  if (record.onboardingStage) return record.onboardingStage;
+  if (record.finalOutcome === "True Hire") return "Completed Onboarding";
+  if (record.finalOutcome === "No Show" || record.showStatus === "No Show") return "No Show";
+  if (record.finalOutcome === "Pre-start Withdrawal" || record.showStatus === "Withdrawn") return "Pre-start Withdrawal";
+  if (record.showStatus === "Show" || record.actualStartDate) return "Day 1 - Handed Off to Training";
+  if (record.daysToStart && record.daysToStart > 12) return "Offer Accepted / Pre-Boarding";
+  if (record.daysToStart && record.daysToStart > 5) return "Document Clearance";
+  return "NHO Orientation";
+}
+
+export function getOnboardingStageBadgeClass(stage: string) {
+  switch (stage) {
+    case "Offer Accepted / Pre-Boarding":
+      return "border-blue-200 bg-blue-50 text-blue-800";
+    case "Document Clearance":
+      return "border-cyan-200 bg-cyan-50 text-cyan-800";
+    case "NHO Orientation":
+      return "border-purple-200 bg-purple-50 text-purple-800";
+    case "IT & Workstation Provisioning":
+      return "border-indigo-200 bg-indigo-50 text-indigo-800";
+    case "Day 1 - Handed Off to Training":
+      return "border-amber-200 bg-amber-50 text-amber-900";
+    case "Completed Onboarding":
+      return "border-emerald-200 bg-emerald-50 text-emerald-800";
+    case "No Show":
+      return "border-rose-200 bg-rose-50 text-rose-800";
+    case "Pre-start Withdrawal":
+      return "border-orange-200 bg-orange-50 text-orange-800";
+    default:
+      return "border-slate-200 bg-slate-50 text-slate-700";
+  }
 }
 
 const INITIAL_ONBOARDING_RECORDS: OnboardingRecord[] = [
@@ -87,6 +139,10 @@ const INITIAL_ONBOARDING_RECORDS: OnboardingRecord[] = [
     offerAcceptedDate: "2026-07-16",
     expectedStartDate: "2026-08-01",
     daysToStart: 16,
+    onboardingStage: "Offer Accepted / Pre-Boarding",
+    handoffStatus: "Pending Day 1 Handoff",
+    assessmentStatus: "Pre-hire Requirements",
+    coachingStatus: "None Required",
     showStatus: "Pending",
     finalOutcome: "Pending Start",
     owner: "Alena Batacan",
@@ -107,6 +163,10 @@ const INITIAL_ONBOARDING_RECORDS: OnboardingRecord[] = [
     offerAcceptedDate: "2026-07-15",
     expectedStartDate: "2026-07-27",
     daysToStart: 12,
+    onboardingStage: "Document Clearance",
+    handoffStatus: "Scheduled for Day 1 Handoff",
+    assessmentStatus: "Orientation Pending",
+    coachingStatus: "None Required",
     showStatus: "Pending",
     finalOutcome: "Pending Start",
     owner: "Juan dela Cruz",
@@ -114,6 +174,112 @@ const INITIAL_ONBOARDING_RECORDS: OnboardingRecord[] = [
     auditTrail: [
       { date: "2026-07-15", action: "Imported from Candidate Pipeline (Offer Accepted)", user: "System" },
       { date: "2026-07-18", action: "Pre-employment medical clearance completed.", user: "Juan dela Cruz" }
+    ]
+  },
+  {
+    id: "ONB-2026-007",
+    name: "Alyssa Rivera",
+    email: "alyssa.rivera@thesiblingssolutions.com",
+    phone: "+63 917 111 2233",
+    role: "Customer Support Advocate",
+    account: "US Visa",
+    siteLocation: "SiBS Davao",
+    offerAcceptedDate: "2026-09-18",
+    expectedStartDate: "2026-09-19",
+    actualStartDate: "2026-09-19",
+    daysToStart: 1,
+    onboardingStage: "Day 1 - Handed Off to Training",
+    handoffStatus: "Day 30 Handoff to TL Due",
+    assessmentStatus: "FST 84% • PST 88% (Passed)",
+    coachingStatus: "None Required",
+    showStatus: "Show",
+    finalOutcome: "True Hire",
+    owner: "Jenna Villanueva",
+    convertedEmployeeId: "SIBS-2901",
+    feedbackRating: 5,
+    auditTrail: [
+      { date: "2026-09-18", action: "NHO clearance completed. Dispatched to L&D Nesting.", user: "Jenna Villanueva" },
+      { date: "2026-09-19", action: "Reported Day 1. Handed off to Trainer Maria Cruz.", user: "Jenna Villanueva" },
+      { date: "2026-10-14", action: "Day 30 Checkpoint reached. Notification generated for TL Handoff.", user: "System" }
+    ]
+  },
+  {
+    id: "ONB-2026-008",
+    name: "Nica Flores",
+    email: "nica.flores@thesiblingssolutions.com",
+    phone: "+63 919 222 3344",
+    role: "Customer Care Specialist",
+    account: "Customer Care",
+    siteLocation: "SiBS Mabini",
+    offerAcceptedDate: "2026-07-28",
+    expectedStartDate: "2026-08-01",
+    actualStartDate: "2026-08-01",
+    daysToStart: 4,
+    onboardingStage: "Completed Onboarding",
+    handoffStatus: "Handoff to TL Complete (Anton Reyes)",
+    assessmentStatus: "FST 71% • PST 66%",
+    coachingStatus: "Coaching: Active (Pacing & Empathy)",
+    showStatus: "Show",
+    finalOutcome: "True Hire",
+    owner: "Alena Batacan",
+    convertedEmployeeId: "SIBS-2903",
+    feedbackRating: 4,
+    auditTrail: [
+      { date: "2026-08-01", action: "Completed Day 1 Induction. Handed off to Trainer Kim Ramos.", user: "Alena Batacan" },
+      { date: "2026-08-30", action: "Day 30 handoff accepted by Anton Reyes.", user: "Anton Reyes" }
+    ]
+  },
+  {
+    id: "ONB-2026-009",
+    name: "Kenneth Dizon",
+    email: "kenneth.dizon@thesiblingssolutions.com",
+    phone: "+63 928 333 4455",
+    role: "Technical Support Associate",
+    account: "Chevron Support",
+    siteLocation: "SiBS Tagum",
+    offerAcceptedDate: "2026-08-15",
+    expectedStartDate: "2026-08-25",
+    actualStartDate: "2026-08-25",
+    daysToStart: 10,
+    onboardingStage: "Completed Onboarding",
+    handoffStatus: "Handoff to TL Complete",
+    assessmentStatus: "FST 65% • PST 68% (PST Needs Support)",
+    coachingStatus: "Coaching: Action Required (Escalated)",
+    showStatus: "Show",
+    finalOutcome: "True Hire",
+    owner: "Juan dela Cruz",
+    convertedEmployeeId: "SIBS-2906",
+    feedbackRating: 3,
+    auditTrail: [
+      { date: "2026-08-25", action: "Day 1 completed. Transferred to Nesting.", user: "Juan dela Cruz" },
+      { date: "2026-09-24", action: "Day 30 Checkpoint identified QA drop. Coaching action initiated.", user: "Kim Ramos" }
+    ]
+  },
+  {
+    id: "ONB-2026-010",
+    name: "Joshua Lee",
+    email: "joshua.lee@thesiblingssolutions.com",
+    phone: "+63 939 444 5566",
+    role: "Operations Specialist",
+    account: "Fintech Support",
+    siteLocation: "SiBS Davao",
+    offerAcceptedDate: "2026-07-10",
+    expectedStartDate: "2026-07-15",
+    actualStartDate: "2026-07-15",
+    daysToStart: 5,
+    onboardingStage: "Completed Onboarding",
+    handoffStatus: "Handoff to TL Complete",
+    assessmentStatus: "FST 83% • PST 89% (Passed)",
+    coachingStatus: "Coaching: Passed (Goal Met)",
+    showStatus: "Show",
+    finalOutcome: "True Hire",
+    owner: "Alena Batacan",
+    convertedEmployeeId: "SIBS-2904",
+    feedbackRating: 5,
+    auditTrail: [
+      { date: "2026-07-15", action: "Day 1 Induction verified.", user: "Alena Batacan" },
+      { date: "2026-08-14", action: "Day 30 Handoff endorsed to Anton Reyes.", user: "Kim Ramos" },
+      { date: "2026-09-20", action: "Coaching session completed with Goal Met status.", user: "Kim Ramos" }
     ]
   },
   {
@@ -128,6 +294,10 @@ const INITIAL_ONBOARDING_RECORDS: OnboardingRecord[] = [
     expectedStartDate: "2026-07-18",
     actualStartDate: "2026-07-18",
     daysToStart: 8,
+    onboardingStage: "Completed Onboarding",
+    handoffStatus: "Handed Off to Training",
+    assessmentStatus: "FST Passed (86%)",
+    coachingStatus: "None Required",
     showStatus: "Show",
     finalOutcome: "True Hire",
     owner: "Alena Batacan",
@@ -150,6 +320,10 @@ const INITIAL_ONBOARDING_RECORDS: OnboardingRecord[] = [
     offerAcceptedDate: "2026-07-08",
     expectedStartDate: "2026-07-15",
     daysToStart: 7,
+    onboardingStage: "No Show",
+    handoffStatus: "No Show (Archived)",
+    assessmentStatus: "N/A",
+    coachingStatus: "N/A",
     showStatus: "No Show",
     finalOutcome: "No Show",
     owner: "Maria Santos",
@@ -173,6 +347,10 @@ const INITIAL_ONBOARDING_RECORDS: OnboardingRecord[] = [
     expectedStartDate: "2026-07-15",
     actualStartDate: "2026-07-15",
     daysToStart: 10,
+    onboardingStage: "Day 1 - Handed Off to Training",
+    handoffStatus: "Handed Off to Training",
+    assessmentStatus: "FST In Progress (78%)",
+    coachingStatus: "None Required",
     showStatus: "Show",
     finalOutcome: "True Hire",
     owner: "Juan dela Cruz",
@@ -194,6 +372,10 @@ const INITIAL_ONBOARDING_RECORDS: OnboardingRecord[] = [
     offerAcceptedDate: "2026-06-28",
     expectedStartDate: "2026-07-12",
     daysToStart: 14,
+    onboardingStage: "Pre-start Withdrawal",
+    handoffStatus: "Withdrawn Before Start",
+    assessmentStatus: "N/A",
+    coachingStatus: "N/A",
     showStatus: "Withdrawn",
     finalOutcome: "Pre-start Withdrawal",
     owner: "Alena Batacan",
@@ -206,7 +388,6 @@ const INITIAL_ONBOARDING_RECORDS: OnboardingRecord[] = [
     ]
   }
 ];
-
 
 function getInitials(name = "") {
   const parts = String(name || "")
@@ -233,38 +414,6 @@ function formatDisplayDate(value?: string) {
   });
 }
 
-function getShowStatusClass(status = "Pending") {
-  if (status === "Show") {
-    return "border-emerald-200 bg-emerald-50 text-emerald-700";
-  }
-
-  if (status === "No Show") {
-    return "border-red-200 bg-red-50 text-red-700";
-  }
-
-  if (status === "Withdrawn") {
-    return "border-orange-200 bg-orange-50 text-orange-700";
-  }
-
-  return "border-amber-200 bg-amber-50 text-amber-700";
-}
-
-function getOutcomeClass(outcome = "Pending Start") {
-  if (outcome === "True Hire") {
-    return "border-emerald-200 bg-emerald-50 text-emerald-700";
-  }
-
-  if (outcome === "No Show") {
-    return "border-red-200 bg-red-50 text-red-700";
-  }
-
-  if (outcome === "Pre-start Withdrawal") {
-    return "border-orange-200 bg-orange-50 text-orange-700";
-  }
-
-  return "border-amber-200 bg-amber-50 text-amber-700";
-}
-
 export default function Onboarding({ userEmail = "alena.batacan@thesiblingssolutions.com", onSwitchModule }: OnboardingProps) {
   // Load initial onboarding records from localStorage or default
   const [records, setRecords] = useState<OnboardingRecord[]>(() => {
@@ -282,10 +431,12 @@ export default function Onboarding({ userEmail = "alena.batacan@thesiblingssolut
 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
+  const { journeys, phaseTrainingScores, coachingActions } = useJourney();
+
   // Search & Filtering State
   const [searchTerm, setSearchTerm] = useState("");
-  const [showStatusFilter, setShowStatusFilter] = useState("All");
-  const [outcomeFilter, setOutcomeFilter] = useState("All");
+  const [stageFilter, setStageFilter] = useState("All");
+  const [operationalFilter, setOperationalFilter] = useState("All");
   const [locationFilter, setLocationFilter] = useState("All");
   const [ownerFilter, setOwnerFilter] = useState("All");
 
@@ -312,6 +463,7 @@ export default function Onboarding({ userEmail = "alena.batacan@thesiblingssolut
   // Outcome Workflow Modal State
   const [outcomeTargetRecord, setOutcomeTargetRecord] = useState<OnboardingRecord | null>(null);
   const [isOutcomeModalOpen, setIsOutcomeModalOpen] = useState(false);
+  const [outcomeStage, setOutcomeStage] = useState<string>("Day 1 - Handed Off to Training");
   const [outcomeShowStatus, setOutcomeShowStatus] = useState<"Pending" | "Show" | "No Show" | "Withdrawn">("Show");
   const [outcomeActualDate, setOutcomeActualDate] = useState("2026-07-20");
   const [outcomeFeedbackRating, setOutcomeFeedbackRating] = useState<number>(5);
@@ -419,6 +571,128 @@ export default function Onboarding({ userEmail = "alena.batacan@thesiblingssolut
     };
   }, [records]);
 
+  // Helper: Determine live operational and journey status for an onboarding candidate
+  const getRecordOperationalStatus = (record: OnboardingRecord) => {
+    const matchingJourney = journeys.find(
+      j => (record.convertedEmployeeId && (j.sibsEmployeeId === record.convertedEmployeeId || j.id === record.convertedEmployeeId)) ||
+           j.fullName.toLowerCase() === record.name.toLowerCase()
+    );
+
+    // 1. Handoff
+    let handoffBadge = {
+      label: "Pending Day 1 Handoff",
+      tone: "bg-slate-100 text-slate-600 border-slate-200",
+      isAlert: false,
+      key: "pending"
+    };
+
+    if (matchingJourney) {
+      const handoff = matchingJourney.day30Handoff || matchingJourney.day30?.handoff;
+      if (matchingJourney.daysElapsed >= 27 && (!handoff || handoff.status === "Pending")) {
+        handoffBadge = {
+          label: "Day 30 Handoff to TL Due",
+          tone: "bg-orange-100 text-[#FF5C28] border-orange-300 font-black",
+          isAlert: true,
+          key: "day30-due"
+        };
+      } else if (handoff?.status === "Submitted") {
+        handoffBadge = {
+          label: `Awaiting TL Acceptance (${handoff.targetTlName || "TL"})`,
+          tone: "bg-amber-100 text-amber-800 border-amber-300 font-bold",
+          isAlert: false,
+          key: "submitted"
+        };
+      } else if (handoff?.status === "Accepted") {
+        handoffBadge = {
+          label: `Handoff to TL Accepted (${handoff.targetTlName || "TL"})`,
+          tone: "bg-emerald-100 text-emerald-800 border-emerald-300 font-bold",
+          isAlert: false,
+          key: "accepted"
+        };
+      } else {
+        handoffBadge = {
+          label: `Handed Off to Training (${matchingJourney.trainerName || "L&D"})`,
+          tone: "bg-blue-100 text-blue-800 border-blue-200 font-bold",
+          isAlert: false,
+          key: "training"
+        };
+      }
+    } else if (record.handoffStatus) {
+      const isDue = record.handoffStatus.toLowerCase().includes("due") || record.handoffStatus.toLowerCase().includes("pending action");
+      handoffBadge = {
+        label: record.handoffStatus,
+        tone: isDue ? "bg-orange-100 text-[#FF5C28] border-orange-300 font-black" : "bg-slate-100 text-slate-700 border-slate-200 font-semibold",
+        isAlert: isDue,
+        key: isDue ? "day30-due" : "custom"
+      };
+    } else if (record.finalOutcome === "True Hire" || record.onboardingStage === "Completed Onboarding") {
+      handoffBadge = {
+        label: "Handed Off to Training",
+        tone: "bg-blue-100 text-blue-800 border-blue-200 font-bold",
+        isAlert: false,
+        key: "training"
+      };
+    } else if (record.finalOutcome === "No Show" || record.onboardingStage === "No Show") {
+      handoffBadge = {
+        label: "No Show (Archived)",
+        tone: "bg-rose-50 text-rose-700 border-rose-200 font-semibold",
+        isAlert: false,
+        key: "noshow"
+      };
+    } else if (record.finalOutcome === "Pre-start Withdrawal" || record.onboardingStage === "Pre-start Withdrawal") {
+      handoffBadge = {
+        label: "Withdrawn Before Start",
+        tone: "bg-orange-50 text-orange-700 border-orange-200 font-semibold",
+        isAlert: false,
+        key: "withdrawn"
+      };
+    }
+
+    // 2. Assessment
+    let assessmentLabel = record.assessmentStatus || "";
+    if (matchingJourney) {
+      const empKey = matchingJourney.sibsEmployeeId || matchingJourney.id;
+      const fst = phaseTrainingScores.find(s => (s.emp === empKey || s.emp === matchingJourney.id) && s.phase === "FST");
+      const pst = phaseTrainingScores.find(s => (s.emp === empKey || s.emp === matchingJourney.id) && s.phase === "PST");
+      if (fst || pst) {
+        assessmentLabel = `FST: ${fst ? fst.score + "%" : "—"} • PST: ${pst ? pst.score + "%" : "—"}`;
+      }
+    }
+
+    // 3. Coaching
+    let coachingBadge: { label: string; tone: string; key: string } | null = null;
+    if (matchingJourney) {
+      const empKey = matchingJourney.sibsEmployeeId || matchingJourney.id;
+      const coachActs = coachingActions.filter(c => c.emp === empKey || c.emp === matchingJourney.id);
+      const hasDone = coachActs.some(c => c.status === "Done");
+      const hasOpen = coachActs.some(c => c.status === "Open");
+
+      if (hasDone && !hasOpen) {
+        coachingBadge = {
+          label: "Coaching: Passed (Goal Met)",
+          tone: "bg-emerald-50 text-emerald-700 border-emerald-300 font-bold",
+          key: "passed"
+        };
+      } else if (hasOpen) {
+        coachingBadge = {
+          label: "Coaching: Active",
+          tone: "bg-amber-50 text-amber-800 border-amber-300 font-bold",
+          key: "active"
+        };
+      }
+    } else if (record.coachingStatus && record.coachingStatus !== "None Required" && record.coachingStatus !== "N/A") {
+      const passed = record.coachingStatus.toLowerCase().includes("pass") || record.coachingStatus.toLowerCase().includes("met");
+      const failed = record.coachingStatus.toLowerCase().includes("fail") || record.coachingStatus.toLowerCase().includes("action");
+      coachingBadge = {
+        label: record.coachingStatus,
+        tone: passed ? "bg-emerald-50 text-emerald-700 border-emerald-300 font-bold" : failed ? "bg-rose-50 text-rose-700 border-rose-300 font-black" : "bg-amber-50 text-amber-800 border-amber-300 font-bold",
+        key: passed ? "passed" : failed ? "action" : "active"
+      };
+    }
+
+    return { handoffBadge, assessmentLabel, coachingBadge, matchingJourney };
+  };
+
   // Filtered Onboarding Records
   const filteredRecords = useMemo(() => {
     return records.filter(r => {
@@ -430,14 +704,24 @@ export default function Onboarding({ userEmail = "alena.batacan@thesiblingssolut
         r.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (r.siteLocation && r.siteLocation.toLowerCase().includes(searchTerm.toLowerCase()));
 
-      const matchShowStatus = showStatusFilter === "All" ? true : r.showStatus === showStatusFilter;
-      const matchOutcome = outcomeFilter === "All" ? true : r.finalOutcome === outcomeFilter;
+      const stage = getRecordOnboardingStage(r);
+      const matchStage = stageFilter === "All" ? true : stage === stageFilter;
+
+      const opStatus = getRecordOperationalStatus(r);
+      const matchOperational = operationalFilter === "All" ? true :
+        operationalFilter === "Day 30 Handoff Due" ? opStatus.handoffBadge.isAlert :
+        operationalFilter === "Handed Off to TL" ? (opStatus.handoffBadge.key === "accepted" || opStatus.handoffBadge.label.includes("TL")) :
+        operationalFilter === "Handed Off to Training" ? (opStatus.handoffBadge.key === "training" || opStatus.handoffBadge.label.includes("Training")) :
+        operationalFilter === "Coaching: Passed" ? (opStatus.coachingBadge?.key === "passed") :
+        operationalFilter === "Coaching: Active / Needs Attention" ? (opStatus.coachingBadge?.key === "active" || opStatus.coachingBadge?.key === "action") :
+        true;
+
       const matchLocation = locationFilter === "All" ? true : r.siteLocation === locationFilter;
       const matchOwner = ownerFilter === "All" ? true : r.owner === ownerFilter;
 
-      return matchSearch && matchShowStatus && matchOutcome && matchLocation && matchOwner;
+      return matchSearch && matchStage && matchOperational && matchLocation && matchOwner;
     });
-  }, [records, searchTerm, showStatusFilter, outcomeFilter, locationFilter, ownerFilter]);
+  }, [records, searchTerm, stageFilter, operationalFilter, locationFilter, ownerFilter, journeys, phaseTrainingScores, coachingActions]);
 
   // Handler: Selecting a pending offer from Create Modal
   const handleSelectPendingOffer = (offerId: string) => {
@@ -519,7 +803,17 @@ export default function Onboarding({ userEmail = "alena.batacan@thesiblingssolut
   // Open Outcome Resolution Modal
   const handleOpenOutcomeModal = (record: OnboardingRecord) => {
     setOutcomeTargetRecord(record);
-    setOutcomeShowStatus(record.showStatus);
+    const initialStage = getRecordOnboardingStage(record);
+    setOutcomeStage(initialStage);
+    setOutcomeShowStatus(
+      initialStage === "Completed Onboarding" || initialStage === "Day 1 - Handed Off to Training"
+        ? "Show"
+        : initialStage === "No Show"
+          ? "No Show"
+          : initialStage === "Pre-start Withdrawal"
+            ? "Withdrawn"
+            : record.showStatus || "Pending"
+    );
     setOutcomeActualDate(record.actualStartDate || record.expectedStartDate || new Date().toISOString().split("T")[0]);
     setOutcomeFeedbackRating(record.feedbackRating || 5);
     setOutcomeWithdrawalReason(record.withdrawalReason || "Compensation Gap / Counter Offer");
@@ -532,11 +826,11 @@ export default function Onboarding({ userEmail = "alena.batacan@thesiblingssolut
     if (!outcomeTargetRecord) return;
 
     let finalOutcomeState: OnboardingRecord["finalOutcome"] = "Pending Start";
-    if (outcomeShowStatus === "Show") {
+    if (outcomeStage === "Completed Onboarding" || outcomeStage === "Day 1 - Handed Off to Training" || outcomeShowStatus === "Show") {
       finalOutcomeState = "True Hire";
-    } else if (outcomeShowStatus === "No Show") {
+    } else if (outcomeStage === "No Show" || outcomeShowStatus === "No Show") {
       finalOutcomeState = "No Show";
-    } else if (outcomeShowStatus === "Withdrawn") {
+    } else if (outcomeStage === "Pre-start Withdrawal" || outcomeShowStatus === "Withdrawn") {
       finalOutcomeState = "Pre-start Withdrawal";
     } else {
       finalOutcomeState = "Pending Start";
@@ -675,14 +969,25 @@ export default function Onboarding({ userEmail = "alena.batacan@thesiblingssolut
             user: userEmail.split("@")[0] || "Alena Batacan"
           });
 
+          let resolvedHandoff = r.handoffStatus;
+          if (outcomeStage === "Day 1 - Handed Off to Training" || outcomeStage === "Completed Onboarding") {
+            resolvedHandoff = resolvedHandoff || "Handed Off to Training";
+          } else if (outcomeStage === "No Show") {
+            resolvedHandoff = "No Show (Archived)";
+          } else if (outcomeStage === "Pre-start Withdrawal") {
+            resolvedHandoff = "Withdrawn Before Start";
+          }
+
           return {
             ...r,
+            onboardingStage: outcomeStage,
             showStatus: outcomeShowStatus,
             finalOutcome: finalOutcomeState,
-            actualStartDate: outcomeShowStatus === "Show" ? outcomeActualDate : undefined,
+            handoffStatus: resolvedHandoff,
+            actualStartDate: (outcomeShowStatus === "Show" || outcomeStage === "Day 1 - Handed Off to Training" || outcomeStage === "Completed Onboarding") ? outcomeActualDate : undefined,
             feedbackRating: outcomeFeedbackRating,
-            withdrawalReason: (outcomeShowStatus === "No Show" || outcomeShowStatus === "Withdrawn") ? outcomeWithdrawalReason : undefined,
-            withdrawalNotes: (outcomeShowStatus === "No Show" || outcomeShowStatus === "Withdrawn") ? outcomeWithdrawalNotes : undefined,
+            withdrawalReason: (outcomeShowStatus === "No Show" || outcomeShowStatus === "Withdrawn" || outcomeStage === "No Show" || outcomeStage === "Pre-start Withdrawal") ? outcomeWithdrawalReason : undefined,
+            withdrawalNotes: (outcomeShowStatus === "No Show" || outcomeShowStatus === "Withdrawn" || outcomeStage === "No Show" || outcomeStage === "Pre-start Withdrawal") ? outcomeWithdrawalNotes : undefined,
             convertedEmployeeId: finalOutcomeState === "True Hire" ? generatedEmpId : r.convertedEmployeeId,
             auditTrail: updatedAudit
           };
@@ -988,27 +1293,29 @@ export default function Onboarding({ userEmail = "alena.batacan@thesiblingssolut
             </div>
 
             <select
-              value={showStatusFilter}
-              onChange={(event) => setShowStatusFilter(event.target.value)}
-              className="h-10 w-full rounded-xl border border-[#D7DEE8] bg-[#F8FAFC] px-3 text-xs font-semibold text-[#042C51] outline-none transition hover:border-[#FF5C28]/40 hover:bg-white focus:border-[#FF5C28] focus:bg-white focus:ring-4 focus:ring-[#FF5C28]/10"
+              value={stageFilter}
+              onChange={(event) => setStageFilter(event.target.value)}
+              className="h-10 w-full rounded-xl border border-[#D7DEE8] bg-[#F8FAFC] px-3 text-xs font-semibold text-[#042C51] outline-none transition hover:border-[#FF5C28]/40 hover:bg-white focus:border-[#FF5C28] focus:bg-white focus:ring-4 focus:ring-[#FF5C28]/10 cursor-pointer"
             >
-              <option value="All">All Status</option>
-              <option value="Pending">Pending</option>
-              <option value="Show">Show</option>
-              <option value="No Show">No Show</option>
-              <option value="Withdrawn">Withdrawn</option>
+              <option value="All">All Onboarding Stages</option>
+              {ONBOARDING_STAGES.map((st) => (
+                <option key={st} value={st}>
+                  {st}
+                </option>
+              ))}
             </select>
 
             <select
-              value={outcomeFilter}
-              onChange={(event) => setOutcomeFilter(event.target.value)}
-              className="h-10 w-full rounded-xl border border-[#D7DEE8] bg-[#F8FAFC] px-3 text-xs font-semibold text-[#042C51] outline-none transition hover:border-[#FF5C28]/40 hover:bg-white focus:border-[#FF5C28] focus:bg-white focus:ring-4 focus:ring-[#FF5C28]/10"
+              value={operationalFilter}
+              onChange={(event) => setOperationalFilter(event.target.value)}
+              className="h-10 w-full rounded-xl border border-[#D7DEE8] bg-[#F8FAFC] px-3 text-xs font-semibold text-[#042C51] outline-none transition hover:border-[#FF5C28]/40 hover:bg-white focus:border-[#FF5C28] focus:bg-white focus:ring-4 focus:ring-[#FF5C28]/10 cursor-pointer"
             >
-              <option value="All">All Outcomes</option>
-              <option value="Pending Start">Pending Start</option>
-              <option value="True Hire">True Hire</option>
-              <option value="No Show">No Show</option>
-              <option value="Pre-start Withdrawal">Pre-start Withdrawal</option>
+              <option value="All">All Journey Status</option>
+              <option value="Day 30 Handoff Due">⚠️ Day 30 Handoff Due</option>
+              <option value="Handed Off to TL">Handed Off to TL</option>
+              <option value="Handed Off to Training">Handed Off to Training</option>
+              <option value="Coaching: Passed">Coaching: Passed (Goal Met)</option>
+              <option value="Coaching: Active / Needs Attention">Coaching: Active / Needs Attention</option>
             </select>
 
             <select
@@ -1039,19 +1346,19 @@ export default function Onboarding({ userEmail = "alena.batacan@thesiblingssolut
               type="button"
               onClick={() => {
                 setSearchTerm("");
-                setShowStatusFilter("All");
-                setOutcomeFilter("All");
+                setStageFilter("All");
+                setOperationalFilter("All");
                 setLocationFilter("All");
                 setOwnerFilter("All");
               }}
               disabled={
                 !searchTerm &&
-                showStatusFilter === "All" &&
-                outcomeFilter === "All" &&
+                stageFilter === "All" &&
+                operationalFilter === "All" &&
                 locationFilter === "All" &&
                 ownerFilter === "All"
               }
-              className="inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-xl border border-[#D7DEE8] bg-white px-3 text-xs font-extrabold text-[#667085] transition hover:border-[#FF5C28]/40 hover:bg-[#FFF8F5] hover:text-[#FF5C28] disabled:cursor-not-allowed disabled:opacity-45 xl:w-auto"
+              className="inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-xl border border-[#D7DEE8] bg-white px-3 text-xs font-extrabold text-[#667085] transition hover:border-[#FF5C28]/40 hover:bg-[#FFF8F5] hover:text-[#FF5C28] disabled:cursor-not-allowed disabled:opacity-45 xl:w-auto cursor-pointer"
             >
               <Filter size={14} />
               Clear
@@ -1073,8 +1380,8 @@ export default function Onboarding({ userEmail = "alena.batacan@thesiblingssolut
                       ["OFFER ACCEPTED", "text-left"],
                       ["EXPECTED START", "text-left"],
                       ["ACTUAL START", "text-left"],
-                      ["SHOW STATUS", "text-center"],
-                      ["FINAL OUTCOME", "text-center"],
+                      ["ONBOARDING STAGE", "text-left"],
+                      ["JOURNEY & COACHING STATUS", "text-left"],
                       ["TA OWNER", "text-left"],
                       ["ACTION", "text-right"],
                     ].map(([header, align]) => (
@@ -1093,132 +1400,156 @@ export default function Onboarding({ userEmail = "alena.batacan@thesiblingssolut
                       </td>
                     </tr>
                   ) : (
-                    filteredRecords.map((record) => (
-                      <tr
-                        key={record.id}
-                        className="group transition-colors hover:bg-[#F8FAFC]"
-                      >
-                        <td className="whitespace-nowrap px-4 py-2.5 align-middle text-xs font-extrabold text-[#042C51]">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setSelectedRecord(record);
-                              setIsDetailsModalOpen(true);
-                            }}
-                            className="font-extrabold tabular-nums text-[#042C51] transition hover:text-[#FF5C28]"
-                          >
-                            {record.id}
-                          </button>
-                        </td>
+                    filteredRecords.map((record) => {
+                      const recordStage = getRecordOnboardingStage(record);
+                      const statusInfo = getRecordOperationalStatus(record);
 
-                        <td className="whitespace-nowrap px-4 py-2.5 align-middle text-xs">
-                          <div className="flex min-w-0 items-center gap-2.5">
-                            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#042C51] text-[10px] font-extrabold text-white shadow-sm">
-                              {getInitials(record.name)}
-                            </span>
-                            <div className="min-w-0">
-                              <p className="m-0 max-w-[210px] truncate font-extrabold text-[#042C51]">
-                                {record.name}
-                              </p>
-                              <p className="mt-0.5 max-w-[210px] truncate text-[10px] font-semibold text-[#667085]">
-                                {record.email || "No email saved"}
-                              </p>
-                            </div>
-                          </div>
-                        </td>
-
-                        <td className="whitespace-nowrap px-4 py-2.5 align-middle text-xs">
-                          <p className="max-w-[210px] truncate font-extrabold text-[#344054]">
-                            {record.role}
-                          </p>
-                          <span className="mt-0.5 inline-flex max-w-[210px] truncate rounded bg-[#F2F4F7] px-1.5 py-0.5 text-[10px] font-bold text-[#475467]">
-                            {record.account || "No account"}
-                          </span>
-                          <p className="mt-0.5 flex max-w-[210px] items-center gap-1 truncate text-[9.5px] font-semibold text-[#667085]">
-                            <MapPin size={10} className="shrink-0 text-[#FF5C28]" />
-                            {record.siteLocation || "No site"}
-                          </p>
-                        </td>
-
-                        <td className="whitespace-nowrap px-4 py-2.5 align-middle text-xs font-semibold text-[#344054]">
-                          <div className="flex items-center gap-1.5">
-                            <Calendar size={13} className="shrink-0 text-[#98A2B3]" />
-                            <span className="tabular-nums">{formatDisplayDate(record.offerAcceptedDate)}</span>
-                          </div>
-                        </td>
-
-                        <td className="whitespace-nowrap px-4 py-2.5 align-middle text-xs font-extrabold tabular-nums text-[#042C51]">
-                          {formatDisplayDate(record.expectedStartDate)}
-                          <p className="mt-0.5 text-[9.5px] font-bold text-indigo-600">
-                            {record.daysToStart || 0} day/s to start
-                          </p>
-                        </td>
-
-                        <td className="whitespace-nowrap px-4 py-2.5 align-middle text-xs font-semibold tabular-nums text-[#475467]">
-                          {formatDisplayDate(record.actualStartDate)}
-                        </td>
-
-                        <td className="whitespace-nowrap px-4 py-2.5 text-center align-middle text-xs">
-                          <span className={`inline-flex rounded-full border px-2.5 py-1 text-[9px] font-extrabold ${getShowStatusClass(record.showStatus)}`}>
-                            {record.showStatus}
-                          </span>
-                        </td>
-
-                        <td className="whitespace-nowrap px-4 py-2.5 text-center align-middle text-xs">
-                          <span className={`inline-flex whitespace-nowrap rounded-full border px-2.5 py-1 text-[9px] font-extrabold ${getOutcomeClass(record.finalOutcome)}`}>
-                            {record.finalOutcome}
-                          </span>
-                          {record.convertedEmployeeId ? (
-                            <p className="mt-1 font-mono text-[9px] font-bold text-emerald-700">
-                              #{record.convertedEmployeeId}
-                            </p>
-                          ) : null}
-                        </td>
-
-                        <td className="whitespace-nowrap px-4 py-2.5 align-middle text-xs font-semibold text-[#475467]">
-                          <span className="block max-w-[150px] truncate">{record.owner || "—"}</span>
-                        </td>
-
-                        <td className="whitespace-nowrap px-4 py-2.5 text-right align-middle text-xs">
-                          <div className="flex items-center justify-end gap-1.5">
-                            <button
-                              type="button"
-                              onClick={() => handleOpenOutcomeModal(record)}
-                              className={`inline-flex h-8 items-center justify-center rounded-lg px-2.5 text-[10px] font-extrabold transition active:scale-[0.98] ${
-                                record.showStatus === "Pending"
-                                  ? "bg-[#FF5C28] text-white hover:bg-[#E94F1F]"
-                                  : "border border-[#D7DEE8] bg-white text-[#475467] hover:border-[#FF5C28]/40 hover:bg-[#FFF8F5] hover:text-[#FF5C28]"
-                              }`}
-                            >
-                              {record.showStatus === "Pending" ? "Set Outcome" : "Modify Outcome"}
-                            </button>
-
+                      return (
+                        <tr
+                          key={record.id}
+                          className="group transition-colors hover:bg-[#F8FAFC]"
+                        >
+                          <td className="whitespace-nowrap px-4 py-2.5 align-middle text-xs font-extrabold text-[#042C51]">
                             <button
                               type="button"
                               onClick={() => {
                                 setSelectedRecord(record);
                                 setIsDetailsModalOpen(true);
                               }}
-                              className="inline-flex h-8 items-center justify-center gap-1.5 rounded-lg border border-[#D7DEE8] bg-white px-2.5 text-[10px] font-extrabold text-[#042C51] transition hover:border-[#FF5C28]/40 hover:bg-[#FFF7F3] hover:text-[#FF5C28]"
+                              className="font-extrabold tabular-nums text-[#042C51] transition hover:text-[#FF5C28]"
                             >
-                              <Eye size={13} />
-                              View
+                              {record.id}
                             </button>
+                          </td>
 
-                            {record.finalOutcome === "True Hire" && onSwitchModule ? (
+                          <td className="whitespace-nowrap px-4 py-2.5 align-middle text-xs">
+                            <div className="flex min-w-0 items-center gap-2.5">
+                              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#042C51] text-[10px] font-extrabold text-white shadow-sm">
+                                {getInitials(record.name)}
+                              </span>
+                              <div className="min-w-0">
+                                <p className="m-0 max-w-[210px] truncate font-extrabold text-[#042C51]">
+                                  {record.name}
+                                </p>
+                                <p className="mt-0.5 max-w-[210px] truncate text-[10px] font-semibold text-[#667085]">
+                                  {record.email || "No email saved"}
+                                </p>
+                              </div>
+                            </div>
+                          </td>
+
+                          <td className="whitespace-nowrap px-4 py-2.5 align-middle text-xs">
+                            <p className="max-w-[210px] truncate font-extrabold text-[#344054]">
+                              {record.role}
+                            </p>
+                            <span className="mt-0.5 inline-flex max-w-[210px] truncate rounded bg-[#F2F4F7] px-1.5 py-0.5 text-[10px] font-bold text-[#475467]">
+                              {record.account || "No account"}
+                            </span>
+                            <p className="mt-0.5 flex max-w-[210px] items-center gap-1 truncate text-[9.5px] font-semibold text-[#667085]">
+                              <MapPin size={10} className="shrink-0 text-[#FF5C28]" />
+                              {record.siteLocation || "No site"}
+                            </p>
+                          </td>
+
+                          <td className="whitespace-nowrap px-4 py-2.5 align-middle text-xs font-semibold text-[#344054]">
+                            <div className="flex items-center gap-1.5">
+                              <Calendar size={13} className="shrink-0 text-[#98A2B3]" />
+                              <span className="tabular-nums">{formatDisplayDate(record.offerAcceptedDate)}</span>
+                            </div>
+                          </td>
+
+                          <td className="whitespace-nowrap px-4 py-2.5 align-middle text-xs font-extrabold tabular-nums text-[#042C51]">
+                            {formatDisplayDate(record.expectedStartDate)}
+                            <p className="mt-0.5 text-[9.5px] font-bold text-indigo-600">
+                              {record.daysToStart || 0} day/s to start
+                            </p>
+                          </td>
+
+                          <td className="whitespace-nowrap px-4 py-2.5 align-middle text-xs font-semibold tabular-nums text-[#475467]">
+                            {formatDisplayDate(record.actualStartDate)}
+                          </td>
+
+                          {/* ONBOARDING STAGE */}
+                          <td className="whitespace-nowrap px-4 py-2.5 align-middle text-xs">
+                            <span className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-1 text-[9.5px] font-extrabold shadow-2xs ${getOnboardingStageBadgeClass(recordStage)}`}>
+                              <span className="w-1.5 h-1.5 rounded-full bg-current" />
+                              {recordStage}
+                            </span>
+                            {record.convertedEmployeeId ? (
+                              <p className="mt-1 font-mono text-[9px] font-bold text-emerald-700">
+                                #{record.convertedEmployeeId}
+                              </p>
+                            ) : null}
+                          </td>
+
+                          {/* JOURNEY & COACHING STATUS */}
+                          <td className="px-4 py-2.5 align-middle text-xs">
+                            <div className="space-y-1 min-w-[210px] max-w-[270px]">
+                              {/* Handoff Status */}
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[9.5px] font-extrabold ${statusInfo.handoffBadge.tone} ${statusInfo.handoffBadge.isAlert ? "animate-pulse" : ""}`}>
+                                  {statusInfo.handoffBadge.isAlert && <AlertTriangle className="w-3 h-3 text-[#FF5C28]" />}
+                                  {statusInfo.handoffBadge.label}
+                                </span>
+                              </div>
+
+                              {/* Assessment & Coaching */}
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                {statusInfo.assessmentLabel && (
+                                  <span className="text-[9px] font-bold text-[#042C51] bg-[#F2F5F9] border border-[#DCE5EF] px-1.5 py-0.5 rounded">
+                                    {statusInfo.assessmentLabel}
+                                  </span>
+                                )}
+                                {statusInfo.coachingBadge && (
+                                  <span className={`inline-flex items-center rounded-md border px-1.5 py-0.5 text-[9px] ${statusInfo.coachingBadge.tone}`}>
+                                    {statusInfo.coachingBadge.label}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </td>
+
+                          <td className="whitespace-nowrap px-4 py-2.5 align-middle text-xs font-semibold text-[#475467]">
+                            <span className="block max-w-[150px] truncate">{record.owner || "—"}</span>
+                          </td>
+
+                          <td className="whitespace-nowrap px-4 py-2.5 text-right align-middle text-xs">
+                            <div className="flex items-center justify-end gap-1.5">
                               <button
                                 type="button"
-                                onClick={() => onSwitchModule("Employee Directory")}
-                                className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-700 transition hover:bg-emerald-100"
-                                title="Open Employee Directory"
+                                onClick={() => handleOpenOutcomeModal(record)}
+                                className="inline-flex h-8 items-center justify-center rounded-lg border border-[#D7DEE8] bg-white px-2.5 text-[10px] font-extrabold text-[#042C51] transition hover:border-[#FF5C28]/40 hover:bg-[#FFF8F5] hover:text-[#FF5C28] cursor-pointer"
                               >
-                                <ExternalLink size={13} />
+                                Update Stage
                               </button>
-                            ) : null}
-                          </div>
-                        </td>
-                      </tr>
-                    ))
+
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedRecord(record);
+                                  setIsDetailsModalOpen(true);
+                                }}
+                                className="inline-flex h-8 items-center justify-center gap-1.5 rounded-lg border border-[#D7DEE8] bg-white px-2.5 text-[10px] font-extrabold text-[#042C51] transition hover:border-[#FF5C28]/40 hover:bg-[#FFF7F3] hover:text-[#FF5C28] cursor-pointer"
+                              >
+                                <Eye size={13} />
+                                View
+                              </button>
+
+                              {record.finalOutcome === "True Hire" && onSwitchModule ? (
+                                <button
+                                  type="button"
+                                  onClick={() => onSwitchModule("Employee Directory")}
+                                  className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-700 transition hover:bg-emerald-100 cursor-pointer"
+                                  title="Open Employee Directory"
+                                >
+                                  <ExternalLink size={13} />
+                                </button>
+                              ) : null}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
                   )}
                 </tbody>
               </table>
@@ -1267,12 +1598,14 @@ export default function Onboarding({ userEmail = "alena.batacan@thesiblingssolut
                     </div>
 
                     <div className="flex shrink-0 flex-col items-end gap-1">
-                      <span className={`rounded-full border px-2 py-0.5 text-[9px] font-extrabold ${getShowStatusClass(record.showStatus)}`}>
-                        {record.showStatus}
+                      <span className={`rounded-full border px-2 py-0.5 text-[9px] font-extrabold ${getOnboardingStageBadgeClass(getRecordOnboardingStage(record))}`}>
+                        {getRecordOnboardingStage(record)}
                       </span>
-                      <span className={`rounded-full border px-2 py-0.5 text-[9px] font-extrabold ${getOutcomeClass(record.finalOutcome)}`}>
-                        {record.finalOutcome}
-                      </span>
+                      {getRecordOperationalStatus(record).handoffBadge && (
+                        <span className={`rounded-full border px-2 py-0.5 text-[8.5px] font-bold ${getRecordOperationalStatus(record).handoffBadge.tone}`}>
+                          {getRecordOperationalStatus(record).handoffBadge.label}
+                        </span>
+                      )}
                     </div>
                   </div>
 
@@ -2013,13 +2346,13 @@ export default function Onboarding({ userEmail = "alena.batacan@thesiblingssolut
                 <div className="min-w-0">
                   <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-2.5 py-1 text-[9px] font-extrabold uppercase tracking-wide text-white/90">
                     <Settings size={12} className="text-[#FF5C28]" />
-                    Outcome Resolution
+                    Stage & Outcome Resolution
                   </span>
                   <h2 className="mt-2 text-sm font-extrabold text-white sm:text-base">
-                    Resolve Onboarding Outcome
+                    Update Onboarding Stage & Start Disposition
                   </h2>
                   <p className="mt-0.5 text-[10px] font-semibold text-white/75">
-                    Resolve the candidate’s Day 1 status and synchronize the final outcome.
+                    Update candidate stage, Day 1 transition, and operational disposition.
                   </p>
                 </div>
 
@@ -2066,21 +2399,34 @@ export default function Onboarding({ userEmail = "alena.batacan@thesiblingssolut
                   <section className="rounded-2xl border border-[#E6ECF2] bg-white p-4 shadow-sm">
                     <label className="block">
                       <span className="mb-1.5 block text-[9px] font-extrabold uppercase tracking-wide text-[#98A2B3]">
-                        Day 1 Attendance Status
+                        Onboarding Stage & Start Disposition
                       </span>
                       <select
-                        value={outcomeShowStatus}
-                        onChange={(event) => setOutcomeShowStatus(event.target.value as any)}
-                        className="h-10 w-full rounded-xl border border-[#D7DEE8] bg-[#F8FAFC] px-3 text-xs font-semibold text-[#042C51] outline-none transition hover:border-[#FF5C28]/45 focus:border-[#FF5C28] focus:bg-white focus:ring-4 focus:ring-[#FF5C28]/10"
+                        value={outcomeStage}
+                        onChange={(event) => {
+                          const val = event.target.value;
+                          setOutcomeStage(val);
+                          if (val === "Day 1 - Handed Off to Training" || val === "Completed Onboarding") {
+                            setOutcomeShowStatus("Show");
+                          } else if (val === "No Show") {
+                            setOutcomeShowStatus("No Show");
+                          } else if (val === "Pre-start Withdrawal") {
+                            setOutcomeShowStatus("Withdrawn");
+                          } else {
+                            setOutcomeShowStatus("Pending");
+                          }
+                        }}
+                        className="h-10 w-full rounded-xl border border-[#D7DEE8] bg-[#F8FAFC] px-3 text-xs font-semibold text-[#042C51] outline-none transition hover:border-[#FF5C28]/45 focus:border-[#FF5C28] focus:bg-white focus:ring-4 focus:ring-[#FF5C28]/10 cursor-pointer"
                       >
-                        <option value="Pending">Pending Start</option>
-                        <option value="Show">Show — True Hire</option>
-                        <option value="No Show">No Show</option>
-                        <option value="Withdrawn">Pre-start Withdrawal</option>
+                        {ONBOARDING_STAGES.map((st) => (
+                          <option key={st} value={st}>
+                            {st}
+                          </option>
+                        ))}
                       </select>
                     </label>
 
-                    {outcomeShowStatus === "Show" ? (
+                    {(outcomeStage === "Day 1 - Handed Off to Training" || outcomeStage === "Completed Onboarding" || outcomeShowStatus === "Show") ? (
                       <label className="mt-4 block">
                         <span className="mb-1.5 block text-[9px] font-extrabold uppercase tracking-wide text-[#98A2B3]">
                           Actual Start Date <span className="text-[#FF5C28]">*</span>
