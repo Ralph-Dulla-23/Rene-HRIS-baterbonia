@@ -11,11 +11,14 @@ import BenchmarkView from "./views/BenchmarkView";
 import NotificationsView from "./views/NotificationsView";
 import ConfigurationView from "./views/ConfigurationView";
 import EmployeeJourneyDrillDown from "./drilldown/EmployeeJourneyDrillDown";
+import Review306090Modal from "./views/Review306090Modal";
+import ESEPCoachingTabView from "./views/ESEPCoachingTabView";
 import { 
   Sparkles, 
   Users, 
   Award, 
   ShieldAlert, 
+  ShieldCheck,
   Bell, 
   Settings, 
   User, 
@@ -28,6 +31,7 @@ import {
 export type JourneyWorkspaceView = 
   | "trainee-dashboard" 
   | "benchmark" 
+  | "esep-coaching"
   | "trainer-monitoring" 
   | "qds-dashboard" 
   | "notifications" 
@@ -88,14 +92,30 @@ export default function EmployeeJourneyModule({
       {isPersonalView && !personalJourney ? <div className="rounded-2xl bg-white p-7 border border-[#E6ECF2]"><h2 className="font-bold text-[#042C51]">No Employee Journey linked yet</h2><p className="text-sm text-slate-500 mt-2">This demo account is not linked to an employee Journey. An HR demo account can set up the sample record before it appears here.</p></div> : null}
       {(!isPersonalView || personalJourney) && activeView === "trainee-dashboard" && <TraineeDashboardView onSwitchModule={onSwitchModule} />}
       {canAccessJourneyTab(currentRole, 'benchmark') && activeView === "benchmark" && <BenchmarkView onOpenLinkModal={j => setLinkingJourney(j)} onSwitchModule={onSwitchModule} />}
+      {canAccessJourneyTab(currentRole, 'esep-coaching') && activeView === "esep-coaching" && (
+        <ESEPCoachingTabView 
+          currentJourney={personalJourney || selectedJourney || journeys[0]} 
+          onSelectEmployee={(j) => setSelectedJourney(j)}
+          onSwitchModule={onSwitchModule}
+        />
+      )}
       {canAccessJourneyTab(currentRole, 'trainer-monitoring') && activeView === "trainer-monitoring" && <TrainerMonitoringView onSwitchModule={onSwitchModule} />}
       {canAccessJourneyTab(currentRole, 'qds-dashboard') && activeView === "qds-dashboard" && <QDSDashboardView onSwitchModule={onSwitchModule} />}
       {canAccessJourneyTab(currentRole,'notifications') && activeView === "notifications" && <NotificationsView onSwitchModule={onSwitchModule} />}
       {canAccessJourneyTab(currentRole,'configuration') && activeView === "configuration" && <ConfigurationView onSwitchModule={onSwitchModule} />}
 
 
-      {/* Full 7-Tab Employee Journey Drill-Down Modal/Drawer */}
-      {selectedJourney && (
+      {/* In 30 / 60 / 90 Reviews View: Show details about 30 60 90 only without other details */}
+      {selectedJourney && activeView === "benchmark" && (
+        <Review306090Modal
+          journey={selectedJourney}
+          isOpen={!!selectedJourney}
+          onClose={() => setSelectedJourney(null)}
+        />
+      )}
+
+      {/* In other views (excluding esep-coaching where inline selection is used): Employee Journey DrillDown */}
+      {selectedJourney && activeView !== "benchmark" && activeView !== "esep-coaching" && (
         <EmployeeJourneyDrillDown
           journey={selectedJourney}
           isOpen={!!selectedJourney}

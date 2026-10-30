@@ -18,33 +18,34 @@ export const defaultPageForRole: Record<DemoRole, { module: string; tab?: string
 
 const journeyTabs: Record<DemoRole,string[]> = {
   Employee:['trainee-dashboard'], TA:[], IT:[],
-  QDS:['qds-dashboard','trainer-monitoring','notifications'],
-  Trainer:['trainer-monitoring','trainee-dashboard','notifications'],
+  QDS:['qds-dashboard','trainer-monitoring','esep-coaching','notifications'],
+  Trainer:['trainer-monitoring','trainee-dashboard','esep-coaching','notifications'],
   WFM:[],
-  HR:['benchmark','trainee-dashboard','notifications','configuration'],
-  'HR Admin':['benchmark','trainer-monitoring','qds-dashboard','trainee-dashboard','notifications','configuration'],
-  'Team Leader':['benchmark','notifications'],
-  Manager:['benchmark','notifications'],
-  SOM:['benchmark','notifications'],
-  'Super Admin':['benchmark','trainer-monitoring','qds-dashboard','trainee-dashboard','notifications','configuration'],
+  HR:['benchmark','esep-coaching','trainee-dashboard','notifications','configuration'],
+  'HR Admin':['benchmark','esep-coaching','trainer-monitoring','qds-dashboard','trainee-dashboard','notifications','configuration'],
+  'Team Leader':['benchmark','esep-coaching','notifications'],
+  Manager:['benchmark','esep-coaching','notifications'],
+  SOM:['benchmark','esep-coaching','notifications'],
+  'Super Admin':['benchmark','esep-coaching','trainer-monitoring','qds-dashboard','trainee-dashboard','notifications','configuration'],
 };
 
 const modules: Record<DemoRole,string[]> = {
   Employee:['Employee Dashboard','Time & Attendance','Leaves & Time Off','Resignation Management','Employee Journey'],
-  TA:['TA Dashboard','Employee Directory','Workforce Hiring','Hiring Needs Intake','Available Positions','Job Description','Applicant Leads','Talent Pool','Candidate Pipeline','Offers','New Hire Orientation','Onboarding','Candidate Experience','Recruitment Flowchart','Sourcing Analytics','Action Items','Weekly Reports','Public Application Form','Public Survey'],
+  TA:['TA Dashboard','Employee Directory','Workforce Hiring','Hiring Needs Intake','Available Positions','Job Description','Applicant Leads','Talent Pool','Candidate Pipeline','Offers','New Hire Orientation','Onboarding','ESEP Coaching','Candidate Experience','Recruitment Flowchart','Sourcing Analytics','Action Items','Weekly Reports','Public Application Form','Public Survey'],
   IT:['New Hire Orientation'],
-  QDS:['Employee Journey','New Hire Orientation'],
-  Trainer:['Employee Journey','New Hire Orientation'],
-  WFM:['Workforce Hiring','Employee Directory','Time & Attendance','New Hire Orientation','Action Items'],
-  HR:['HR Admin Dashboard','Employee Directory','Time & Attendance','Leaves & Time Off','Resignation Management','New Hire Orientation','Employee Journey','Onboarding','Hiring Needs Intake','Available Positions','Candidate Experience'],
-  'HR Admin':['HR Admin Dashboard','Employee Directory','Time & Attendance','Leaves & Time Off','Resignation Management','New Hire Orientation','Employee Journey','Onboarding','Hiring Needs Intake','Available Positions','Job Description','Departments','Office Locations','Email Logs'],
-  'Team Leader':['OM Dashboard','Employee Directory','Time & Attendance','Leaves & Time Off','Employee Journey'],
-  Manager:['OM Dashboard','Employee Directory','Time & Attendance','Leaves & Time Off','Employee Journey'],
-  SOM:['OM Dashboard','Employee Directory','Time & Attendance','Leaves & Time Off','Employee Journey'],
-  'Super Admin':['Super Admin Dashboard','HR Admin Dashboard','HR Dashboard','TA Dashboard','OM Dashboard','Employee Dashboard','Trainee Dashboard','Employee Directory','Time & Attendance','Leaves & Time Off','Resignation Management','Workforce Hiring','Hiring Needs Intake','Available Positions','Job Description','Applicant Leads','Talent Pool','Candidate Pipeline','Offers','New Hire Orientation','Onboarding','Candidate Experience','Employee Journey','Recruitment Flowchart','Sourcing Analytics','Action Items','Weekly Reports','Departments','Office Locations','Email Logs','Recruitment Settings','Frontend Design PDF View','Process Specbook','Public Application Form','Public Survey'],
+  QDS:['Employee Journey','New Hire Orientation','ESEP Coaching'],
+  Trainer:['Employee Journey','New Hire Orientation','ESEP Coaching'],
+  WFM:['Workforce Hiring','Employee Directory','Time & Attendance','New Hire Orientation','Action Items','ESEP Coaching'],
+  HR:['HR Admin Dashboard','Employee Directory','Time & Attendance','Leaves & Time Off','Resignation Management','New Hire Orientation','Employee Journey','Onboarding','ESEP Coaching','Hiring Needs Intake','Available Positions','Candidate Experience'],
+  'HR Admin':['HR Admin Dashboard','Employee Directory','Time & Attendance','Leaves & Time Off','Resignation Management','New Hire Orientation','Employee Journey','Onboarding','ESEP Coaching','Hiring Needs Intake','Available Positions','Job Description','Departments','Office Locations','Email Logs'],
+  'Team Leader':['OM Dashboard','Employee Directory','Time & Attendance','Leaves & Time Off','Employee Journey','ESEP Coaching'],
+  Manager:['OM Dashboard','Employee Directory','Time & Attendance','Leaves & Time Off','Employee Journey','ESEP Coaching'],
+  SOM:['OM Dashboard','Employee Directory','Time & Attendance','Leaves & Time Off','Employee Journey','ESEP Coaching'],
+  'Super Admin':['Super Admin Dashboard','HR Admin Dashboard','HR Dashboard','TA Dashboard','OM Dashboard','Employee Dashboard','Trainee Dashboard','Employee Directory','Time & Attendance','Leaves & Time Off','Resignation Management','Workforce Hiring','Hiring Needs Intake','Available Positions','Job Description','Applicant Leads','Talent Pool','Candidate Pipeline','Offers','New Hire Orientation','Onboarding','ESEP Coaching','Candidate Experience','Employee Journey','Recruitment Flowchart','Sourcing Analytics','Action Items','Weekly Reports','Departments','Office Locations','Email Logs','Recruitment Settings','Frontend Design PDF View','Process Specbook','Public Application Form','Public Survey'],
 };
 
 export function normalizeModule(module: string): string {
+  if (module === '30 / 60 / 90 Reviews' || module === '30/60/90 Reviews') return 'Onboarding';
   if (module === '30/60/90 Employee Journey' || module === 'Trainee Dashboard') return 'Employee Journey';
   if (module === 'New Hire Orientation (NHO)') return 'New Hire Orientation';
   if (module === 'Separate QDS Application' || module === 'QDS') return 'QDS Application';

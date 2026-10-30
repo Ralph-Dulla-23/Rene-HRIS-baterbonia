@@ -403,6 +403,7 @@ function AuthenticatedWorkspace() {
                   currentModule === "Trainee Dashboard" && canAccessJourneyTab(user.role,"trainee-dashboard") ? "trainee-dashboard" :
                   (activeTab === "trainee-dashboard" || 
                   activeTab === "benchmark" || 
+                  activeTab === "esep-coaching" ||
                   activeTab === "trainer-monitoring" || 
                   activeTab === "qds-dashboard" || 
                   activeTab === "notifications" || 

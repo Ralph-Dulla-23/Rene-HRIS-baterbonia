@@ -88,21 +88,20 @@ export default function OnboardingTable({ records, onViewRecord }: OnboardingTab
                 <th className="py-3.5 px-4">Show Status</th>
                 <th className="py-3.5 px-4">Final Outcome</th>
                 <th className="py-3.5 px-4">Owner</th>
-                <th className="py-3.5 px-4 text-right">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 font-medium text-slate-800">
               {paginatedRecords.map((r) => (
-                <tr key={r.id} className="hover:bg-slate-50/90 transition-colors group">
+                <tr 
+                  key={r.id} 
+                  onClick={() => onViewRecord(r)}
+                  className="hover:bg-slate-50/90 cursor-pointer transition-colors group"
+                >
                   {/* Onboarding ID */}
                   <td className="py-3.5 px-4 font-mono font-black text-[#042C51]">
-                    <button
-                      type="button"
-                      onClick={() => onViewRecord(r)}
-                      className="text-[#042C51] hover:text-[#FF5C28] font-black hover:underline cursor-pointer transition-colors"
-                    >
+                    <span className="text-[#042C51] group-hover:text-[#FF5C28] font-black transition-colors">
                       {r.onboardingId || r.id}
-                    </button>
+                    </span>
                   </td>
 
                   {/* Candidate Name + Email */}
@@ -210,18 +209,6 @@ export default function OnboardingTable({ records, onViewRecord }: OnboardingTab
                   <td className="py-3.5 px-4 text-slate-700 font-semibold text-xs">
                     {r.owner}
                   </td>
-
-                  {/* Action */}
-                  <td className="py-3.5 px-4 text-right">
-                    <button
-                      type="button"
-                      onClick={() => onViewRecord(r)}
-                      className="px-3.5 py-1.5 bg-[#042C51] hover:bg-[#FF5C28] text-white font-bold text-xs rounded-xl shadow-2xs transition-all inline-flex items-center gap-1.5 cursor-pointer"
-                    >
-                      <Eye className="w-3.5 h-3.5" />
-                      View Record
-                    </button>
-                  </td>
                 </tr>
               ))}
             </tbody>
@@ -232,7 +219,11 @@ export default function OnboardingTable({ records, onViewRecord }: OnboardingTab
       {/* Mobile Cards View (below lg) */}
       <div className="lg:hidden divide-y divide-slate-200">
         {paginatedRecords.map((r) => (
-          <div key={r.id} className="p-4 space-y-3 bg-white">
+          <div 
+            key={r.id} 
+            onClick={() => onViewRecord(r)}
+            className="p-4 space-y-3 bg-white hover:bg-slate-50 transition-colors cursor-pointer"
+          >
             <div className="flex items-center justify-between">
               <span className="font-mono font-black text-xs text-[#042C51]">
                 {r.onboardingId || r.id}
@@ -269,16 +260,9 @@ export default function OnboardingTable({ records, onViewRecord }: OnboardingTab
               </div>
             </div>
 
-            <div className="flex justify-between items-center pt-1">
-              <span className="text-xs text-slate-500 font-medium">Owner: {r.owner}</span>
-              <button
-                type="button"
-                onClick={() => onViewRecord(r)}
-                className="px-3.5 py-1.5 bg-[#042C51] text-white font-bold text-xs rounded-xl flex items-center gap-1.5 cursor-pointer shadow-2xs"
-              >
-                <Eye className="w-3.5 h-3.5" />
-                View Details
-              </button>
+            <div className="flex justify-between items-center pt-1 text-xs text-slate-500 font-medium">
+              <span>Owner: {r.owner}</span>
+              <span className="text-[#FF5C28] font-bold text-xs hover:underline">View Profile &rarr;</span>
             </div>
           </div>
         ))}

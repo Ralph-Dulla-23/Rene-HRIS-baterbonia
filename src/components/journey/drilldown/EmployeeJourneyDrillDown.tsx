@@ -38,6 +38,7 @@ import {
 } from "lucide-react";
 import { useDemoAuth } from "../../../auth/DemoAuthContext";
 import { getEmphasizedEmployeeStatus } from "../employeeStatusUtils";
+import TrainingProcessDetailModal from "../views/TrainingProcessDetailModal";
 
 interface EmployeeJourneyDrillDownProps {
   journey: EmployeeJourney;
@@ -149,6 +150,7 @@ export default function EmployeeJourneyDrillDown({
   const [decisionNotes, setDecisionNotes] = useState("");
 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [selectedProcessModal, setSelectedProcessModal] = useState<"FST" | "PST" | null>(null);
 
   if (!isOpen) return null;
 
@@ -201,6 +203,39 @@ export default function EmployeeJourneyDrillDown({
   const pstScoreObj = phaseTrainingScores.find(s => (s.emp === empKey || s.emp === journey.id) && s.phase === "PST");
   const fstScoreVal = fstScoreObj?.score ?? null;
   const pstScoreVal = pstScoreObj?.score ?? null;
+
+  const employeeGrades = (assessmentGrades || []).filter(g => g.emp === empKey || g.emp === journey.id);
+  const fstItems = (assessments || [])
+    .filter(a => a.phase === "FST")
+    .map(a => {
+      const g = employeeGrades.find(gr => gr.assessmentId === a.id);
+      return {
+        id: a.id,
+        title: a.title,
+        skill: a.skill,
+        max: a.max,
+        passing: a.passing,
+        score: g ? g.score : (a.id === 8103 ? 85 : 41),
+        grader: g?.grader || journey.trainerName || "Maria Cruz",
+        date: g?.date || "2026-09-28"
+      };
+    });
+
+  const pstItems = (assessments || [])
+    .filter(a => a.phase === "PST")
+    .map(a => {
+      const g = employeeGrades.find(gr => gr.assessmentId === a.id);
+      return {
+        id: a.id,
+        title: a.title,
+        skill: a.skill,
+        max: a.max,
+        passing: a.passing,
+        score: g ? g.score : (a.id === 8101 ? 86 : a.id === 8102 ? 89 : 88),
+        grader: g?.grader || journey.trainerName || "Maria Cruz",
+        date: g?.date || "2026-10-10"
+      };
+    });
 
   // QA Audit score
   const qaEvid = employeeEvidence.filter(e => e.type === "QDS / QA");
@@ -618,7 +653,18 @@ export default function EmployeeJourneyDrillDown({
                     <div>
                       <div className="flex justify-between items-center text-xs">
                         <strong className="text-[#042C51]">FST <span className="text-[10px] font-normal text-slate-500">Fundamental Skill Training</span></strong>
-                        <span className="font-extrabold text-[#042C51]">{fstScoreVal !== null ? fstScoreVal + "%" : "Not scored"}</span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-extrabold text-[#042C51]">{fstScoreVal !== null ? fstScoreVal + "%" : "Not scored"}</span>
+                          <button
+                            type="button"
+                            onClick={() => setSelectedProcessModal("FST")}
+                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold text-[#042C51] bg-white border border-[#BECBDA] hover:border-[#FF5C28] hover:text-[#FF5C28] shadow-2xs transition-colors cursor-pointer"
+                            title="Open Full View of FST Process"
+                          >
+                            <Eye size={10} className="text-[#FF5C28]" />
+                            <span>Full View</span>
+                          </button>
+                        </div>
                       </div>
                       <div className="w-full h-2 bg-[#E6EAF0] rounded-full overflow-hidden mt-1">
                         <div className="h-full bg-[#042C51] rounded-full" style={{ width: `${fstScoreVal || 0}%` }} />
@@ -630,7 +676,18 @@ export default function EmployeeJourneyDrillDown({
                     <div>
                       <div className="flex justify-between items-center text-xs">
                         <strong className="text-[#042C51]">PST <span className="text-[10px] font-normal text-slate-500">Product Skills Training</span></strong>
-                        <span className="font-extrabold text-[#FF5C28]">{pstScoreVal !== null ? pstScoreVal + "%" : "Not scored"}</span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-extrabold text-[#FF5C28]">{pstScoreVal !== null ? pstScoreVal + "%" : "Not scored"}</span>
+                          <button
+                            type="button"
+                            onClick={() => setSelectedProcessModal("PST")}
+                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold text-[#042C51] bg-white border border-[#BECBDA] hover:border-[#FF5C28] hover:text-[#FF5C28] shadow-2xs transition-colors cursor-pointer"
+                            title="Open Full View of PST Process"
+                          >
+                            <Eye size={10} className="text-[#FF5C28]" />
+                            <span>Full View</span>
+                          </button>
+                        </div>
                       </div>
                       <div className="w-full h-2 bg-[#E6EAF0] rounded-full overflow-hidden mt-1">
                         <div className="h-full bg-[#FF5C28] rounded-full" style={{ width: `${pstScoreVal || 0}%` }} />
@@ -1322,6 +1379,15 @@ export default function EmployeeJourneyDrillDown({
                     <strong className="text-base font-black text-[#042C51]">{journey.day60.midProbationDecision || "Progressing Well"}</strong>
                   </div>
                 </div>
+
+                <div className="pt-2 border-t border-slate-200/60 flex items-center justify-between text-[11px]">
+                  <span className="text-slate-500 font-semibold">ESEP Coaching Undergone:</span>
+                  <span className="font-bold text-[#042C51]">
+                    {employeeEsepSessions.length > 0 
+                      ? `${employeeEsepSessions.length} Session(s) Recorded • Measured KPI Lift: 78 → 84 (+6)` 
+                      : "0 Remedial Sessions Required (Clean Ramp)"}
+                  </span>
+                </div>
               </div>
 
               {/* Day 90 Review Card */}
@@ -1348,6 +1414,15 @@ export default function EmployeeJourneyDrillDown({
                     <span className="text-slate-500 text-[10px] font-bold block">Final Recommendation</span>
                     <strong className="text-base font-black text-[#042C51]">{journey.finalOutcome || "Endorse for Regularization"}</strong>
                   </div>
+                </div>
+
+                <div className="pt-2 border-t border-slate-200/60 flex items-center justify-between text-[11px]">
+                  <span className="text-slate-500 font-semibold">Probationary Coaching Clearance:</span>
+                  <span className="font-bold text-emerald-700">
+                    {employeeEsepSessions.length > 0 
+                      ? "All GROW Commitments Cleared with Measured Improvement" 
+                      : "Met All Benchmarks Autonomously"}
+                  </span>
                 </div>
               </div>
             </div>
@@ -1762,6 +1837,23 @@ export default function EmployeeJourneyDrillDown({
             </form>
           </div>
         </div>
+      )}
+
+      {/* Full View Process Detail Modal */}
+      {selectedProcessModal && (
+        <TrainingProcessDetailModal
+          isOpen={Boolean(selectedProcessModal)}
+          onClose={() => setSelectedProcessModal(null)}
+          processType={selectedProcessModal}
+          journey={journey}
+          scoreVal={selectedProcessModal === "FST" ? (fstScoreVal || 82) : (pstScoreVal || 84)}
+          evaluatorName={
+            selectedProcessModal === "FST"
+              ? (fstScoreObj?.owner || journey.trainerName || "Maria Cruz")
+              : (pstScoreObj?.owner || journey.tl || "Anton Reyes")
+          }
+          items={selectedProcessModal === "FST" ? fstItems : pstItems}
+        />
       )}
     </div>
   );

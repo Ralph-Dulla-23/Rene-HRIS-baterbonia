@@ -65,6 +65,7 @@ import FigmaExportModal from "./components/FigmaExportModal";
 import NHOMainModule from "./components/nho/NHOMainModule";
 import { NHOProvider } from "./components/nho/NHOContext";
 import EmployeeJourneyModule from "./components/journey/EmployeeJourneyModule";
+import ESEPCoachingTabView from "./components/journey/views/ESEPCoachingTabView";
 import { JourneyProvider } from "./components/journey/JourneyContext";
 
 import { 
@@ -102,7 +103,7 @@ function AuthenticatedWorkspace() {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<string>(initialPage.tab || "overview");
   const changeTab = (tab:string) => {
-    if (tab === 'benchmark' || tab === 'trainee-dashboard' || tab === 'trainer-monitoring' || tab === 'qds-dashboard' || tab === 'notifications' || tab === 'configuration') {
+    if (tab === 'benchmark' || tab === 'trainee-dashboard' || tab === 'trainer-monitoring' || tab === 'esep-coaching' || tab === 'qds-dashboard' || tab === 'notifications' || tab === 'configuration') {
       if (!canAccessJourneyTab(user.role,tab)) return;
     }
     setActiveTab(tab);
@@ -403,6 +404,7 @@ function AuthenticatedWorkspace() {
                   currentModule === "Trainee Dashboard" && canAccessJourneyTab(user.role,"trainee-dashboard") ? "trainee-dashboard" :
                   (activeTab === "trainee-dashboard" || 
                   activeTab === "benchmark" || 
+                  activeTab === "esep-coaching" ||
                   activeTab === "trainer-monitoring" || 
                   activeTab === "qds-dashboard" || 
                   activeTab === "notifications" || 
@@ -494,9 +496,23 @@ function AuthenticatedWorkspace() {
           <div className="mt-20 px-6 flex-1 flex flex-col w-full">
             <Offers userEmail={user.email} onSwitchModule={setCurrentModule} />
           </div>
-        ) : currentModule === "Onboarding" ? (
+        ) : currentModule === "ESEP Coaching" ? (
+          <div className="mt-20 px-6 flex-1 flex flex-col w-full max-w-[1920px] mx-auto min-h-0">
+            <ESEPCoachingTabView onSwitchModule={setCurrentModule} />
+          </div>
+        ) : currentModule === "Onboarding" || currentModule === "30 / 60 / 90 Reviews" ? (
           <div className="mt-20 px-6 flex-1 flex flex-col w-full">
-            <Onboarding userEmail={user.email} onSwitchModule={setCurrentModule} />
+            <Onboarding 
+              userEmail={user.email} 
+              onSwitchModule={setCurrentModule} 
+              initialTab={
+                activeTab === "30-60-90" || activeTab === "benchmark" 
+                  ? "30-60-90" 
+                  : activeTab === "coaching" || activeTab === "esep-coaching" 
+                    ? "coaching" 
+                    : "records"
+              } 
+            />
           </div>
         ) : currentModule === "Action Items" ? (
           <div className="mt-20 px-6 flex-1 flex flex-col w-full">

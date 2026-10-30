@@ -36,6 +36,7 @@ import {
   GitFork,
   Award,
   ShieldAlert,
+  ShieldCheck,
   User
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
@@ -153,15 +154,21 @@ export default function Sidebar({ currentModule, role, onModuleChange, activeTab
         { name: "Candidate Pipeline", icon: LayoutGrid, isEnabled: true, moduleKey: "Candidate Pipeline" },
         { name: "Offers", icon: Gift, isEnabled: true, moduleKey: "Offers" },
         { name: "New Hire Orientation (NHO)", icon: Sparkles, isEnabled: true, moduleKey: "New Hire Orientation", badge: "V1" },
-        { name: "Onboarding", icon: ClipboardCheck, isEnabled: true, moduleKey: "Onboarding" },
         { 
-          name: "30 / 60 / 90 Reviews", 
-          displayName: "30 / 60 / 90 Reviews", 
-          icon: Award, 
+          name: "Onboarding & Employee Journey", 
+          displayName: "Onboarding & Journey", 
+          icon: ClipboardCheck, 
           isEnabled: true, 
-          moduleKey: "Employee Journey", 
-          tabKey: "benchmark", 
-          badge: "ROSTER" 
+          moduleKey: "Onboarding", 
+          tabKey: "records",
+          badge: pendingDay30HandoffsCount > 0 ? `⚠️ ${pendingDay30HandoffsCount} HANDOFF DUE` : undefined
+        },
+        { 
+          name: "ESEP Coaching", 
+          displayName: "ESEP Coaching", 
+          icon: ShieldCheck, 
+          isEnabled: true, 
+          moduleKey: "ESEP Coaching" 
         },
         { 
           name: "Trainer Monitoring", 
@@ -446,7 +453,7 @@ export default function Sidebar({ currentModule, role, onModuleChange, activeTab
                                     {item.displayName || item.name}
                                   </span>
                                 </div>
-                                {item.tabKey === "benchmark" && pendingDay30HandoffsCount > 0 ? (
+                                {(item.moduleKey === "Onboarding" || item.tabKey === "30-60-90" || item.tabKey === "benchmark") && pendingDay30HandoffsCount > 0 ? (
                                   <span className="px-1.5 py-0.5 text-[8.5px] font-black rounded uppercase tracking-wider shrink-0 bg-[#FF5C28] text-white flex items-center gap-1 shadow-xs animate-pulse">
                                     <span>⚠️</span>
                                     <span>{pendingDay30HandoffsCount} HANDOFF DUE</span>
