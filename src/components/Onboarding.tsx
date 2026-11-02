@@ -1357,223 +1357,196 @@ export default function Onboarding({
       {/* ======================================================== */}
       {/* SECTION A: EXECUTIVE OVERVIEW & METRICS */}
       {/* ======================================================== */}
-      <section id="section-overview" className="space-y-4">
-        {/* Candidate Onboarding & True Hire Conversion KPIs */}
+      {/* ======================================================== */}
+      {/* SECTION A: EXECUTIVE OVERVIEW & METRICS */}
+      {/* ======================================================== */}
+      <section id="section-overview" className="space-y-4 select-none">
+        {/* Row 1: Candidate Onboarding & True Hire Conversion (6 Metrics) */}
         <div>
           <div className="mb-2 flex items-center justify-between">
-            <span className="text-[10.5px] font-black uppercase tracking-wider text-[#042C51]">
+            <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
               Candidate Onboarding &amp; True Hire Conversion
             </span>
-            <span className="text-[10px] font-bold text-[#667085]">6 Metrics</span>
+            <span className="text-[10px] font-bold text-slate-400">6 Metrics</span>
           </div>
-          <div className="grid grid-cols-2 gap-2.5 md:grid-cols-3 xl:grid-cols-6 2xl:gap-3">
-            {[
-              {
-                title: "Total Records",
-                value: metrics.total,
-                description: "All onboarding records",
-                Icon: Users,
-                labelClass: "text-[#042C51]",
-                iconClass: "bg-[#EAF0F7] text-[#042C51]",
-              },
-              {
-                title: "True Hires",
-                value: metrics.trueHires,
-                description: "Reported and placed",
-                Icon: UserCheck,
-                labelClass: "text-emerald-700",
-                iconClass: "bg-emerald-50 text-emerald-700",
-              },
-              {
-                title: "Pending Start",
-                value: metrics.pendingStart,
-                description: "Awaiting start date",
-                Icon: Clock,
-                labelClass: "text-amber-700",
-                iconClass: "bg-amber-50 text-amber-700",
-              },
-              {
-                title: "No Show",
-                value: metrics.noShow,
-                description: "Did not report",
-                Icon: AlertTriangle,
-                labelClass: "text-red-700",
-                iconClass: "bg-red-50 text-red-700",
-              },
-              {
-                title: "Withdrawal",
-                value: metrics.withdrawal,
-                description: "Pre-start drop-offs",
-                Icon: XCircle,
-                labelClass: "text-orange-700",
-                iconClass: "bg-orange-50 text-orange-700",
-              },
-              {
-                title: "Show Rate",
-                value: `${metrics.showRate}%`,
-                description: "True hires / resolved",
-                Icon: TrendingUp,
-                labelClass: "text-indigo-700",
-                iconClass: "bg-indigo-50 text-indigo-700",
-              },
-            ].map(({ title, value, description, Icon, labelClass, iconClass }) => (
-              <article
-                key={title}
-                className="flex h-[100px] min-h-[92px] flex-col justify-between overflow-hidden rounded-xl border border-[#DCE5EF] bg-white p-3 shadow-[0_6px_18px_rgba(4,44,81,0.04)] transition hover:-translate-y-0.5 hover:shadow-md 2xl:h-[108px]"
-              >
-                <div className="flex h-full items-start justify-between gap-2">
-                  <div className="flex h-full min-w-0 flex-1 flex-col justify-between">
-                    <div>
-                      <p className={`m-0 truncate text-[9.5px] font-extrabold uppercase tracking-wide ${labelClass}`}>
-                        {title}
-                      </p>
-                      <p className={`mt-1.5 text-2xl font-bold leading-none tabular-nums tracking-tight ${labelClass}`}>
-                        {value}
-                      </p>
-                    </div>
-                    <p className="mt-1 truncate text-[9.5px] font-semibold leading-tight text-[#667085]">
-                      {description}
-                    </p>
-                  </div>
-
-                  <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${iconClass}`}>
-                    <Icon className="h-4 w-4" strokeWidth={2} />
-                  </span>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3.5 min-w-0">
+            {/* 1. Total Records */}
+            <div className="bg-white p-3.5 rounded-xl border border-[#E6ECF2] shadow-sm flex flex-col justify-between relative overflow-hidden h-[115px] hover:-translate-y-0.5 hover:shadow-md transition-all">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Total Records</span>
+                <div className="w-7 h-7 rounded-full bg-[#E9F0FC] flex items-center justify-center text-[#042C51]">
+                  <Users className="w-3.5 h-3.5" />
                 </div>
-              </article>
-            ))}
+              </div>
+              <div className="mt-1.5">
+                <div className="text-xl font-extrabold text-[#042C51] tracking-tight">{metrics.total}</div>
+                <div className="text-[9px] text-slate-400 font-bold mt-1 uppercase tracking-wide">All onboarding records</div>
+              </div>
+            </div>
+
+            {/* 2. True Hires */}
+            <div className="bg-white p-3.5 rounded-xl border border-[#E6ECF2] shadow-sm flex flex-col justify-between relative overflow-hidden h-[115px] hover:-translate-y-0.5 hover:shadow-md transition-all">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">True Hires</span>
+                <div className="w-7 h-7 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600">
+                  <UserCheck className="w-3.5 h-3.5" />
+                </div>
+              </div>
+              <div className="mt-1.5">
+                <div className="text-xl font-extrabold text-emerald-600 tracking-tight">{metrics.trueHires}</div>
+                <div className="text-[9px] text-slate-400 font-bold mt-1 uppercase tracking-wide">Reported and placed</div>
+              </div>
+            </div>
+
+            {/* 3. Pending Start */}
+            <div className="bg-white p-3.5 rounded-xl border border-[#E6ECF2] shadow-sm flex flex-col justify-between relative overflow-hidden h-[115px] hover:-translate-y-0.5 hover:shadow-md transition-all">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Pending Start</span>
+                <div className="w-7 h-7 rounded-full bg-amber-50 flex items-center justify-center text-[#E67E22]">
+                  <Clock className="w-3.5 h-3.5" />
+                </div>
+              </div>
+              <div className="mt-1.5">
+                <div className="text-xl font-extrabold text-[#E67E22] tracking-tight">{metrics.pendingStart}</div>
+                <div className="text-[9px] text-slate-400 font-bold mt-1 uppercase tracking-wide">Awaiting start date</div>
+              </div>
+            </div>
+
+            {/* 4. No Show */}
+            <div className="bg-white p-3.5 rounded-xl border border-[#E6ECF2] shadow-sm flex flex-col justify-between relative overflow-hidden h-[115px] hover:-translate-y-0.5 hover:shadow-md transition-all">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">No Show</span>
+                <div className="w-7 h-7 rounded-full bg-rose-50 flex items-center justify-center text-[#E74C3C]">
+                  <AlertTriangle className="w-3.5 h-3.5" />
+                </div>
+              </div>
+              <div className="mt-1.5">
+                <div className="text-xl font-extrabold text-[#E74C3C] tracking-tight">{metrics.noShow}</div>
+                <div className="text-[9px] text-slate-400 font-bold mt-1 uppercase tracking-wide">Did not report</div>
+              </div>
+            </div>
+
+            {/* 5. Withdrawal */}
+            <div className="bg-white p-3.5 rounded-xl border border-[#E6ECF2] shadow-sm flex flex-col justify-between relative overflow-hidden h-[115px] hover:-translate-y-0.5 hover:shadow-md transition-all">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Withdrawal</span>
+                <div className="w-7 h-7 rounded-full bg-rose-50 flex items-center justify-center text-[#E74C3C]">
+                  <XCircle className="w-3.5 h-3.5" />
+                </div>
+              </div>
+              <div className="mt-1.5">
+                <div className="text-xl font-extrabold text-[#E74C3C] tracking-tight">{metrics.withdrawal}</div>
+                <div className="text-[9px] text-slate-400 font-bold mt-1 uppercase tracking-wide">Pre-start drop-offs</div>
+              </div>
+            </div>
+
+            {/* 6. Show Rate */}
+            <div className="bg-white p-3.5 rounded-xl border border-[#E6ECF2] shadow-sm flex flex-col justify-between relative overflow-hidden h-[115px] hover:-translate-y-0.5 hover:shadow-md transition-all">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Show Rate</span>
+                <div className="w-7 h-7 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-500">
+                  <TrendingUp className="w-3.5 h-3.5" />
+                </div>
+              </div>
+              <div className="mt-1.5">
+                <div className="text-xl font-extrabold text-indigo-600 tracking-tight">{metrics.showRate}%</div>
+                <div className="text-[9px] text-slate-400 font-bold mt-1 uppercase tracking-wide">True hires / resolved</div>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* 30 / 60 / 90 Probationary Journey Benchmarks KPIs */}
+        {/* Row 2: 30 / 60 / 90 Probationary Journey Benchmarks (5 Metrics) */}
         <div>
           <div className="mb-2 flex items-center justify-between">
-            <span className="text-[10.5px] font-black uppercase tracking-wider text-[#FF5C28]">
+            <span className="text-[10px] font-black uppercase tracking-wider text-[#FF5C28]">
               30 / 60 / 90 Probationary Journey Benchmarks
             </span>
-            <span className="text-[10px] font-bold text-[#667085]">5 Metrics</span>
+            <span className="text-[10px] font-bold text-slate-400">5 Metrics</span>
           </div>
-          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-5 2xl:gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3.5 min-w-0">
             {/* 1. Trainees in View */}
-            <article className="flex h-[100px] min-h-[92px] flex-col justify-between overflow-hidden rounded-xl border border-[#DCE5EF] bg-white p-3 shadow-[0_6px_18px_rgba(4,44,81,0.04)] transition hover:-translate-y-0.5 hover:shadow-md 2xl:h-[108px]">
-              <div className="flex h-full items-start justify-between gap-2">
-                <div className="flex h-full min-w-0 flex-1 flex-col justify-between">
-                  <div>
-                    <p className="m-0 truncate text-[9.5px] font-extrabold uppercase tracking-wide text-slate-700">
-                      Trainees in View
-                    </p>
-                    <p className="mt-1.5 text-2xl font-bold leading-none tabular-nums tracking-tight text-[#042C51]">
-                      {journeys.length}
-                    </p>
-                  </div>
-                  <p className="mt-1 truncate text-[9.5px] font-semibold leading-tight text-[#667085]">
-                    Active cohort trainees
-                  </p>
+            <div className="bg-white p-3.5 rounded-xl border border-[#E6ECF2] shadow-sm flex flex-col justify-between relative overflow-hidden h-[115px] hover:-translate-y-0.5 hover:shadow-md transition-all">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Trainees in View</span>
+                <div className="w-7 h-7 rounded-full bg-[#E9F0FC] flex items-center justify-center text-[#042C51]">
+                  <Users className="w-3.5 h-3.5" />
                 </div>
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-50 text-blue-600">
-                  <Users className="h-4 w-4" />
-                </span>
               </div>
-            </article>
+              <div className="mt-1.5">
+                <div className="text-xl font-extrabold text-[#042C51] tracking-tight">{journeys.length}</div>
+                <div className="text-[9px] text-slate-400 font-bold mt-1 uppercase tracking-wide">Active cohort trainees</div>
+              </div>
+            </div>
 
             {/* 2. Completed Scorecards */}
-            <article className="flex h-[100px] min-h-[92px] flex-col justify-between overflow-hidden rounded-xl border border-[#DCE5EF] bg-white p-3 shadow-[0_6px_18px_rgba(4,44,81,0.04)] transition hover:-translate-y-0.5 hover:shadow-md 2xl:h-[108px]">
-              <div className="flex h-full items-start justify-between gap-2">
-                <div className="flex h-full min-w-0 flex-1 flex-col justify-between">
-                  <div>
-                    <p className="m-0 truncate text-[9.5px] font-extrabold uppercase tracking-wide text-emerald-700">
-                      Completed Scorecards
-                    </p>
-                    <p className="mt-1.5 text-2xl font-bold leading-none tabular-nums tracking-tight text-[#042C51]">
-                      7 <span className="text-xs font-semibold text-slate-400">/ 7</span>
-                    </p>
-                  </div>
-                  <p className="mt-1 truncate text-[9.5px] font-semibold leading-tight text-[#667085]">
-                    Trainer + QA + TL combined
-                  </p>
+            <div className="bg-white p-3.5 rounded-xl border border-[#E6ECF2] shadow-sm flex flex-col justify-between relative overflow-hidden h-[115px] hover:-translate-y-0.5 hover:shadow-md transition-all">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Completed Scorecards</span>
+                <div className="w-7 h-7 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
                 </div>
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
-                  <CheckCircle2 className="h-4 w-4" />
-                </span>
               </div>
-            </article>
+              <div className="mt-1.5">
+                <div className="text-xl font-extrabold text-[#042C51] tracking-tight">
+                  7 <span className="text-xs font-semibold text-slate-400">/ 7</span>
+                </div>
+                <div className="text-[9px] text-slate-400 font-bold mt-1 uppercase tracking-wide">Trainer + QA + TL combined</div>
+              </div>
+            </div>
 
             {/* 3. Needs Support */}
-            <article className="flex h-[100px] min-h-[92px] flex-col justify-between overflow-hidden rounded-xl border border-[#DCE5EF] bg-white p-3 shadow-[0_6px_18px_rgba(4,44,81,0.04)] transition hover:-translate-y-0.5 hover:shadow-md 2xl:h-[108px]">
-              <div className="flex h-full items-start justify-between gap-2">
-                <div className="flex h-full min-w-0 flex-1 flex-col justify-between">
-                  <div>
-                    <p className="m-0 truncate text-[9.5px] font-extrabold uppercase tracking-wide text-rose-700">
-                      Needs Support
-                    </p>
-                    <p className="mt-1.5 text-2xl font-bold leading-none tabular-nums tracking-tight text-[#E74C3C]">
-                      2
-                    </p>
-                  </div>
-                  <p className="mt-1 truncate text-[9.5px] font-semibold leading-tight text-[#667085]">
-                    Scorecards &lt;70% benchmark
-                  </p>
+            <div className="bg-white p-3.5 rounded-xl border border-[#E6ECF2] shadow-sm flex flex-col justify-between relative overflow-hidden h-[115px] hover:-translate-y-0.5 hover:shadow-md transition-all">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Needs Support</span>
+                <div className="w-7 h-7 rounded-full bg-rose-50 flex items-center justify-center text-[#E74C3C]">
+                  <AlertTriangle className="w-3.5 h-3.5" />
                 </div>
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-rose-50 text-rose-600">
-                  <AlertTriangle className="h-4 w-4" />
-                </span>
               </div>
-            </article>
+              <div className="mt-1.5">
+                <div className="text-xl font-extrabold text-[#E74C3C] tracking-tight">2</div>
+                <div className="text-[9px] text-[#E74C3C] font-bold mt-1 uppercase tracking-wide">Scorecards &lt;70% benchmark</div>
+              </div>
+            </div>
 
             {/* 4. Pending Scorecards */}
-            <article className="flex h-[100px] min-h-[92px] flex-col justify-between overflow-hidden rounded-xl border border-[#DCE5EF] bg-white p-3 shadow-[0_6px_18px_rgba(4,44,81,0.04)] transition hover:-translate-y-0.5 hover:shadow-md 2xl:h-[108px]">
-              <div className="flex h-full items-start justify-between gap-2">
-                <div className="flex h-full min-w-0 flex-1 flex-col justify-between">
-                  <div>
-                    <p className="m-0 truncate text-[9.5px] font-extrabold uppercase tracking-wide text-amber-700">
-                      Pending Scorecards
-                    </p>
-                    <p className="mt-1.5 text-2xl font-bold leading-none tabular-nums tracking-tight text-[#E67E22]">
-                      0
-                    </p>
-                  </div>
-                  <p className="mt-1 truncate text-[9.5px] font-semibold leading-tight text-[#667085]">
-                    Due results lacking inputs
-                  </p>
+            <div className="bg-white p-3.5 rounded-xl border border-[#E6ECF2] shadow-sm flex flex-col justify-between relative overflow-hidden h-[115px] hover:-translate-y-0.5 hover:shadow-md transition-all">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Pending Scorecards</span>
+                <div className="w-7 h-7 rounded-full bg-amber-50 flex items-center justify-center text-[#E67E22]">
+                  <Clock className="w-3.5 h-3.5" />
                 </div>
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-50 text-amber-600">
-                  <Clock className="h-4 w-4" />
-                </span>
               </div>
-            </article>
+              <div className="mt-1.5">
+                <div className="text-xl font-extrabold text-[#E67E22] tracking-tight">0</div>
+                <div className="text-[9px] text-slate-400 font-bold mt-1 uppercase tracking-wide">Due results lacking inputs</div>
+              </div>
+            </div>
 
             {/* 5. Day 30 TL Handoffs */}
-            <article className={`col-span-2 sm:col-span-1 flex h-[100px] min-h-[92px] flex-col justify-between overflow-hidden rounded-xl border p-3 shadow-[0_6px_18px_rgba(4,44,81,0.04)] transition hover:-translate-y-0.5 hover:shadow-md 2xl:h-[108px] ${
+            <div className={`p-3.5 rounded-xl border shadow-sm flex flex-col justify-between relative overflow-hidden h-[115px] hover:-translate-y-0.5 hover:shadow-md transition-all ${
               pendingDay30HandoffsCount > 0 
-                ? "border-[#FF5C28] bg-orange-50/50" 
-                : "border-[#DCE5EF] bg-white"
+                ? "bg-orange-50/30 border-[#FF5C28]" 
+                : "bg-white border-[#E6ECF2]"
             }`}>
-              <div className="flex h-full items-start justify-between gap-2">
-                <div className="flex h-full min-w-0 flex-1 flex-col justify-between">
-                  <div>
-                    <p className="m-0 truncate text-[9.5px] font-extrabold uppercase tracking-wide text-[#FF5C28]">
-                      Day 30 TL Handoffs
-                    </p>
-                    <div className="mt-1.5 flex items-center gap-1.5">
-                      <span className="text-2xl font-bold leading-none tabular-nums tracking-tight text-[#042C51]">
-                        {pendingDay30HandoffsCount}
-                      </span>
-                      {pendingDay30HandoffsCount > 0 && (
-                        <span className="rounded-full bg-[#FF5C28] px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wider text-white">
-                          Action Due
-                        </span>
-                      )}
-                    </div>
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-black uppercase text-[#FF5C28] tracking-wider">Day 30 TL Handoffs</span>
+                <div className="flex items-center gap-1">
+                  {pendingDay30HandoffsCount > 0 && (
+                    <span className="text-[9px] font-extrabold text-white bg-[#FF5C28] px-1.5 py-0.5 rounded-full uppercase tracking-wider">
+                      Action Due
+                    </span>
+                  )}
+                  <div className="w-7 h-7 rounded-full bg-orange-100 flex items-center justify-center text-[#FF5C28]">
+                    <Award className="w-3.5 h-3.5" />
                   </div>
-                  <p className="mt-1 truncate text-[9.5px] font-semibold leading-tight text-[#667085]">
-                    Trainer → TL transition needed
-                  </p>
                 </div>
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-orange-100 text-[#FF5C28]">
-                  <Award className="h-4 w-4" />
-                </span>
               </div>
-            </article>
+              <div className="mt-1.5">
+                <div className="text-xl font-extrabold text-[#042C51] tracking-tight">{pendingDay30HandoffsCount}</div>
+                <div className="text-[9px] text-slate-400 font-bold mt-1 uppercase tracking-wide">Trainer → TL transition needed</div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
