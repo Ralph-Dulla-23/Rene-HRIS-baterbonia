@@ -368,12 +368,12 @@ export default function EmployeeDashboard({
                 </button>
                 {onSwitchModule && (
                   <button
-                    onClick={() => onSwitchModule("Trainee Dashboard")}
-                    title="Click to view Trainee Dashboard & Daily Learning"
+                    onClick={() => onSwitchModule("Trainee Learning & Progress")}
+                    title="Click to view Trainee Learning & Progress"
                     className="px-2.5 py-0.5 rounded-full bg-emerald-400/20 text-emerald-300 hover:bg-emerald-400/30 text-[10px] font-black uppercase tracking-wider border border-emerald-400/40 inline-flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
                   >
                     <BookOpen className="w-3 h-3 text-emerald-300" />
-                    <span>Trainee Journey</span>
+                    <span>Trainee Learning</span>
                   </button>
                 )}
               </div>

@@ -43,6 +43,7 @@ import OnboardingDetailsModal from "./onboarding/OnboardingDetailsModal";
 import BenchmarkView from "./journey/views/BenchmarkView";
 import Review306090Modal from "./journey/views/Review306090Modal";
 import ESEPCoachingTabView from "./journey/views/ESEPCoachingTabView";
+import { coachingForEmployee, evaluationFor, coachingStatus } from "./journey/trainerCoachingUtils";
 
 // ==========================================
 // STORAGE KEYS FOR CROSS-MODULE SYNC
@@ -148,7 +149,7 @@ const INITIAL_ONBOARDING_RECORDS: OnboardingRecord[] = [
     onboardingStage: "Offer Accepted / Pre-Boarding",
     handoffStatus: "Pending Day 1 Handoff",
     assessmentStatus: "Pre-hire Requirements",
-    coachingStatus: "None Required",
+    coachingStatus: "Coaching: Evaluated (Goal Met)",
     showStatus: "Pending",
     finalOutcome: "Pending Start",
     owner: "Alena Batacan",
@@ -496,7 +497,10 @@ export default function Onboarding({
     setSelectedJourney, 
     pendingDay30HandoffsCount,
     phaseTrainingScores, 
-    coachingActions 
+    coachingActions,
+    esepSessions,
+    esepEvaluations,
+    simulatedCurrentDate
   } = useJourney();
 
   // Search & Filtering State for Unified Roster
@@ -728,9 +732,38 @@ export default function Onboarding({
       }
     }
 
-    // 3. Coaching
+    // 3. Coaching (Reflecting ESEP GROW sessions and Coaching Actions per individual)
     let coachingBadge: { label: string; tone: string; key: string } | null = null;
-    if (matchingJourney) {
+    const synthJourney: any = matchingJourney || {
+      id: record.id,
+      sibsEmployeeId: record.convertedEmployeeId || record.id,
+      fullName: record.name || (record as any).candidateName || "Candidate"
+    };
+    const esepList = coachingForEmployee(esepSessions, synthJourney);
+
+    if (esepList.length > 0) {
+      const hasEvaluated = esepList.some(s => evaluationFor(s, esepEvaluations));
+      const hasOverdue = esepList.some(s => coachingStatus(s, esepEvaluations, simulatedCurrentDate) === 'Overdue');
+      if (hasEvaluated) {
+        coachingBadge = {
+          label: "Coaching: Evaluated (Goal Met)",
+          tone: "bg-emerald-50 text-emerald-700 border-emerald-300 font-bold",
+          key: "passed"
+        };
+      } else if (hasOverdue) {
+        coachingBadge = {
+          label: "Coaching: Action Required",
+          tone: "bg-rose-50 text-rose-700 border-rose-300 font-black",
+          key: "action"
+        };
+      } else {
+        coachingBadge = {
+          label: "Coaching: Active (GROW)",
+          tone: "bg-amber-50 text-amber-800 border-amber-300 font-bold",
+          key: "active"
+        };
+      }
+    } else if (matchingJourney) {
       const empKey = matchingJourney.sibsEmployeeId || matchingJourney.id;
       const coachActs = coachingActions.filter(c => c.emp === empKey || c.emp === matchingJourney.id);
       const hasDone = coachActs.some(c => c.status === "Done");
@@ -750,7 +783,7 @@ export default function Onboarding({
         };
       }
     } else if (record.coachingStatus && record.coachingStatus !== "None Required" && record.coachingStatus !== "N/A") {
-      const passed = record.coachingStatus.toLowerCase().includes("pass") || record.coachingStatus.toLowerCase().includes("met");
+      const passed = record.coachingStatus.toLowerCase().includes("pass") || record.coachingStatus.toLowerCase().includes("met") || record.coachingStatus.toLowerCase().includes("eval");
       const failed = record.coachingStatus.toLowerCase().includes("fail") || record.coachingStatus.toLowerCase().includes("action");
       coachingBadge = {
         label: record.coachingStatus,
@@ -1337,7 +1370,21 @@ export default function Onboarding({
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#F8FAFC] text-[#042C51] hover:bg-[#042C51] hover:text-white border border-[#E6ECF2] text-xs font-bold transition-all cursor-pointer shrink-0"
           >
             <Clock className="h-3.5 w-3.5 text-[#FF5C28]" />
-            <span>HR Actions & Alerts</span>
+            <span>Outcome & Governance</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => document.getElementById("section-benchmarks")?.scrollIntoView({ behavior: "smooth" })}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#F8FAFC] text-[#042C51] hover:bg-[#042C51] hover:text-white border border-[#E6ECF2] text-xs font-bold transition-all cursor-pointer shrink-0"
+          >
+            <Award className="h-3.5 w-3.5 text-[#FF5C28]" />
+            <span>30/60/90 Benchmarks</span>
+            {pendingDay30HandoffsCount > 0 && (
+              <span className="px-1.5 py-0.2 rounded-full text-[9px] font-black bg-[#FF5C28] text-white">
+                {pendingDay30HandoffsCount} Due
+              </span>
+            )}
           </button>
 
           <button
@@ -1455,100 +1502,6 @@ export default function Onboarding({
             </div>
           </div>
         </div>
-
-        {/* Row 2: 30 / 60 / 90 Probationary Journey Benchmarks (5 Metrics) */}
-        <div>
-          <div className="mb-2 flex items-center justify-between">
-            <span className="text-[10px] font-black uppercase tracking-wider text-[#FF5C28]">
-              30 / 60 / 90 Probationary Journey Benchmarks
-            </span>
-            <span className="text-[10px] font-bold text-slate-400">5 Metrics</span>
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3.5 min-w-0">
-            {/* 1. Trainees in View */}
-            <div className="bg-white p-3.5 rounded-xl border border-[#E6ECF2] shadow-sm flex flex-col justify-between relative overflow-hidden h-[115px] hover:-translate-y-0.5 hover:shadow-md transition-all">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Trainees in View</span>
-                <div className="w-7 h-7 rounded-full bg-[#E9F0FC] flex items-center justify-center text-[#042C51]">
-                  <Users className="w-3.5 h-3.5" />
-                </div>
-              </div>
-              <div className="mt-1.5">
-                <div className="text-xl font-extrabold text-[#042C51] tracking-tight">{journeys.length}</div>
-                <div className="text-[9px] text-slate-400 font-bold mt-1 uppercase tracking-wide">Active cohort trainees</div>
-              </div>
-            </div>
-
-            {/* 2. Completed Scorecards */}
-            <div className="bg-white p-3.5 rounded-xl border border-[#E6ECF2] shadow-sm flex flex-col justify-between relative overflow-hidden h-[115px] hover:-translate-y-0.5 hover:shadow-md transition-all">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Completed Scorecards</span>
-                <div className="w-7 h-7 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600">
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                </div>
-              </div>
-              <div className="mt-1.5">
-                <div className="text-xl font-extrabold text-[#042C51] tracking-tight">
-                  7 <span className="text-xs font-semibold text-slate-400">/ 7</span>
-                </div>
-                <div className="text-[9px] text-slate-400 font-bold mt-1 uppercase tracking-wide">Trainer + QA + TL combined</div>
-              </div>
-            </div>
-
-            {/* 3. Needs Support */}
-            <div className="bg-white p-3.5 rounded-xl border border-[#E6ECF2] shadow-sm flex flex-col justify-between relative overflow-hidden h-[115px] hover:-translate-y-0.5 hover:shadow-md transition-all">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Needs Support</span>
-                <div className="w-7 h-7 rounded-full bg-rose-50 flex items-center justify-center text-[#E74C3C]">
-                  <AlertTriangle className="w-3.5 h-3.5" />
-                </div>
-              </div>
-              <div className="mt-1.5">
-                <div className="text-xl font-extrabold text-[#E74C3C] tracking-tight">2</div>
-                <div className="text-[9px] text-[#E74C3C] font-bold mt-1 uppercase tracking-wide">Scorecards &lt;70% benchmark</div>
-              </div>
-            </div>
-
-            {/* 4. Pending Scorecards */}
-            <div className="bg-white p-3.5 rounded-xl border border-[#E6ECF2] shadow-sm flex flex-col justify-between relative overflow-hidden h-[115px] hover:-translate-y-0.5 hover:shadow-md transition-all">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Pending Scorecards</span>
-                <div className="w-7 h-7 rounded-full bg-amber-50 flex items-center justify-center text-[#E67E22]">
-                  <Clock className="w-3.5 h-3.5" />
-                </div>
-              </div>
-              <div className="mt-1.5">
-                <div className="text-xl font-extrabold text-[#E67E22] tracking-tight">0</div>
-                <div className="text-[9px] text-slate-400 font-bold mt-1 uppercase tracking-wide">Due results lacking inputs</div>
-              </div>
-            </div>
-
-            {/* 5. Day 30 TL Handoffs */}
-            <div className={`p-3.5 rounded-xl border shadow-sm flex flex-col justify-between relative overflow-hidden h-[115px] hover:-translate-y-0.5 hover:shadow-md transition-all ${
-              pendingDay30HandoffsCount > 0 
-                ? "bg-orange-50/30 border-[#FF5C28]" 
-                : "bg-white border-[#E6ECF2]"
-            }`}>
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-black uppercase text-[#FF5C28] tracking-wider">Day 30 TL Handoffs</span>
-                <div className="flex items-center gap-1">
-                  {pendingDay30HandoffsCount > 0 && (
-                    <span className="text-[9px] font-extrabold text-white bg-[#FF5C28] px-1.5 py-0.5 rounded-full uppercase tracking-wider">
-                      Action Due
-                    </span>
-                  )}
-                  <div className="w-7 h-7 rounded-full bg-orange-100 flex items-center justify-center text-[#FF5C28]">
-                    <Award className="w-3.5 h-3.5" />
-                  </div>
-                </div>
-              </div>
-              <div className="mt-1.5">
-                <div className="text-xl font-extrabold text-[#042C51] tracking-tight">{pendingDay30HandoffsCount}</div>
-                <div className="text-[9px] text-slate-400 font-bold mt-1 uppercase tracking-wide">Trainer → TL transition needed</div>
-              </div>
-            </div>
-          </div>
-        </div>
       </section>
 
       {/* Outcome Overview + Governance */}
@@ -1642,6 +1595,102 @@ export default function Onboarding({
             </p>
           </div>
         </aside>
+      </section>
+
+      {/* Row 2: 30 / 60 / 90 Probationary Journey Benchmarks (5 Metrics) */}
+      <section id="section-benchmarks" className="space-y-4 select-none">
+        <div>
+          <div className="mb-2 flex items-center justify-between">
+            <span className="text-[10px] font-black uppercase tracking-wider text-[#FF5C28]">
+              30 / 60 / 90 Probationary Journey Benchmarks
+            </span>
+            <span className="text-[10px] font-bold text-slate-400">5 Metrics</span>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3.5 min-w-0">
+            {/* 1. Trainees in View */}
+            <div className="bg-white p-3.5 rounded-xl border border-[#E6ECF2] shadow-sm flex flex-col justify-between relative overflow-hidden h-[115px] hover:-translate-y-0.5 hover:shadow-md transition-all">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Trainees in View</span>
+                <div className="w-7 h-7 rounded-full bg-[#E9F0FC] flex items-center justify-center text-[#042C51]">
+                  <Users className="w-3.5 h-3.5" />
+                </div>
+              </div>
+              <div className="mt-1.5">
+                <div className="text-xl font-extrabold text-[#042C51] tracking-tight">{journeys.length}</div>
+                <div className="text-[9px] text-slate-400 font-bold mt-1 uppercase tracking-wide">Active cohort trainees</div>
+              </div>
+            </div>
+
+            {/* 2. Completed Scorecards */}
+            <div className="bg-white p-3.5 rounded-xl border border-[#E6ECF2] shadow-sm flex flex-col justify-between relative overflow-hidden h-[115px] hover:-translate-y-0.5 hover:shadow-md transition-all">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Completed Scorecards</span>
+                <div className="w-7 h-7 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                </div>
+              </div>
+              <div className="mt-1.5">
+                <div className="text-xl font-extrabold text-[#042C51] tracking-tight">
+                  7 <span className="text-xs font-semibold text-slate-400">/ 7</span>
+                </div>
+                <div className="text-[9px] text-slate-400 font-bold mt-1 uppercase tracking-wide">Trainer + QA + TL combined</div>
+              </div>
+            </div>
+
+            {/* 3. Needs Support */}
+            <div className="bg-white p-3.5 rounded-xl border border-[#E6ECF2] shadow-sm flex flex-col justify-between relative overflow-hidden h-[115px] hover:-translate-y-0.5 hover:shadow-md transition-all">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Needs Support</span>
+                <div className="w-7 h-7 rounded-full bg-rose-50 flex items-center justify-center text-[#E74C3C]">
+                  <AlertTriangle className="w-3.5 h-3.5" />
+                </div>
+              </div>
+              <div className="mt-1.5">
+                <div className="text-xl font-extrabold text-[#E74C3C] tracking-tight">2</div>
+                <div className="text-[9px] text-[#E74C3C] font-bold mt-1 uppercase tracking-wide">Scorecards &lt;70% benchmark</div>
+              </div>
+            </div>
+
+            {/* 4. Pending Scorecards */}
+            <div className="bg-white p-3.5 rounded-xl border border-[#E6ECF2] shadow-sm flex flex-col justify-between relative overflow-hidden h-[115px] hover:-translate-y-0.5 hover:shadow-md transition-all">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Pending Scorecards</span>
+                <div className="w-7 h-7 rounded-full bg-amber-50 flex items-center justify-center text-[#E67E22]">
+                  <Clock className="w-3.5 h-3.5" />
+                </div>
+              </div>
+              <div className="mt-1.5">
+                <div className="text-xl font-extrabold text-[#E67E22] tracking-tight">0</div>
+                <div className="text-[9px] text-slate-400 font-bold mt-1 uppercase tracking-wide">Due results lacking inputs</div>
+              </div>
+            </div>
+
+            {/* 5. Day 30 TL Handoffs */}
+            <div className={`p-3.5 rounded-xl border shadow-sm flex flex-col justify-between relative overflow-hidden h-[115px] hover:-translate-y-0.5 hover:shadow-md transition-all ${
+              pendingDay30HandoffsCount > 0 
+                ? "bg-orange-50/30 border-[#FF5C28]" 
+                : "bg-white border-[#E6ECF2]"
+            }`}>
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-black uppercase text-[#FF5C28] tracking-wider">Day 30 TL Handoffs</span>
+                <div className="flex items-center gap-1">
+                  {pendingDay30HandoffsCount > 0 && (
+                    <span className="text-[9px] font-extrabold text-white bg-[#FF5C28] px-1.5 py-0.5 rounded-full uppercase tracking-wider">
+                      Action Due
+                    </span>
+                  )}
+                  <div className="w-7 h-7 rounded-full bg-orange-100 flex items-center justify-center text-[#FF5C28]">
+                    <Award className="w-3.5 h-3.5" />
+                  </div>
+                </div>
+              </div>
+              <div className="mt-1.5">
+                <div className="text-xl font-extrabold text-[#042C51] tracking-tight">{pendingDay30HandoffsCount}</div>
+                <div className="text-[9px] text-slate-400 font-bold mt-1 uppercase tracking-wide">Trainer → TL transition needed</div>
+              </div>
+            </div>
+          </div>
+        </div>
       </section>
 
       {/* ======================================================== */}

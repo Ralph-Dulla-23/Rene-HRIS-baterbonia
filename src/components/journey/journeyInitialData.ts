@@ -967,7 +967,9 @@ export const INITIAL_QDS_REQUESTS: QDSFollowUpRequest[] = [
 export const INITIAL_ESEP_SESSIONS: ESEPCoachingSession[] = [
   {
     "id": 8201,
-    "emp": "SIBS-2901",
+    "emp": "ONB-2026-001",
+    "empName": "Theresa Mae Santos",
+    "candidateName": "Theresa Mae Santos",
     "date": "2026-10-12",
     "facilitator": "Anton Reyes",
     "facilitatorRole": "Team Leader",
@@ -1011,8 +1013,46 @@ export const INITIAL_ESEP_SESSIONS: ESEPCoachingSession[] = [
     "status": "Completed"
   },
   {
+    "id": 8207,
+    "emp": "ONB-2026-001",
+    "empName": "Theresa Mae Santos",
+    "candidateName": "Theresa Mae Santos",
+    "date": "2026-10-14",
+    "facilitator": "Elena Santos",
+    "facilitatorRole": "QDS / QA",
+    "coachDesignation": "Quality Development Specialist",
+    "coacheeSupervisor": "Anton Reyes",
+    "taskOrder": "TO04 PAC",
+    "auditWeek": "Week 3",
+    "reasons": [
+      "QA Score",
+      "Compliance & Verification"
+    ],
+    "qaCallCaseId": "PAC-29012",
+    "qaLob": "Call",
+    "qaParameters": [
+      "1.5 Active Listening",
+      "1.7 Understanding and Empathy",
+      "3.5 Adherence to data protection policy",
+      "3.6 Adherence to proper caller authentication process"
+    ],
+    "type": "QA-triggered",
+    "goal": "HIPAA & Caller Authentication Accuracy",
+    "reality": "Minor hesitation on third-party verification procedures during mock practice scenarios.",
+    "options": "Review standard authentication job aid, shadow top performer on verification calls.",
+    "will": "Complete verification checklist on 100% of upcoming mock simulations.",
+    "overview": "Targeted verification compliance session to ensure ready floor transfer upon 30-day handoff.",
+    "actionPlan": "Perform 3 guided HIPAA verification exercises with QDS before Friday.",
+    "commitment": "I will strictly authenticate callers prior to releasing profile data.",
+    "due": "2026-10-20",
+    "source": "QDS Nesting Observation",
+    "status": "Completed"
+  },
+  {
     "id": 8202,
     "emp": "SIBS-2903",
+    "empName": "Nica Flores",
+    "candidateName": "Nica Flores",
     "date": "2026-10-13",
     "facilitator": "Ella Lim",
     "facilitatorRole": "QDS / QA",
@@ -1052,6 +1092,8 @@ export const INITIAL_ESEP_SESSIONS: ESEPCoachingSession[] = [
   {
     "id": 8203,
     "emp": "SIBS-2902",
+    "empName": "Marco Santos",
+    "candidateName": "Marco Santos",
     "date": "2026-10-14",
     "facilitator": "Anton Reyes",
     "facilitatorRole": "Team Leader",
@@ -1076,8 +1118,44 @@ export const INITIAL_ESEP_SESSIONS: ESEPCoachingSession[] = [
     "due": "2026-10-21",
     "source": "Weekly scheduled contact",
     "status": "Completed"
+  },
+  {
+    "id": 8204,
+    "emp": "SIBS-2901",
+    "empName": "Alyssa Rivera",
+    "candidateName": "Alyssa Rivera",
+    "date": "2026-10-12",
+    "facilitator": "Anton Reyes",
+    "facilitatorRole": "Team Leader",
+    "coachDesignation": "Team Leader",
+    "coacheeSupervisor": "Anton Reyes",
+    "taskOrder": "TO04 PAC",
+    "auditWeek": "Week 2",
+    "reasons": [
+      "QA Score",
+      "Average Handle Time"
+    ],
+    "qaCallCaseId": "PAC-24188",
+    "qaLob": "Call",
+    "qaParameters": [
+      "1.4 Proper Pace and volume",
+      "1.5 Active Listening",
+      "2.1 Correct and complete resolution"
+    ],
+    "type": "Weekly 1:1",
+    "goal": "Pacing & Call Control Optimization",
+    "reality": "High empathy, needs structured pacing during peak call queues to meet operational handle-time target.",
+    "options": "Use quick navigation shortcuts and standardized disposition tags.",
+    "will": "Apply 3-step call wrap-up procedure on next shift.",
+    "overview": "Focused on maintaining top empathy ratings while shaving 40 seconds off case wrap-up times.",
+    "actionPlan": "Practice streamlined wrap-up and tag templates during morning warm-up.",
+    "commitment": "I will balance warm customer empathy with efficient case documentation.",
+    "due": "2026-10-18",
+    "source": "Routine TL one-to-one",
+    "status": "Completed"
   }
 ];
+
 export const INITIAL_ESEP_EVALUATIONS: ESEPCoachingEvaluation[] = [
   {
     "id": 8301,
@@ -1088,5 +1166,15 @@ export const INITIAL_ESEP_EVALUATIONS: ESEPCoachingEvaluation[] = [
     "before": 78,
     "after": 84,
     "notes": "Employee completed case-scenario practice and demonstrated clearer escalation decisions in the sample follow-up review."
+  },
+  {
+    "id": 8302,
+    "sessionId": 8204,
+    "date": "2026-10-14",
+    "owner": "Anton Reyes",
+    "source": "AHT Benchmark Verification",
+    "before": 420,
+    "after": 375,
+    "notes": "Wrap-up times decreased by 45 seconds following template adoption."
   }
 ];

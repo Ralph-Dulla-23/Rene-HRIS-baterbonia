@@ -99,6 +99,8 @@ interface JourneyContextType {
   addCheckIn: (item: Omit<CheckInItem, "id">) => void;
   addCoachingAction: (action: Omit<CoachingAction, "id">) => void;
   toggleCoachingAction: (id: number) => void;
+  addEsepSession: (session: ESEPCoachingSession) => void;
+  addEsepEvaluation: (evaluation: ESEPCoachingEvaluation) => void;
   addQDSRequest: (req: Omit<QDSFollowUpRequest, "id" | "created" | "status">) => void;
   updateQDSRequestStatus: (id: number, status: "Open" | "Acknowledged" | "Closed", resolution?: string) => void;
   addNotification: (notif: Omit<NotificationEvent, "id">) => void;
@@ -283,7 +285,14 @@ function loadStorage<T>(key: string, defaultValue: T): T {
     const item = localStorage.getItem(STORAGE_PREFIX + key);
     if (item) {
       const parsed = JSON.parse(item);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed as unknown as T;
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        if (Array.isArray(defaultValue)) {
+          const parsedIds = new Set(parsed.map((p: any) => p.id ?? p.emp ?? p.sessionId));
+          const missing = defaultValue.filter((d: any) => !parsedIds.has(d.id ?? d.emp ?? d.sessionId));
+          return [...parsed, ...missing] as unknown as T;
+        }
+        return parsed as unknown as T;
+      }
       if (typeof parsed === "object" && parsed !== null) return parsed as unknown as T;
     }
   } catch {
@@ -829,6 +838,14 @@ export function JourneyProvider({ children }: { children: ReactNode }) {
     setCoachingActions(prev => prev.map(c => c.id === id ? { ...c, status: c.status === "Open" ? "Done" : "Open" } : c));
   };
 
+  const addEsepSession = (session: ESEPCoachingSession) => {
+    setEsepSessions(prev => [session, ...prev]);
+  };
+
+  const addEsepEvaluation = (evaluation: ESEPCoachingEvaluation) => {
+    setEsepEvaluations(prev => [evaluation, ...prev]);
+  };
+
   const addQDSRequest = (req: Omit<QDSFollowUpRequest, "id" | "created" | "status">) => {
     const newReq: QDSFollowUpRequest = {
       ...req,
@@ -927,6 +944,8 @@ export function JourneyProvider({ children }: { children: ReactNode }) {
     addCheckIn,
     addCoachingAction,
     toggleCoachingAction,
+    addEsepSession,
+    addEsepEvaluation,
     addQDSRequest,
     updateQDSRequestStatus,
     addNotification,

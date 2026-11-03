@@ -41,12 +41,12 @@ const modules: Record<DemoRole,string[]> = {
   'Team Leader':['OM Dashboard','Employee Directory','Time & Attendance','Leaves & Time Off','Employee Journey','ESEP Coaching'],
   Manager:['OM Dashboard','Employee Directory','Time & Attendance','Leaves & Time Off','Employee Journey','ESEP Coaching'],
   SOM:['OM Dashboard','Employee Directory','Time & Attendance','Leaves & Time Off','Employee Journey','ESEP Coaching'],
-  'Super Admin':['Super Admin Dashboard','HR Admin Dashboard','HR Dashboard','TA Dashboard','OM Dashboard','Employee Dashboard','Trainee Dashboard','Employee Directory','Time & Attendance','Leaves & Time Off','Resignation Management','Workforce Hiring','Hiring Needs Intake','Available Positions','Job Description','Applicant Leads','Talent Pool','Candidate Pipeline','Offers','New Hire Orientation','Onboarding','ESEP Coaching','Candidate Experience','Employee Journey','Recruitment Flowchart','Sourcing Analytics','Action Items','Weekly Reports','Departments','Office Locations','Email Logs','Recruitment Settings','Frontend Design PDF View','Process Specbook','Public Application Form','Public Survey'],
+  'Super Admin':['Super Admin Dashboard','HR Admin Dashboard','HR Dashboard','TA Dashboard','OM Dashboard','Employee Dashboard','Trainee Dashboard','Trainee Learning & Progress','Employee Directory','Time & Attendance','Leaves & Time Off','Resignation Management','Workforce Hiring','Hiring Needs Intake','Available Positions','Job Description','Applicant Leads','Talent Pool','Candidate Pipeline','Offers','New Hire Orientation','Onboarding','ESEP Coaching','Candidate Experience','Employee Journey','Recruitment Flowchart','Sourcing Analytics','Action Items','Weekly Reports','Departments','Office Locations','Email Logs','Recruitment Settings','Frontend Design PDF View','Process Specbook','Public Application Form','Public Survey'],
 };
 
 export function normalizeModule(module: string): string {
   if (module === '30 / 60 / 90 Reviews' || module === '30/60/90 Reviews') return 'Onboarding';
-  if (module === '30/60/90 Employee Journey' || module === 'Trainee Dashboard') return 'Employee Journey';
+  if (module === '30/60/90 Employee Journey' || module === 'Trainee Dashboard' || module === 'Trainee Learning & Progress') return 'Employee Journey';
   if (module === 'New Hire Orientation (NHO)') return 'New Hire Orientation';
   if (module === 'Separate QDS Application' || module === 'QDS') return 'QDS Application';
   if (module === 'HR Dashboard') return 'HR Admin Dashboard';

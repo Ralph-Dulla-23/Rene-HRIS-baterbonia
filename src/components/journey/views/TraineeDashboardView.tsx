@@ -148,7 +148,6 @@ export default function TraineeDashboardView({ onSwitchModule }: TraineeDashboar
   const availableTrainers = Array.from(new Set(journeys.map(j => j.trainerName).filter((name): name is string => !!name)));
   const chooseTrainer = () => newActivity.trainer || (user?.role === "Trainer" ? user.trainerName || "" : currentJourney.trainerName || "");
   const materialRows = selectedDayAssignments.filter(a => a.type === "Material");
-  const goalRows = selectedDayAssignments.filter(a => a.type === "Goal");
   const futureAssignedDates = Array.from(new Set(traineeAssignments
     .filter(a => a.date > trainingDate && dateWithinBounds(a.date, dateBounds))
     .map(a => a.date))).sort();
@@ -293,7 +292,7 @@ export default function TraineeDashboardView({ onSwitchModule }: TraineeDashboar
             <div className="flex items-center gap-2 flex-wrap">
               <span className="inline-flex items-center gap-1.5 rounded-full border border-blue-100 bg-[#E9F0FC] px-2.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wide text-[#042C51]">
                 <span className="h-1.5 w-1.5 rounded-full bg-[#FF5C28]" />
-                My Training Dashboard • Day {currentJourney.daysElapsed} of 90
+                Trainee Learning & Progress • Day {currentJourney.daysElapsed} of 90
               </span>
               <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[9.5px] font-bold ${attendanceTone(selectedAttendance)}`}>
                 Selected day attendance: {selectedAttendance === "Unrecorded" ? "Not yet recorded" : selectedAttendance}
@@ -303,7 +302,7 @@ export default function TraineeDashboardView({ onSwitchModule }: TraineeDashboar
               Good to see you, {currentJourney.fullName.split(" ")[0]}!
             </h1>
             <p className="text-xs text-[#667085] max-w-3xl leading-normal">
-              Track your daily learning materials, FST & PST module grades, daily goals, and trainer verification status.
+              Track your daily learning materials, FST & PST module grades, curriculum progress, and trainer verification status.
             </p>
             <div className="flex flex-wrap items-center gap-2 pt-1">
               <span className="text-[11px] font-medium text-slate-500">
@@ -394,7 +393,7 @@ export default function TraineeDashboardView({ onSwitchModule }: TraineeDashboar
             <div className="min-w-0">
               <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#FF5C28]">{getStatus(nextAction) === "Revision requested" ? "Action needed · trainer requested changes" : "Next training task"}</span>
               <p className="text-sm font-bold text-[#042C51] mt-0.5">{nextAction.title}</p>
-              <p className="text-xs text-slate-500 mt-0.5">{nextAction.type === "Material" ? "Learning material" : "Training goal"} · {nextAction.trainer ? `Assigned trainer: ${nextAction.trainer}` : `General contact: ${currentJourney.trainerName || "Not assigned"}`}</p>
+              <p className="text-xs text-slate-500 mt-0.5">{nextAction.type === "Material" ? "Learning material" : "Training module"} · {nextAction.trainer ? `Assigned trainer: ${nextAction.trainer}` : `General contact: ${currentJourney.trainerName || "Not assigned"}`}</p>
             </div>
             <button type="button" onClick={() => { setTaskFilter("All"); setSubmissionNote(getSubmission(nextAction)?.note || ""); setActiveMaterialModal(nextAction); }} className="rounded-xl bg-[#042C51] hover:bg-[#0B365F] px-3.5 py-2 text-xs font-bold text-white shadow-xs transition-colors">{getStatus(nextAction) === "Revision requested" ? "Review feedback & resubmit" : "Open activity"}</button>
           </div>}
@@ -465,14 +464,13 @@ export default function TraineeDashboardView({ onSwitchModule }: TraineeDashboar
             const hasActivities = dayItems.length > 0;
             const att = within ? getAttendanceAt(date) : "Outside training period";
             const mats = dayItems.filter(a => a.type === "Material").length;
-            const goals = dayItems.filter(a => a.type === "Goal").length;
             const selected = date === trainingDate;
             return <button key={date} type="button" disabled={!within} onClick={() => pickTrainingDate(date)} aria-pressed={selected}
-              aria-label={`${date}: ${mats} materials, ${goals} goals; ${att}; ${hasActivities ? `training contact ${trainers.names.join(" / ") || "not assigned"}` : "no trainer-led tasks scheduled"}`}
+              aria-label={`${date}: ${mats} materials; ${att}; ${hasActivities ? `training contact ${trainers.names.join(" / ") || "not assigned"}` : "no trainer-led tasks scheduled"}`}
               className={`${calendarView === "week" ? "w-[125px] shrink-0 sm:w-auto" : "min-w-0"} min-h-[82px] sm:min-h-[106px] rounded-xl border p-2 text-left flex flex-col gap-1 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#042C51] ${selected ? "bg-orange-50/70 border-2 border-[#FF5C28] ring-1 ring-[#FF5C28]/20 shadow-xs" : within && hasActivities ? "bg-blue-50/40 border-blue-200 hover:bg-blue-50 hover:border-blue-300" : within ? "bg-[#FAFCFF] border-[#E6ECF2] hover:bg-[#F7F9FC] hover:border-[#BECBDA]" : "bg-slate-50/60 border-dashed border-slate-200 opacity-50 cursor-not-allowed"}`}>
               <span className="text-xs sm:text-sm font-black text-[#042C51]"><span className="sm:hidden mr-1 text-[10px] text-slate-500">{new Date(date + "T12:00:00Z").toLocaleDateString("en-US", {weekday:"short",timeZone:"UTC"})}</span>{Number(date.slice(-2))}{date === simulatedCurrentDate && <span className="text-[#FF5C28] font-black"> •</span>}</span>
               {within ? <>
-                <span className="text-[9px] sm:text-[10px] leading-tight text-slate-600">{mats} material{mats===1?"":"s"} · {goals} goal{goals===1?"":"s"}</span>
+                <span className="text-[9px] sm:text-[10px] leading-tight text-slate-600">{mats} material{mats===1?"":"s"}</span>
                 {hasActivities && <span className="hidden sm:block text-[9px] text-[#215789] font-bold leading-tight break-words">{trainers.explicit ? "Task trainer: " : "Contact: "}{trainers.names.join(" / ") || "Not assigned"}</span>}
                 <span className={`self-start rounded-md px-1.5 py-0.5 text-[8px] sm:text-[9px] font-bold ${attendanceTone(att)}`}>{att === "Unrecorded" ? "Pending record" : att}</span>
               </> : <span className="text-[9px] text-slate-400">—</span>}
@@ -498,118 +496,100 @@ export default function TraineeDashboardView({ onSwitchModule }: TraineeDashboar
       {canAddActivity && <div className="flex justify-end"><button type="button" onClick={() => setIsAddingAssignment(true)} className="px-4 py-2 bg-[#FF5C28] text-white font-bold text-xs rounded-xl hover:bg-[#e04f20] shadow-xs transition-colors cursor-pointer">+ Assign training activity</button></div>}
 
       {/* One daily view for materials and goals. Published assessment details stay below. */}
-      <div id="trainee-daily-work" className="grid grid-cols-1 lg:grid-cols-2 gap-5 scroll-mt-24" aria-label="Selected day learning materials and goals">
-        <div className="min-w-0 space-y-5">
-          <div className="bg-white rounded-xl border border-[#E6ECF2] shadow-xs p-5 space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
-              <div>
-                <h2 className="text-sm font-extrabold text-[#042C51]">Assigned Learning Materials ({trainingDate})</h2>
-                <p className="text-xs text-slate-500">Read materials, complete tasks, and submit for trainer verification.</p>
-              </div>
-              {/* Filter Tabs */}
-              <div className="flex items-center gap-1 bg-[#F7F9FC] border border-[#BECBDA] p-1 rounded-xl flex-wrap" role="group" aria-label="Learning material status filter">
-                {(["All", "To do", "For review", "Verified"] as const).map(f => (
-                  <button
-                    key={f}
-                    onClick={() => setTaskFilter(f)}
-                    aria-pressed={taskFilter === f}
-                    className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors cursor-pointer ${
-                      taskFilter === f ? "bg-[#042C51] text-white shadow-xs" : "text-[#215789] hover:text-[#042C51] hover:bg-white"
-                    }`}
-                  >
-                    {f}
-                  </button>
-                ))}
-              </div>
+      {/* Assigned Learning Materials */}
+      <div id="trainee-daily-work" className="w-full scroll-mt-24" aria-label="Selected day learning materials">
+        <div className="bg-white rounded-xl border border-[#E6ECF2] shadow-xs p-5 space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+            <div>
+              <h2 className="text-sm font-extrabold text-[#042C51]">Assigned Learning Materials ({trainingDate})</h2>
+              <p className="text-xs text-slate-500">Read materials, complete tasks, and submit for trainer verification.</p>
             </div>
+            {/* Filter Tabs */}
+            <div className="flex items-center gap-1 bg-[#F7F9FC] border border-[#BECBDA] p-1 rounded-xl flex-wrap" role="group" aria-label="Learning material status filter">
+              {(["All", "To do", "For review", "Verified"] as const).map(f => (
+                <button
+                  key={f}
+                  onClick={() => setTaskFilter(f)}
+                  aria-pressed={taskFilter === f}
+                  className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors cursor-pointer ${
+                    taskFilter === f ? "bg-[#042C51] text-white shadow-xs" : "text-[#215789] hover:text-[#042C51] hover:bg-white"
+                  }`}
+                >
+                  {f}
+                </button>
+              ))}
+            </div>
+          </div>
 
-            {/* Itemized Materials Table / List */}
-            {materialRows.filter(filterMatches).length === 0 ? (
-              <div className="py-10 text-center text-slate-400 space-y-2">
-                <BookOpen className="w-8 h-8 text-slate-300 mx-auto" />
-                <p className="text-xs font-semibold text-slate-600">{materialRows.length ? `No materials match “${taskFilter}”.` : "No learning materials scheduled for this day."}</p>
-                <p className="text-xs text-slate-600">{materialRows.length ? "Try viewing all statuses." : "Nothing to submit for this date."}</p>
-                {materialRows.length > 0 && taskFilter !== "All" && <button type="button" className="text-xs font-bold text-[#215789] underline" onClick={() => setTaskFilter("All")}>Show all materials</button>}
-                {materialRows.length === 0 && nextAssignedDate && <button type="button" className="text-xs font-bold text-[#215789] underline" onClick={() => pickTrainingDate(nextAssignedDate)}>Go to next assigned day: {dateLabel(nextAssignedDate)}</button>}
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {materialRows.filter(filterMatches).map(item => {
-                  const sub = getSubmission(item);
-                  const st = getStatus(item);
+          {/* Itemized Materials Table / List */}
+          {materialRows.filter(filterMatches).length === 0 ? (
+            <div className="py-10 text-center text-slate-400 space-y-2">
+              <BookOpen className="w-8 h-8 text-slate-300 mx-auto" />
+              <p className="text-xs font-semibold text-slate-600">{materialRows.length ? `No materials match “${taskFilter}”.` : "No learning materials scheduled for this day."}</p>
+              <p className="text-xs text-slate-600">{materialRows.length ? "Try viewing all statuses." : "Nothing to submit for this date."}</p>
+              {materialRows.length > 0 && taskFilter !== "All" && <button type="button" className="text-xs font-bold text-[#215789] underline" onClick={() => setTaskFilter("All")}>Show all materials</button>}
+              {materialRows.length === 0 && nextAssignedDate && <button type="button" className="text-xs font-bold text-[#215789] underline" onClick={() => pickTrainingDate(nextAssignedDate)}>Go to next assigned day: {dateLabel(nextAssignedDate)}</button>}
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {materialRows.filter(filterMatches).map(item => {
+                const sub = getSubmission(item);
+                const st = getStatus(item);
 
-                  return (
-                    <div 
-                      key={item.id} 
-                      className="p-4 rounded-xl border border-[#E6ECF2] bg-white hover:border-[#BECBDA] transition-all shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4"
-                    >
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{item.category || "General"}</span>
-                          <span className={`px-2 py-0.2 rounded text-[10px] font-bold ${getTone(st)}`}>
-                            {readableStatus(st)}
+                return (
+                  <div 
+                    key={item.id} 
+                    className="p-4 rounded-xl border border-[#E6ECF2] bg-white hover:border-[#BECBDA] transition-all shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                  >
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{item.category || "General"}</span>
+                        <span className={`px-2 py-0.2 rounded text-[10px] font-bold ${getTone(st)}`}>
+                          {readableStatus(st)}
+                        </span>
+                        {item.priority === "High" && (
+                          <span className="px-2 py-0.2 rounded text-[10px] font-bold sibs-tone-amber-bg sibs-tone-amber-text border sibs-tone-amber-border">
+                            High Priority
                           </span>
-                          {item.priority === "High" && (
-                            <span className="px-2 py-0.2 rounded text-[10px] font-bold sibs-tone-amber-bg sibs-tone-amber-text border sibs-tone-amber-border">
-                              High Priority
-                            </span>
-                          )}
-                        </div>
-
-                        <h3 className="text-sm font-extrabold text-[#042C51]">{item.title}</h3>
-                        <p className="text-xs text-slate-500">{item.description}</p>
-                        
-                        <div className="flex items-center gap-3 text-[11px] text-slate-400 pt-1">
-                          <span>{item.trainer ? "Assigned trainer" : "General training contact"}: {trainerForTask(item, currentJourney.trainerName) || "Not assigned"}</span><span>•</span><span>Assigned by: {item.owner || "Not recorded"}</span>
-                          <span>•</span>
-                          <span>Duration: {item.duration}</span>
-                        </div>
-
-                        <p className="text-[11px] text-slate-600 mt-1">{statusExplanation(st)}</p>
-                        {sub?.feedback && (
-                          <div className="mt-2 p-2.5 rounded-lg sibs-tone-blue-bg border sibs-tone-blue-border text-xs text-[#042C51]">
-                            <strong className="block text-[10px] uppercase font-bold text-[#215789]">Trainer Feedback:</strong>
-                            <p className="mt-0.5">{sub.feedback}</p>
-                          </div>
                         )}
                       </div>
 
-                      <div className="shrink-0 flex items-center gap-2">
-                        <button
-                          onClick={() => { setSubmissionNote(getSubmission(item)?.note || ""); setActiveMaterialModal(item); }}
-                          className={`px-3.5 py-1.5 rounded-xl font-semibold text-xs transition-colors cursor-pointer shadow-xs ${
-                            st === "Verified" 
-                              ? "bg-white border border-[#BECBDA] text-[#042C51] hover:bg-[#F7F9FC]" 
-                              : "bg-[#FF5C28] hover:bg-[#e04f20] text-white"
-                          }`}
-                        >
-                          {st === "Verified" ? "View verified activity" : st === "Submitted" ? "View submission" : !isEmployee ? "View details" : st === "Revision requested" ? "Review feedback & resubmit" : "Open activity & submit"}
-                        </button>
+                      <h3 className="text-sm font-extrabold text-[#042C51]">{item.title}</h3>
+                      <p className="text-xs text-slate-500">{item.description}</p>
+                      
+                      <div className="flex items-center gap-3 text-[11px] text-slate-400 pt-1">
+                        <span>{item.trainer ? "Assigned trainer" : "General training contact"}: {trainerForTask(item, currentJourney.trainerName) || "Not assigned"}</span><span>•</span><span>Assigned by: {item.owner || "Not recorded"}</span>
+                        <span>•</span>
+                        <span>Duration: {item.duration}</span>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
 
+                      <p className="text-[11px] text-slate-600 mt-1">{statusExplanation(st)}</p>
+                      {sub?.feedback && (
+                        <div className="mt-2 p-2.5 rounded-lg sibs-tone-blue-bg border sibs-tone-blue-border text-xs text-[#042C51]">
+                          <strong className="block text-[10px] uppercase font-bold text-[#215789]">Trainer Feedback:</strong>
+                          <p className="mt-0.5">{sub.feedback}</p>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="shrink-0 flex items-center gap-2">
+                      <button
+                        onClick={() => { setSubmissionNote(getSubmission(item)?.note || ""); setActiveMaterialModal(item); }}
+                        className={`px-3.5 py-1.5 rounded-xl font-semibold text-xs transition-colors cursor-pointer shadow-xs ${
+                          st === "Verified" 
+                            ? "bg-white border border-[#BECBDA] text-[#042C51] hover:bg-[#F7F9FC]" 
+                            : "bg-[#FF5C28] hover:bg-[#e04f20] text-white"
+                        }`}
+                      >
+                        {st === "Verified" ? "View verified activity" : st === "Submitted" ? "View submission" : !isEmployee ? "View details" : st === "Revision requested" ? "Review feedback & resubmit" : "Open activity & submit"}
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
-        {/* Today’s training goals use the existing submit/review data model. */}
-        <section className="min-w-0 rounded-xl border border-[#E6ECF2] bg-white shadow-xs p-4 sm:p-5 space-y-4">
-          <div><h2 className="text-sm font-extrabold text-[#042C51]">Training Goals ({trainingDate})</h2><p className="text-xs text-slate-500 mt-1">Complete practice exercises and submit progress for trainer verification.</p></div>
-          {goalRows.filter(filterMatches).length === 0 ? <div className="text-xs text-slate-600 bg-slate-50 border border-slate-200 rounded-lg p-5 space-y-2"><p>{goalRows.length ? `No training goals match “${taskFilter}”.` : "No practice goals scheduled for this day. Nothing to submit."}</p>{goalRows.length > 0 && taskFilter !== "All" && <button type="button" onClick={() => setTaskFilter("All")} className="font-bold text-[#215789] underline">Show all goals</button>}{goalRows.length === 0 && nextAssignedDate && <button type="button" onClick={() => pickTrainingDate(nextAssignedDate)} className="font-bold text-[#215789] underline">Go to next assigned day: {dateLabel(nextAssignedDate)}</button>}</div> :
-            goalRows.filter(filterMatches).map(goal => {
-              const st = getStatus(goal);
-              const feedback = getSubmission(goal)?.feedback;
-              return <article key={goal.id} className="p-4 rounded-xl border border-[#E6ECF2] bg-[#FAFCFF] space-y-2">
-                <div className="flex justify-between gap-2 items-start"><strong className="text-sm text-[#042C51]">{goal.title}</strong><span className={`shrink-0 px-2 py-0.5 rounded text-[10px] font-bold ${getTone(st)}`}>{readableStatus(st)}</span></div>
-                <p className="text-xs text-slate-500">{goal.description}</p><p className="text-[11px] text-slate-600">{statusExplanation(st)}</p>
-                <div className="text-[10px] text-slate-500">{goal.trainer ? "Assigned trainer" : "General training contact"}: <strong className="text-[#042C51]">{trainerForTask(goal, currentJourney.trainerName) || "Not assigned"}</strong> · Assigned by {goal.owner || "Not recorded"} · {goal.duration}</div>
-                {feedback && <p className="text-xs bg-blue-50 border border-blue-100 p-2 rounded-lg text-blue-900">Trainer feedback: {feedback}</p>}
-                <button type="button" onClick={() => { setSubmissionNote(getSubmission(goal)?.note || ""); setActiveMaterialModal(goal); }} className="px-3 py-2 rounded-lg border border-[#BECBDA] text-xs font-bold text-[#042C51] bg-white hover:bg-[#F7F9FC]">{st === "Verified" || st === "Submitted" ? "View goal & submission" : !isEmployee ? "View goal" : st === "Revision requested" ? "Review feedback & resubmit" : "Open goal & submit progress"}</button>
-              </article>;
-            })}
-        </section>
       </div>
 
       <section className="space-y-2" aria-label="Training progress and recorded attendance">
@@ -740,13 +720,12 @@ export default function TraineeDashboardView({ onSwitchModule }: TraineeDashboar
               <button type="button" aria-label="Close assignment form" onClick={() => setIsAddingAssignment(false)} className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-500 transition-colors cursor-pointer"><X className="w-5 h-5"/></button>
             </div>
             <label className="block text-xs font-bold text-[#042C51]">Type
-              <select value={newActivity.type} onChange={e => setNewActivity(p=>({...p,type:e.target.value as "Goal"|"Material"}))} className="block w-full border border-[#BECBDA] rounded-xl p-2.5 mt-1 text-xs text-[#042C51] outline-none focus:border-[#FF5C28]">
-                <option>Material</option>
-                <option>Goal</option>
+              <select value={newActivity.type} onChange={e => setNewActivity(p=>({...p,type:e.target.value as "Material"}))} className="block w-full border border-[#BECBDA] rounded-xl p-2.5 mt-1 text-xs text-[#042C51] outline-none focus:border-[#FF5C28]">
+                <option value="Material">Learning Material</option>
               </select>
             </label>
             <label className="block text-xs font-bold text-[#042C51]">Title
-              <input required maxLength={140} value={newActivity.title} onChange={e=>setNewActivity(p=>({...p,title:e.target.value}))} className="block w-full border border-[#BECBDA] rounded-xl p-2.5 mt-1 text-xs text-[#042C51] outline-none focus:border-[#FF5C28]" placeholder="Module or goal title..."/>
+              <input required maxLength={140} value={newActivity.title} onChange={e=>setNewActivity(p=>({...p,title:e.target.value}))} className="block w-full border border-[#BECBDA] rounded-xl p-2.5 mt-1 text-xs text-[#042C51] outline-none focus:border-[#FF5C28]" placeholder="Module or assignment title..."/>
             </label>
             <label className="block text-xs font-bold text-[#042C51]">Learning instructions / success criteria
               <textarea required rows={4} value={newActivity.details} onChange={e=>setNewActivity(p=>({...p,details:e.target.value}))} className="block w-full border border-[#BECBDA] rounded-xl p-2.5 mt-1 text-xs text-[#042C51] outline-none focus:border-[#FF5C28]" placeholder="Enter clear instructions or success metrics..."/>

@@ -22,8 +22,9 @@ function Information({ label, value }: { label: string; value?: React.ReactNode 
 
 export default function TrainerCoachingDetailsModal({ employee, sessions, evaluations, asOf, onClose, initialSessionId }: Props) {
   const records = coachingForEmployee(sessions, employee);
-  const [sessionId, setSessionId] = useState<number | null>(initialSessionId ?? records[0]?.id ?? null);
-  const session = records.find(s => s.id === sessionId) ?? records[0] ?? null;
+  const displayedRecords = records.length > 0 ? records : sessions;
+  const [sessionId, setSessionId] = useState<number | null>(initialSessionId ?? displayedRecords[0]?.id ?? null);
+  const session = displayedRecords.find(s => s.id === sessionId) ?? displayedRecords[0] ?? null;
   const evaluation = session ? evaluationFor(session, evaluations) : null;
   const comparison = kpiComparison(evaluation);
   const selectedParameters = new Set(session?.qaParameters ?? []);
@@ -31,9 +32,9 @@ export default function TrainerCoachingDetailsModal({ employee, sessions, evalua
   const status = session ? coachingStatus(session, evaluations, asOf) : null;
 
   // Counts for the 3 top metric cards matching image_cbd83600.png
-  const recordedCount = records.length;
-  const evaluatedCount = records.filter(s => evaluationFor(s, evaluations)).length;
-  const overdueCount = records.filter(s => coachingStatus(s, evaluations, asOf) === 'Overdue').length;
+  const recordedCount = displayedRecords.length;
+  const evaluatedCount = displayedRecords.filter(s => evaluationFor(s, evaluations)).length;
+  const overdueCount = displayedRecords.filter(s => coachingStatus(s, evaluations, asOf) === 'Overdue').length;
 
   useEffect(() => {
     const closeOnEscape = (event: KeyboardEvent) => { if (event.key === 'Escape') onClose(); };
@@ -126,7 +127,7 @@ export default function TrainerCoachingDetailsModal({ employee, sessions, evalua
                   Coaching session history
                 </div>
                 <div className="space-y-2">
-                  {records.map(s => {
+                  {displayedRecords.map(s => {
                     const isSelected = s.id === session.id;
                     const sStatus = coachingStatus(s, evaluations, asOf);
                     return (

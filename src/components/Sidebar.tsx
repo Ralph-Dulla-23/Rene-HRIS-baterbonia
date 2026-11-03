@@ -37,7 +37,8 @@ import {
   Award,
   ShieldAlert,
   ShieldCheck,
-  User
+  User,
+  GraduationCap
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { useJourney } from "./journey/JourneyContext";
@@ -109,7 +110,6 @@ export default function Sidebar({ currentModule, role, onModuleChange, activeTab
     { name: "OM Dashboard", icon: LayoutGrid, isEnabled: true, moduleKey: "OM Dashboard" },
     { name: "Employee Dashboard", icon: LayoutGrid, isEnabled: true, moduleKey: "Employee Dashboard" },
     { name: "QDS Dashboard", icon: ShieldAlert, isEnabled: true, moduleKey: "Employee Journey", tabKey: "qds-dashboard" },
-    { name: "Trainee Dashboard", icon: User, isEnabled: true, moduleKey: "Employee Journey", tabKey: "trainee-dashboard" },
     { name: "Employee Directory", icon: Users, isEnabled: true, moduleKey: "Employee Directory" },
     { name: "Time & Attendance", icon: Clock, isEnabled: true, moduleKey: "Time & Attendance" },
     { name: "Leaves", icon: Calendar, isEnabled: true, moduleKey: "Leaves & Time Off" },
@@ -177,6 +177,14 @@ export default function Sidebar({ currentModule, role, onModuleChange, activeTab
           isEnabled: true, 
           moduleKey: "Employee Journey", 
           tabKey: "trainer-monitoring" 
+        },
+        { 
+          name: "Trainee Learning & Progress", 
+          displayName: "Trainee Learning", 
+          icon: GraduationCap, 
+          isEnabled: true, 
+          moduleKey: "Employee Journey", 
+          tabKey: "trainee-dashboard" 
         },
         { name: "Candidate Experience", icon: BookOpen, isEnabled: true, moduleKey: "Candidate Experience" },
       ]
@@ -255,9 +263,9 @@ export default function Sidebar({ currentModule, role, onModuleChange, activeTab
     }
 
     if (item.moduleKey === "Employee Journey") {
-      const isJourneyMod = currentModule === "Employee Journey" || currentModule === "30/60/90 Employee Journey" || currentModule === "Trainee Dashboard";
+      const isJourneyMod = currentModule === "Employee Journey" || currentModule === "30/60/90 Employee Journey" || currentModule === "Trainee Dashboard" || currentModule === "Trainee Learning & Progress";
       if (item.tabKey) {
-        return isJourneyMod && (activeTab === item.tabKey || (currentModule === "Trainee Dashboard" && item.tabKey === "trainee-dashboard"));
+        return isJourneyMod && (activeTab === item.tabKey || ((currentModule === "Trainee Dashboard" || currentModule === "Trainee Learning & Progress") && item.tabKey === "trainee-dashboard"));
       }
       return isJourneyMod;
     }

@@ -259,6 +259,8 @@ export interface QDSFollowUpRequest {
 export interface ESEPCoachingSession {
   id: number;
   emp: string;
+  empName?: string;
+  candidateName?: string;
   date: string;
   facilitator: string;
   facilitatorRole: string;

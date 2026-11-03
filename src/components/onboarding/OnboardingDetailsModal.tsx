@@ -80,6 +80,7 @@ export default function OnboardingDetailsModal({
     esepEvaluations, 
     addCoachingAction, 
     toggleCoachingAction,
+    addEsepSession,
     assignments, 
     progress, 
     phaseTrainingScores,
@@ -145,6 +146,18 @@ export default function OnboardingDetailsModal({
   const [coachOwner, setCoachOwner] = useState("Maria Cruz (Senior Trainer)");
   const [coachDue, setCoachDue] = useState("2026-10-25");
   const [coachNotes, setCoachNotes] = useState("");
+
+  // Coaching history reflection states
+  const [coachingScope, setCoachingScope] = useState<"individual" | "all">("individual");
+  const [coachingCandidateFilter, setCoachingCandidateFilter] = useState<string>("all");
+  const [selectedHistorySessionId, setSelectedHistorySessionId] = useState<number | null>(null);
+  const [showRecordGrowModal, setShowRecordGrowModal] = useState(false);
+  const [newGrowType, setNewGrowType] = useState("Weekly 1:1");
+  const [newGrowGoal, setNewGrowGoal] = useState("");
+  const [newGrowReality, setNewGrowReality] = useState("");
+  const [newGrowAction, setNewGrowAction] = useState("");
+  const [newGrowDue, setNewGrowDue] = useState("2026-10-21");
+  const [newGrowFacilitator, setNewGrowFacilitator] = useState("Anton Reyes");
 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -224,6 +237,29 @@ export default function OnboardingDetailsModal({
   const employeeCheckIns = checkIns.filter(c => c.emp === empKey || c.emp === journey.id);
   const employeeCoaching = coachingActions.filter(c => c.emp === empKey || c.emp === journey.id);
   const employeeEsepSessions = coachingForEmployee(esepSessions, journey);
+
+  const displayedEsepSessions = (() => {
+    if (coachingScope === "individual") {
+      return employeeEsepSessions;
+    }
+    if (coachingCandidateFilter === "all") {
+      return esepSessions;
+    }
+    return esepSessions.filter(s => {
+      const sName = ((s as any).empName || (s as any).candidateName || "").toLowerCase();
+      const match = journeys.find(j => (j.sibsEmployeeId || j.id) === s.emp || j.fullName.toLowerCase() === coachingCandidateFilter.toLowerCase());
+      return s.emp === coachingCandidateFilter || sName === coachingCandidateFilter.toLowerCase() || match?.fullName.toLowerCase() === coachingCandidateFilter.toLowerCase();
+    });
+  })();
+
+  const activeCoachingSession = (() => {
+    if (selectedHistorySessionId) {
+      const found = displayedEsepSessions.find(s => s.id === selectedHistorySessionId);
+      if (found) return found;
+    }
+    return displayedEsepSessions[0] || employeeEsepSessions[0] || esepSessions[0] || null;
+  })();
+
   const employeeAssignments = assignments.filter(a => a.emp === empKey || a.emp === journey.id);
   const empProg = progress.filter(p => p.emp === empKey || p.emp === journey.id);
   const verifiedAssigns = empProg.filter(p => p.status === "Verified").length;
@@ -430,6 +466,41 @@ export default function OnboardingDetailsModal({
     setCoachTitle("");
     setCoachNotes("");
     setToastMessage("Support / Coaching action assigned.");
+    setTimeout(() => setToastMessage(null), 3000);
+  };
+
+  const handleRecordGrowSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newGrowGoal.trim()) return;
+    const newSessionId = Date.now();
+    const newSession = {
+      id: newSessionId,
+      emp: journey.sibsEmployeeId || journey.id,
+      empName: candidateDisplayName,
+      candidateName: candidateDisplayName,
+      date: simulatedCurrentDate || "2026-10-14",
+      facilitator: newGrowFacilitator || "Anton Reyes",
+      facilitatorRole: "Team Leader",
+      coachDesignation: "Team Leader",
+      coacheeSupervisor: "Anton Reyes",
+      type: newGrowType,
+      goal: newGrowGoal.trim(),
+      reality: newGrowReality.trim() || "Observed developmental opportunity during nesting practice.",
+      options: "Targeted 1:1 coaching, scenario shadowing and reference checklist.",
+      will: newGrowAction.trim() || "Apply standardized documentation checklist on every interaction.",
+      actionPlan: newGrowAction.trim() || "Practice two guided mock cases before next review.",
+      commitment: "I commit to following the agreed guidance on upcoming shifts.",
+      due: newGrowDue || "2026-10-21",
+      source: "Routine TL one-to-one",
+      status: "Completed" as const
+    };
+    addEsepSession(newSession);
+    setSelectedHistorySessionId(newSessionId);
+    setShowRecordGrowModal(false);
+    setNewGrowGoal("");
+    setNewGrowReality("");
+    setNewGrowAction("");
+    setToastMessage("New GROW Coaching session recorded and added to history!");
     setTimeout(() => setToastMessage(null), 3000);
   };
 
@@ -1056,10 +1127,18 @@ export default function OnboardingDetailsModal({
                       </p>
                     </div>
 
-                    <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
+                    <div className="flex items-center gap-2 self-start sm:self-auto shrink-0 flex-wrap">
                       <span className="px-2.5 py-1 rounded-full text-[10.5px] font-black bg-slate-100 text-slate-700 border border-slate-200">
-                        {employeeEsepSessions.filter(s => evaluationFor(s, esepEvaluations)).length} evaluated / {employeeEsepSessions.length} GROW sessions
+                        {displayedEsepSessions.filter(s => evaluationFor(s, esepEvaluations)).length} evaluated / {displayedEsepSessions.length} GROW sessions
                       </span>
+                      <button
+                        type="button"
+                        onClick={() => setShowRecordGrowModal(!showRecordGrowModal)}
+                        className="px-3 py-1.5 rounded-xl border border-[#042C51] bg-[#042C51] hover:bg-[#0B365F] text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs transition-colors"
+                      >
+                        <Plus size={13} className="text-[#FF5C28]" />
+                        Record GROW Log
+                      </button>
                       <button
                         type="button"
                         onClick={() => setShowAddCoaching(!showAddCoaching)}
@@ -1129,7 +1208,7 @@ export default function OnboardingDetailsModal({
                         </button>
                         <button
                           type="submit"
-                          className="px-3.5 py-1 rounded-lg bg-[#FF5C28] hover:bg-[#e04f20] text-white text-xs font-bold shadow-xs"
+                          className="px-3.5 py-1 rounded-lg bg-[#FF5C28] hover:bg-[#e04f20] text-white text-xs font-bold shadow-xs cursor-pointer"
                         >
                           Assign Action
                         </button>
@@ -1137,40 +1216,258 @@ export default function OnboardingDetailsModal({
                     </form>
                   )}
 
-                  {/* List of ESEP GROW Coaching Sessions */}
-                  {employeeEsepSessions.length > 0 ? (
-                    <div className="space-y-4 pt-1">
-                      {employeeEsepSessions.map((session) => {
-                        const evaluation = evaluationFor(session, esepEvaluations);
+                  {/* Record GROW Coaching Session Inline Form */}
+                  {showRecordGrowModal && (
+                    <form onSubmit={handleRecordGrowSubmit} className="p-4 rounded-xl bg-[#F0F6FC] border border-[#042C51]/30 space-y-3 text-xs animate-in fade-in duration-150">
+                      <div className="flex items-center justify-between border-b border-slate-200/80 pb-2">
+                        <div>
+                          <strong className="text-xs font-black text-[#042C51] block">+ Record New GROW Coaching Session</strong>
+                          <span className="text-[10px] text-slate-500 font-medium">Candidate: {candidateDisplayName}</span>
+                        </div>
+                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#042C51] text-white">
+                          GROW Log
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        <div>
+                          <label className="block font-bold text-[#042C51] mb-1">Session Type</label>
+                          <select
+                            value={newGrowType}
+                            onChange={e => setNewGrowType(e.target.value)}
+                            className="w-full p-2 rounded-lg border border-[#BECBDA] text-xs bg-white"
+                          >
+                            <option value="Weekly 1:1">Weekly 1:1</option>
+                            <option value="QA-triggered">QA-triggered</option>
+                            <option value="Developmental">Developmental</option>
+                            <option value="Calibration">Calibration</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block font-bold text-[#042C51] mb-1">Coach / Facilitator</label>
+                          <input
+                            type="text"
+                            value={newGrowFacilitator}
+                            onChange={e => setNewGrowFacilitator(e.target.value)}
+                            placeholder="e.g. Anton Reyes"
+                            className="w-full p-2 rounded-lg border border-[#BECBDA] text-xs bg-white"
+                          />
+                        </div>
+                        <div>
+                          <label className="block font-bold text-[#042C51] mb-1">Follow-up Commitment Due</label>
+                          <input
+                            type="date"
+                            value={newGrowDue}
+                            onChange={e => setNewGrowDue(e.target.value)}
+                            className="w-full p-2 rounded-lg border border-[#BECBDA] text-xs bg-white"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block font-bold text-[#042C51] mb-1">G • Coaching Goal</label>
+                        <input
+                          type="text"
+                          value={newGrowGoal}
+                          onChange={e => setNewGrowGoal(e.target.value)}
+                          placeholder="e.g. Master PAC account verification & optimize average handle time"
+                          className="w-full p-2 rounded-lg border border-[#BECBDA] text-xs bg-white focus:ring-1 focus:ring-[#FF5C28]"
+                          required
+                        />
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <div>
+                          <label className="block font-bold text-[#042C51] mb-1">R • Reality (Observed Behavior / Deficit)</label>
+                          <textarea
+                            rows={2}
+                            value={newGrowReality}
+                            onChange={e => setNewGrowReality(e.target.value)}
+                            placeholder="Observed hesitation during caller authentication..."
+                            className="w-full p-2 rounded-lg border border-[#BECBDA] text-xs bg-white"
+                          />
+                        </div>
+                        <div>
+                          <label className="block font-bold text-[#042C51] mb-1">W • Agreed Action / Way Forward</label>
+                          <textarea
+                            rows={2}
+                            value={newGrowAction}
+                            onChange={e => setNewGrowAction(e.target.value)}
+                            placeholder="Follow authentication checklist on next 5 monitored calls..."
+                            className="w-full p-2 rounded-lg border border-[#BECBDA] text-xs bg-white"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex justify-end gap-2 pt-1">
+                        <button
+                          type="button"
+                          onClick={() => setShowRecordGrowModal(false)}
+                          className="px-3 py-1 rounded-lg border border-[#BECBDA] text-slate-600 text-xs font-semibold hover:bg-slate-100"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="submit"
+                          className="px-3.5 py-1 rounded-lg bg-[#042C51] hover:bg-[#0B365F] text-white text-xs font-bold shadow-xs cursor-pointer flex items-center gap-1.5"
+                        >
+                          <Check size={13} className="text-[#FF5C28]" />
+                          <span>Save GROW Session</span>
+                        </button>
+                      </div>
+                    </form>
+                  )}
+
+                  {/* 2-Column Split: Coaching Session History List (Left) + Selected Session GROW View (Right) */}
+                  <div className="grid grid-cols-1 lg:grid-cols-[280px_minmax(0,1fr)] gap-4 items-start pt-1">
+                    {/* Left Column: Coaching Session History (Matching image_e8189e2b.png) */}
+                    <aside
+                      aria-label="Coaching session history"
+                      className="w-full overflow-hidden rounded-2xl border border-[#E6ECF2] bg-[#FAFCFF] p-3.5 space-y-3 self-start shadow-2xs"
+                    >
+                      <div className="flex items-center justify-between px-1">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs font-black text-[#042C51] uppercase tracking-wider">
+                            Coaching session history
+                          </span>
+                        </div>
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-200/80 text-slate-700">
+                          {displayedEsepSessions.length}
+                        </span>
+                      </div>
+
+                      {/* Scope Switcher: Per Individual vs All Coaching History */}
+                      <div className="grid grid-cols-2 p-1 bg-white rounded-xl border border-[#BECBDA] text-[11px] font-bold shadow-2xs">
+                        <button
+                          type="button"
+                          onClick={() => setCoachingScope("individual")}
+                          className={`py-1 px-1.5 rounded-lg text-center transition-all cursor-pointer truncate ${
+                            coachingScope === "individual"
+                              ? "bg-[#042C51] text-white shadow-xs font-extrabold"
+                              : "text-slate-600 hover:text-[#042C51]"
+                          }`}
+                          title={`Coaching history for ${candidateDisplayName}`}
+                        >
+                          Per Individual
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setCoachingScope("all")}
+                          className={`py-1 px-1.5 rounded-lg text-center transition-all cursor-pointer truncate ${
+                            coachingScope === "all"
+                              ? "bg-[#042C51] text-white shadow-xs font-extrabold"
+                              : "text-slate-600 hover:text-[#042C51]"
+                          }`}
+                          title="View all team coaching history"
+                        >
+                          All History ({esepSessions.length})
+                        </button>
+                      </div>
+
+                      {/* Dropdown when viewing All History */}
+                      {coachingScope === "all" && (
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block px-1">Filter Candidate</label>
+                          <select
+                            value={coachingCandidateFilter}
+                            onChange={(e) => setCoachingCandidateFilter(e.target.value)}
+                            className="w-full p-2 text-xs rounded-xl bg-white border border-[#BECBDA] text-[#042C51] font-semibold focus:ring-1 focus:ring-[#FF5C28] cursor-pointer"
+                          >
+                            <option value="all">All Candidates &amp; Trainees ({esepSessions.length})</option>
+                            <option value="Theresa Mae Santos">Theresa Mae Santos ({employeeEsepSessions.length})</option>
+                            <option value="Alyssa Rivera">Alyssa Rivera (SIBS-2901)</option>
+                            <option value="Nica Flores">Nica Flores (SIBS-2903)</option>
+                            <option value="Marco Santos">Marco Santos (SIBS-2902)</option>
+                          </select>
+                        </div>
+                      )}
+
+                      {/* Coaching Session Cards List matching image_e8189e2b.png */}
+                      <div className="space-y-2 max-h-[480px] overflow-y-auto pr-0.5">
+                        {displayedEsepSessions.map((s) => {
+                          const isSelected = s.id === activeCoachingSession?.id;
+                          const sStatus = coachingStatus(s, esepEvaluations, simulatedCurrentDate);
+                          return (
+                            <button
+                              key={s.id}
+                              type="button"
+                              onClick={() => setSelectedHistorySessionId(s.id)}
+                              aria-pressed={isSelected}
+                              className={`w-full text-left transition-all cursor-pointer ${
+                                isSelected
+                                  ? 'bg-[#FFF7F2] border-l-4 border-l-[#FF5C28] rounded-r-xl rounded-l-xs p-3 space-y-1 shadow-2xs'
+                                  : 'bg-white border border-[#E6ECF2] rounded-xl p-3 space-y-1 hover:bg-slate-50'
+                              }`}
+                            >
+                              <div className="flex items-center justify-between gap-1">
+                                <span className="block text-xs font-bold text-[#042C51] truncate">{s.type}</span>
+                                {coachingScope === "all" && (
+                                  <span className="text-[9.5px] font-bold px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 truncate max-w-[100px]">
+                                    {(s as any).empName || s.emp}
+                                  </span>
+                                )}
+                              </div>
+                              <span className="block text-[11px] text-slate-500">{s.date} • ESEP-{s.id}</span>
+                              <span className="block text-[11px] text-[#215789] font-medium">{s.facilitator}</span>
+                              <span className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-bold mt-1 ${
+                                sStatus === 'Evaluated'
+                                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                  : sStatus === 'Overdue'
+                                    ? 'bg-red-50 text-red-700 border border-red-200'
+                                    : 'bg-amber-50 text-amber-800 border border-amber-200'
+                              }`}>
+                                {sStatus}
+                              </span>
+                            </button>
+                          );
+                        })}
+
+                        {displayedEsepSessions.length === 0 && (
+                          <div className="p-4 text-center rounded-xl border border-dashed border-[#BECBDA] bg-white text-xs text-slate-500 space-y-1">
+                            <p className="font-semibold">No coaching records.</p>
+                            <button
+                              type="button"
+                              onClick={() => setCoachingScope("all")}
+                              className="text-[11px] text-[#FF5C28] hover:underline font-bold cursor-pointer"
+                            >
+                              View all history
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </aside>
+
+                    {/* Right Column: Selected Session Full GROW Breakdown */}
+                    <div className="space-y-4 min-w-0">
+                      {activeCoachingSession ? (() => {
+                        const evaluation = evaluationFor(activeCoachingSession, esepEvaluations);
                         const comparison = kpiComparison(evaluation);
-                        const status = coachingStatus(session, esepEvaluations, simulatedCurrentDate);
+                        const status = coachingStatus(activeCoachingSession, esepEvaluations, simulatedCurrentDate);
 
                         return (
-                          <div 
-                            key={session.id} 
-                            className="rounded-2xl border border-[#E6ECF2] bg-[#FAFCFF] p-4 sm:p-5 space-y-4 shadow-2xs hover:border-[#FF5C28]/30 transition-colors"
-                          >
+                          <div className="rounded-2xl border border-[#E6ECF2] bg-[#FAFCFF] p-4 sm:p-5 space-y-4 shadow-2xs">
                             {/* Session Card Header */}
                             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200/70 pb-3">
                               <div>
                                 <div className="flex items-center gap-2 flex-wrap">
                                   <h4 className="text-sm font-extrabold text-[#042C51]">
-                                    {session.type} • {session.date}
+                                    {activeCoachingSession.type} • {activeCoachingSession.date}
                                   </h4>
                                   <span className="px-2 py-0.2 rounded text-[10px] font-mono font-bold bg-slate-200/80 text-slate-700">
-                                    ESEP-{session.id}
+                                    ESEP-{activeCoachingSession.id}
                                   </span>
+                                  {(activeCoachingSession as any).empName && (
+                                    <span className="px-2 py-0.2 rounded text-[10px] font-bold bg-[#042C51] text-white">
+                                      {(activeCoachingSession as any).empName}
+                                    </span>
+                                  )}
                                 </div>
                                 <p className="text-xs text-slate-500 mt-0.5 font-medium">
-                                  Facilitator: <strong className="text-slate-700">{session.facilitator}</strong> ({session.facilitatorRole})
-                                  {session.taskOrder ? ` • ${session.taskOrder}` : ""}
+                                  Facilitator: <strong className="text-slate-700">{activeCoachingSession.facilitator}</strong> ({activeCoachingSession.facilitatorRole})
+                                  {activeCoachingSession.taskOrder ? ` • ${activeCoachingSession.taskOrder}` : ""}
                                 </p>
                               </div>
 
                               <div className="flex items-center gap-2">
-                                {session.reasons && session.reasons.length > 0 && (
+                                {activeCoachingSession.reasons && activeCoachingSession.reasons.length > 0 && (
                                   <div className="hidden md:flex items-center gap-1">
-                                    {session.reasons.map((r, ri) => (
+                                    {activeCoachingSession.reasons.map((r, ri) => (
                                       <span key={ri} className="px-2 py-0.5 rounded text-[9.5px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
                                         {r}
                                       </span>
@@ -1196,7 +1493,7 @@ export default function OnboardingDetailsModal({
                                   COACHING GOAL
                                 </span>
                                 <p className="font-bold text-[#042C51] text-xs leading-snug">
-                                  {session.goal}
+                                  {activeCoachingSession.goal}
                                 </p>
                               </div>
 
@@ -1205,7 +1502,7 @@ export default function OnboardingDetailsModal({
                                   ISSUE / OBSERVED BEHAVIOR
                                 </span>
                                 <p className="font-bold text-slate-700 text-xs leading-snug">
-                                  {session.reality}
+                                  {activeCoachingSession.reality}
                                 </p>
                               </div>
 
@@ -1214,7 +1511,7 @@ export default function OnboardingDetailsModal({
                                   AGREED ACTION / WAY FORWARD
                                 </span>
                                 <p className="font-bold text-[#042C51] text-xs leading-snug">
-                                  {session.will || session.actionPlan}
+                                  {activeCoachingSession.will || activeCoachingSession.actionPlan}
                                 </p>
                               </div>
 
@@ -1223,7 +1520,7 @@ export default function OnboardingDetailsModal({
                                   COMMITMENT FOLLOW-UP
                                 </span>
                                 <p className="font-bold text-[#042C51] text-xs">
-                                  {session.due || "Pending schedule"}
+                                  {activeCoachingSession.due || "Pending schedule"}
                                 </p>
                               </div>
                             </div>
@@ -1248,37 +1545,53 @@ export default function OnboardingDetailsModal({
                               <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900 flex items-center justify-between">
                                 <div className="flex items-center gap-2">
                                   <Clock className="w-4 h-4 text-amber-600 shrink-0" />
-                                  <span>Awaiting supervisor follow-up evaluation. Target commitment due: <strong>{session.due}</strong></span>
+                                  <span>Awaiting supervisor follow-up evaluation. Target commitment due: <strong>{activeCoachingSession.due}</strong></span>
                                 </div>
                                 <span className="text-[10px] font-extrabold uppercase text-amber-800">Pending Review</span>
                               </div>
                             )}
 
                             {/* View GROW Details Button */}
-                            <div className="flex justify-end pt-1">
+                            <div className="flex justify-end gap-2 pt-1">
                               <button
                                 type="button"
-                                onClick={() => setSelectedGrowSessionId(session.id)}
+                                onClick={() => setSelectedGrowSessionId(activeCoachingSession.id)}
                                 className="px-3.5 py-1.5 rounded-xl border border-[#BECBDA] text-[#042C51] bg-white hover:bg-[#F7F9FC] hover:border-[#FF5C28] hover:text-[#FF5C28] text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer shadow-2xs transition-all"
                               >
                                 <Eye size={13} className="text-[#FF5C28]" />
-                                <span>View GROW details</span>
+                                <span>View Full GROW Form &amp; Results</span>
                               </button>
                             </div>
                           </div>
                         );
-                      })}
+                      })() : (
+                        <div className="p-8 text-center rounded-2xl border border-dashed border-[#BECBDA] bg-[#FAFCFF] space-y-3">
+                          <p className="text-sm font-bold text-[#042C51]">
+                            No coaching sessions recorded for {candidateDisplayName}.
+                          </p>
+                          <p className="text-xs text-slate-500 max-w-md mx-auto">
+                            Candidate is tracking within operational benchmarks. You can view all team coaching sessions or record a new GROW coaching session.
+                          </p>
+                          <div className="flex items-center justify-center gap-2 pt-1">
+                            <button
+                              type="button"
+                              onClick={() => setCoachingScope("all")}
+                              className="px-3 py-1.5 rounded-xl bg-[#042C51] text-white text-xs font-bold hover:bg-[#0B365F] transition-colors"
+                            >
+                              View All Team History ({esepSessions.length})
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setShowRecordGrowModal(true)}
+                              className="px-3 py-1.5 rounded-xl bg-[#FF5C28] text-white text-xs font-bold hover:bg-[#e04f20] transition-colors"
+                            >
+                              + Record GROW Log
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  ) : (
-                    <div className="p-6 text-center rounded-xl border border-dashed border-[#BECBDA] bg-[#FAFCFF] space-y-2">
-                      <p className="text-xs font-semibold text-slate-500">
-                        No ESEP GROW coaching sessions recorded for {candidateDisplayName}.
-                      </p>
-                      <p className="text-[11px] text-slate-400">
-                        Candidate is tracking within operational benchmarks. You can assign action items or record new coaching logs.
-                      </p>
-                    </div>
-                  )}
+                  </div>
                 </div>
 
                 {/* Assigned Support & Action Items (Local Coaching Actions) */}
