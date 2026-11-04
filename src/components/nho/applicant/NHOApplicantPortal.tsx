@@ -57,7 +57,7 @@ export default function NHOApplicantPortal({ subTab = "overview", onSubTabChange
     setNewPasswordInput("");
   };
 
-  const isOrientationPassed = activeApplicant.orientationStatus === "Completed" && activeApplicant.orientationQuizPassed !== false;
+  const isOrientationPassed = activeApplicant.orientationStatus === "Completed";
   const majorDocs = activeApplicant.documents.filter(d => d.isMajor);
   const agreements = activeApplicant.documents.filter(d => d.isEssentialAgreement);
   const nonMajorDocs = activeApplicant.documents.filter(d => !d.isMajor && !d.isEssentialAgreement);
@@ -73,10 +73,8 @@ export default function NHOApplicantPortal({ subTab = "overview", onSubTabChange
       id: "orientation", 
       label: "Orientation & knowledge check quiz", 
       description: isOrientationPassed 
-        ? `Passed & Acknowledged · Score: ${activeApplicant.orientationQuizScore ?? 6}/${activeApplicant.orientationQuizTotal ?? 6}` 
-        : activeApplicant.orientationQuizPassed === false
-          ? `Score: ${activeApplicant.orientationQuizScore ?? 0}/${activeApplicant.orientationQuizTotal ?? 6} · FAILED (<80%)`
-          : activeApplicant.orientationStatus, 
+        ? `Completed & Acknowledged · Score: ${activeApplicant.orientationQuizScore ?? 6}/${activeApplicant.orientationQuizTotal ?? 6}`
+        : activeApplicant.orientationStatus,
       complete: isOrientationPassed 
     },
     { 
@@ -217,32 +215,25 @@ export default function NHOApplicantPortal({ subTab = "overview", onSubTabChange
         </div>
       )}
 
-            {/* Locked screen if attempting to access requirements without passing orientation */}
+            {/* Locked screen if attempting to access requirements before orientation is completed */}
       {["majors", "agreements", "requirements"].includes(currentTab) && !isOrientationPassed && (
-        <div className="overflow-hidden rounded-2xl border-2 border-red-300 bg-red-50/70 p-6 sm:p-8 shadow-xs text-center space-y-4">
-          <div className="w-12 h-12 rounded-2xl bg-red-100 text-red-600 border border-red-300 flex items-center justify-center mx-auto shadow-xs">
+        <div className="overflow-hidden rounded-2xl border border-amber-200 bg-amber-50/70 p-6 sm:p-8 shadow-xs text-center space-y-4">
+          <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-700 border border-amber-200 flex items-center justify-center mx-auto shadow-xs">
             <Lock className="w-6 h-6" />
           </div>
           <div className="space-y-1.5 max-w-md mx-auto">
-            <h3 className="text-base font-black text-red-950">
-              Passing of Requirements is Locked
-            </h3>
-            <p className="text-xs text-red-800 leading-relaxed font-medium">
-              You must complete all orientation slides and achieve a passing score of at least <strong>80% (5 of 6 correct)</strong> on the checkpoint quizzes before accessing or submitting requirements.
+            <h3 className="text-base font-black text-[#042C51]">Passing of Requirements is Locked</h3>
+            <p className="text-xs text-slate-700 leading-relaxed font-medium">
+              Complete the orientation slides and quiz checkpoints first to unlock requirement submission.
             </p>
-            {activeApplicant.orientationQuizScore !== undefined && activeApplicant.orientationQuizPassed === false && (
-              <p className="text-[11px] font-bold text-red-700 bg-red-100/90 px-3 py-1 rounded-lg inline-block border border-red-200">
-                Current Score: {activeApplicant.orientationQuizScore}/{activeApplicant.orientationQuizTotal ?? 6} ({activeApplicant.orientationQuizPercentage ?? 0}%) · FAILED
-              </p>
-            )}
           </div>
           <div className="pt-2">
             <button
               type="button"
               onClick={() => setTab("orientation")}
-              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold shadow-xs cursor-pointer transition-colors"
+              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#FF5C28] hover:bg-[#e04f20] text-white text-xs font-bold shadow-xs cursor-pointer transition-colors"
             >
-              <span>Complete &amp; Pass Orientation Checkpoints →</span>
+              <span>Go to Orientation &amp; Quiz →</span>
             </button>
           </div>
         </div>

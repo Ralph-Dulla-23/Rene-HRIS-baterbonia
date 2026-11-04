@@ -114,7 +114,7 @@ function NHOInnerModule({ onSwitchModule }: { onSwitchModule?: (module: string, 
   const currentSectionHeader = useMemo(() => {
     if (role === "TA") {
       const sections: Record<string, { badge: string; title: string; description: string }> = {
-        dashboard: { badge: "Recruitment Operations", title: "NHO Overview", description: "Manage New Hire Orientation schedules, candidate progress, attendance, document clearance, and handoffs." },
+        dashboard: { badge: "Recruitment Operations", title: "NHO Management", description: "Manage New Hire Orientation schedules, candidate progress, attendance, document clearance, and handoffs." },
         attendance: { badge: "Recruitment Operations", title: "NHO Attendance (Today)", description: "Record show / no-show attendance for candidates scheduled on the selected NHO date, and manage corrections or rescheduling." },
         "applicant-details": { badge: "Recruitment Operations", title: "Applicant NHO Details", description: "Review the selected applicant's NHO progress, documents, agreements, and activity history." },
         "doc-verification": { badge: "Recruitment Operations", title: "Document Verification", description: "Validate uploaded majors, agreements, and supporting onboarding requirements." },

@@ -62,7 +62,7 @@ function PublicApplicantPortalInner({ onBackToLogin, onBackToWorkspace }: Public
   const agreementVerified = agreementDocs.filter(doc => doc.status === "Verified").length;
   const nonMajorVerified = nonMajorDocs.filter(doc => doc.status === "Verified").length;
   const majorComplete = majorDocs.length > 0 && majorVerified === majorDocs.length;
-  const orientationComplete = activeApplicant.orientationStatus === "Completed" && activeApplicant.orientationQuizPassed !== false;
+  const orientationComplete = activeApplicant.orientationStatus === "Completed";
   const agreementComplete = agreementDocs.length > 0 && agreementVerified === agreementDocs.length;
   const nonMajorComplete = nonMajorDocs.length === 0 || nonMajorVerified === nonMajorDocs.length;
   const completedSections = [orientationComplete, majorComplete, agreementComplete, nonMajorComplete].filter(Boolean).length;
@@ -81,12 +81,9 @@ function PublicApplicantPortalInner({ onBackToLogin, onBackToWorkspace }: Public
     overview: { status: "Overview", complete: false },
     orientation: { 
       status: orientationComplete 
-        ? `Passed (${activeApplicant.orientationQuizScore ?? 6}/${activeApplicant.orientationQuizTotal ?? 6})` 
-        : activeApplicant.orientationQuizPassed === false
-          ? `Failed (${activeApplicant.orientationQuizScore ?? 0}/${activeApplicant.orientationQuizTotal ?? 6})`
-          : activeApplicant.orientationStatus, 
-      complete: orientationComplete,
-      urgent: activeApplicant.orientationQuizPassed === false
+        ? `Completed (${activeApplicant.orientationQuizScore ?? 6}/${activeApplicant.orientationQuizTotal ?? 6})`
+        : activeApplicant.orientationStatus,
+      complete: orientationComplete
     },
     majors: { status: `${majorVerified}/${majorDocs.length} verified`, complete: majorComplete },
     agreements: { status: `${agreementVerified}/${agreementDocs.length} verified`, complete: agreementComplete },
@@ -149,7 +146,7 @@ function PublicApplicantPortalInner({ onBackToLogin, onBackToWorkspace }: Public
             key={section.id}
             onClick={() => {
               if (isLocked) {
-                showToast("Orientation and checkpoint quizzes must be completed and passed (minimum 80%) before you can proceed to requirements.", "error");
+                showToast("Please complete the orientation and quiz checkpoints before proceeding to requirements.", "error");
                 return;
               }
               selectSection(section.id);
@@ -169,15 +166,15 @@ function PublicApplicantPortalInner({ onBackToLogin, onBackToWorkspace }: Public
                 <div className="flex items-center gap-1.5">
                   <span className="block text-[13px] font-bold leading-tight">{index + 1}. {section.title}</span>
                   {isLocked && (
-                    <span className="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-red-100 text-red-800 border border-red-200">
+                    <span className="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-amber-100 text-amber-800">
                       Locked
                     </span>
                   )}
                 </div>
                 <span className="block text-[11px] leading-snug text-[#738398]">{section.subtitle}</span>
                 <span className={`block text-[11px] font-semibold ${
-                  complete ? "text-[#17814D]" : isLocked ? "text-red-600 font-bold" : urgent ? "text-[#C43B35]" : "text-[#5C6F84]"
-                }`}>{isLocked ? "Step 1 (Orientation & Quiz) must be passed first" : status}</span>
+                  complete ? "text-[#17814D]" : isLocked ? "text-amber-700" : urgent ? "text-[#C43B35]" : "text-[#5C6F84]"
+                }`}>{isLocked ? "Step 1 (Orientation) required first" : status}</span>
               </span>
               <ChevronRight size={15} className={`mt-1 shrink-0 ${selected ? "text-[#042C51]" : "text-[#C0C9D4]"}`} />
             </div>

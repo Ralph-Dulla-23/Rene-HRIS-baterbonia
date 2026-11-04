@@ -19,10 +19,7 @@ import {
   ArrowRight, 
   Award, 
   HelpCircle,
-  ShieldCheck,
-  RotateCcw,
-  XCircle,
-  Lock
+  ShieldCheck
 } from "lucide-react";
 
 interface NHOOrientationViewerProps {
@@ -198,10 +195,6 @@ export default function NHOOrientationViewer({ onProceedToRequirements }: NHOOri
       showToast(`Please answer all ${NHO_QUIZ_QUESTIONS.length} checkpoint questions first.`, "error");
       return;
     }
-    if (!scoreResult.passed) {
-      showToast(`Cannot complete orientation: Passing score of at least 80% (5 of 6) is strictly required. Your score: ${scoreResult.score}/${scoreResult.total} (${scoreResult.percentage}%).`, "error");
-      return;
-    }
     if (!acknowledgmentChecked) {
       showToast("Please check the final orientation policy acknowledgment checkbox.", "error");
       return;
@@ -212,34 +205,19 @@ export default function NHOOrientationViewer({ onProceedToRequirements }: NHOOri
     }
   };
 
-  // Jump to first failed checkpoint stage
-  const handleJumpToFirstFailedStage = () => {
-    const firstFailed = NHO_QUIZ_STAGES.find(st => {
-      const qs = NHO_QUIZ_QUESTIONS.filter(q => q.stageId === st.id);
-      return qs.some(q => quizAnswers[q.id - 1] !== q.correctOptionIndex);
-    }) || NHO_QUIZ_STAGES[0];
-
-    setActiveStageId(firstFailed.id);
-    setViewMode("checkpoint");
-  };
-
   // Composite progress calculation
   const compositeProgress = useMemo(() => {
-    if (activeApplicant.orientationStatus === "Completed" && activeApplicant.orientationQuizPassed !== false) return 100;
-    if (viewMode === "final") return scoreResult.passed ? 95 : 85;
+    if (activeApplicant.orientationStatus === "Completed") return 100;
+    if (viewMode === "final") return 95;
     const slideWeight = (currentSlide / totalSlides) * 60;
     const quizWeight = (totalAnsweredCount / NHO_QUIZ_QUESTIONS.length) * 40;
     return Math.min(90, Math.round(slideWeight + quizWeight));
-  }, [activeApplicant.orientationStatus, activeApplicant.orientationQuizPassed, viewMode, scoreResult.passed, currentSlide, totalSlides, totalAnsweredCount]);
+  }, [activeApplicant.orientationStatus, viewMode, currentSlide, totalSlides, totalAnsweredCount]);
 
   return (
     <div className="bg-white rounded-2xl border border-[#E6ECF2] shadow-xs overflow-hidden flex flex-col font-jakarta relative">
       {/* Top Accent Gradient Bar */}
-      <div className={`h-[3px] ${
-        viewMode === "final" && !scoreResult.passed 
-          ? "bg-red-500" 
-          : "bg-gradient-to-r from-[#042C51] via-[#0B365F] to-[#FF5C28]"
-      }`} />
+      <div className="h-[3px] bg-gradient-to-r from-[#042C51] via-[#0B365F] to-[#FF5C28]" />
 
       {/* Sample Content Disclaimer Banner */}
       <div className="px-4 py-2 bg-amber-50 border-b border-amber-200 text-amber-950 text-[11px] flex items-center justify-between">
@@ -263,25 +241,16 @@ export default function NHOOrientationViewer({ onProceedToRequirements }: NHOOri
             <span className="text-[11px] text-slate-300">
               {viewMode === "slide" && `Slide ${currentSlide} of ${totalSlides} · Presentation Mode`}
               {viewMode === "checkpoint" && `Checkpoint Quiz: Part ${activeStageId} of 4 · Stage Knowledge Check`}
-              {viewMode === "final" && (
-                scoreResult.passed
-                  ? "Final Scoring & Policy Acknowledgment"
-                  : "Final Scoring — Passing Score (>=80%) Required to Proceed"
-              )}
+              {viewMode === "final" && "Final Scoring & Policy Acknowledgment"}
             </span>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          {activeApplicant.orientationStatus === "Completed" && activeApplicant.orientationQuizPassed !== false ? (
+          {activeApplicant.orientationStatus === "Completed" ? (
             <span className="px-3 py-1.5 rounded-xl bg-emerald-500/20 text-emerald-300 font-bold text-xs flex items-center gap-1.5 border border-emerald-500/30">
               <CheckCircle className="w-4 h-4 text-emerald-400" />
               <span>Orientation Completed (Score: {activeApplicant.orientationQuizScore ?? 6}/{activeApplicant.orientationQuizTotal ?? 6})</span>
-            </span>
-          ) : viewMode === "final" && !scoreResult.passed ? (
-            <span className="px-3 py-1.5 rounded-xl bg-red-500/25 text-red-200 font-bold text-xs flex items-center gap-1.5 border border-red-500/40 animate-pulse">
-              <XCircle className="w-4 h-4 text-red-400" />
-              <span>Failed: {scoreResult.score}/{scoreResult.total} ({scoreResult.percentage}%) · Below 80%</span>
             </span>
           ) : viewMode === "checkpoint" ? (
             <span className="px-3 py-1.5 rounded-xl bg-orange-500/20 text-orange-200 font-bold text-xs flex items-center gap-1.5 border border-orange-500/30">
@@ -304,11 +273,7 @@ export default function NHOOrientationViewer({ onProceedToRequirements }: NHOOri
       {/* Progress Bar */}
       <div className="w-full bg-[#E9EEF5] h-1.5">
         <div 
-          className={`h-full transition-all duration-300 ${
-            viewMode === "final" && !scoreResult.passed
-              ? "bg-red-500"
-              : "bg-gradient-to-r from-[#042C51] via-[#FF6B3D] to-[#FF5C28]"
-          }`}
+          className="h-full transition-all duration-300 bg-gradient-to-r from-[#042C51] via-[#FF6B3D] to-[#FF5C28]"
           style={{ width: `${compositeProgress}%` }}
         />
       </div>
@@ -545,23 +510,16 @@ export default function NHOOrientationViewer({ onProceedToRequirements }: NHOOri
       {/* VIEW MODE 3: FINAL SCORING & POLICY ACKNOWLEDGMENT */}
       {viewMode === "final" && (
         <div className="p-6 md:p-8 space-y-6">
-          {/* Top Bar with Return Action */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-[#E6ECF2]">
             <div>
-              <span className={`text-[10px] font-black uppercase tracking-wider block ${
-                scoreResult.passed ? "text-[#FF5C28]" : "text-red-600"
-              }`}>
-                {scoreResult.passed 
-                  ? "Final Orientation Review & Compliance Sign-Off" 
-                  : "Orientation Checkpoint Threshold Not Met (Action Required)"}
+              <span className="text-[10px] font-black uppercase tracking-wider block text-[#FF5C28]">
+                Final Orientation Review &amp; Sign-Off
               </span>
               <h2 className="text-xl font-black text-[#042C51]">
                 Orientation Checkpoints Scoring &amp; Policy Acknowledgment
               </h2>
               <p className="text-xs text-slate-500 font-medium mt-0.5">
-                {scoreResult.passed
-                  ? "Review your performance across all four checkpoints, confirm the policy acknowledgment, and proceed to Step 2."
-                  : "You must score at least 80% (5 of 6 correct) to complete orientation and unlock the Passing of Requirements."}
+                Your checkpoint score is a benchmark of your performance. Confirm the policy acknowledgment to proceed to Step 2.
               </p>
             </div>
 
@@ -575,137 +533,38 @@ export default function NHOOrientationViewer({ onProceedToRequirements }: NHOOri
             </button>
           </div>
 
-          {/* RED WARNING CARD WHEN FAILED */}
-          {!scoreResult.passed && (
-            <div className="p-4 sm:p-5 rounded-2xl bg-red-50 border-2 border-red-300 text-red-950 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs">
-              <div className="flex items-start gap-3.5">
-                <div className="w-10 h-10 rounded-xl bg-red-600 text-white flex items-center justify-center shrink-0 shadow-xs">
-                  <XCircle className="w-6 h-6" />
-                </div>
-                <div className="space-y-1">
-                  <h4 className="text-sm font-black text-red-900 uppercase tracking-tight flex items-center gap-2">
-                    <span>Passing Score Required — You Cannot Proceed to Requirements</span>
-                  </h4>
-                  <p className="text-xs text-red-800 leading-relaxed font-medium">
-                    Your score is <strong>{scoreResult.score}/{scoreResult.total} ({scoreResult.percentage}%)</strong>. SiBS compliance mandates a minimum passing grade of <strong>80% (5 of 6 correct)</strong>. Passing of Requirements (Step 2) remains locked until you achieve a passing score.
-                  </p>
-                </div>
+          {/* Cumulative Score Card (benchmark only) */}
+          <div className="p-6 rounded-2xl border shadow-xs space-y-4 bg-[#F7F9FC] border-[#E6ECF2]">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 rounded-2xl flex flex-col items-center justify-center font-black shrink-0 shadow-xs bg-[#042C51] text-white">
+                <span className="text-base leading-none">{scoreResult.score}/{scoreResult.total}</span>
+                <span className="text-[9.5px] uppercase font-bold tracking-wider mt-0.5">{scoreResult.percentage}%</span>
               </div>
-
-              <button
-                type="button"
-                onClick={handleJumpToFirstFailedStage}
-                className="px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-xs cursor-pointer transition-colors shrink-0 flex items-center justify-center gap-2"
-              >
-                <RotateCcw className="w-4 h-4" />
-                <span>Retake / Correct Checkpoints</span>
-              </button>
-            </div>
-          )}
-
-          {/* Comprehensive Cumulative Score Card */}
-          <div className={`p-6 rounded-2xl border shadow-xs space-y-4 transition-all ${
-            scoreResult.passed
-              ? "bg-[#F7F9FC] border-[#E6ECF2]"
-              : "bg-red-50/30 border-red-300 ring-2 ring-red-200/50"
-          }`}>
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <div className="flex items-center gap-4">
-                <div className={`w-14 h-14 rounded-2xl flex flex-col items-center justify-center font-black shrink-0 shadow-xs ${
-                  scoreResult.passed 
-                    ? "bg-emerald-100 text-emerald-800 border-2 border-emerald-300" 
-                    : "bg-red-100 text-red-800 border-2 border-red-400"
-                }`}>
-                  <span className="text-base leading-none">{scoreResult.score}/{scoreResult.total}</span>
-                  <span className="text-[9.5px] uppercase font-bold tracking-wider mt-0.5">{scoreResult.percentage}%</span>
-                </div>
-                <div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h4 className={`text-base font-extrabold ${
-                      scoreResult.passed ? "text-[#042C51]" : "text-red-950"
-                    }`}>
-                      Overall Checkpoints Score: {scoreResult.score}/{scoreResult.total} ({scoreResult.percentage}%)
-                    </h4>
-                    <span className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full ${
-                      scoreResult.passed 
-                        ? "bg-emerald-100 text-emerald-800 border border-emerald-300" 
-                        : "bg-red-100 text-red-800 border border-red-300"
-                    }`}>
-                      {scoreResult.passed ? "Passed (>= 80% Threshold Met)" : "Failed (< 80% Threshold)"}
-                    </span>
-                  </div>
-                  <p className={`text-[12px] font-medium mt-1 ${
-                    scoreResult.passed ? "text-slate-500" : "text-red-700"
-                  }`}>
-                    {scoreResult.passed 
-                      ? "Congratulations! You have satisfied the SiBS orientation passing threshold. This score is synchronized directly with the Talent Acquisition NHO verification registry."
-                      : "You have not met the 80% minimum passing requirement. You cannot complete orientation or submit requirements until your score is corrected."}
-                  </p>
-                </div>
+              <div>
+                <h4 className="text-base font-extrabold text-[#042C51]">
+                  Overall Checkpoints Score: {scoreResult.score}/{scoreResult.total} ({scoreResult.percentage}%)
+                </h4>
+                <p className="text-[12px] font-medium mt-1 text-slate-500">
+                  This score is recorded as a performance benchmark and synchronized with the Talent Acquisition NHO registry.
+                </p>
               </div>
             </div>
 
-            {/* Checkpoint Breakdown Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-3 border-t border-[#E6ECF2]">
               {NHO_QUIZ_STAGES.map(stage => {
                 const stageQs = NHO_QUIZ_QUESTIONS.filter(q => q.stageId === stage.id);
                 let stageScore = 0;
                 stageQs.forEach(q => {
-                  if (quizAnswers[q.id - 1] === q.correctOptionIndex) {
-                    stageScore++;
-                  }
+                  if (quizAnswers[q.id - 1] === q.correctOptionIndex) stageScore++;
                 });
-                const isStagePerfect = stageScore === stageQs.length;
-
                 return (
-                  <div 
-                    key={stage.id} 
-                    className={`p-3.5 rounded-xl border flex flex-col justify-between space-y-2 transition-all ${
-                      isStagePerfect
-                        ? "bg-white border-emerald-200"
-                        : "bg-red-50/60 border-red-300"
-                    }`}
-                  >
+                  <div key={stage.id} className="p-3.5 rounded-xl border bg-white border-[#E6ECF2] flex flex-col justify-between space-y-2">
                     <div className="space-y-1">
-                      <div className="flex items-center justify-between">
-                        <span className={`text-[9.5px] font-black uppercase tracking-wider ${
-                          isStagePerfect ? "text-[#FF5C28]" : "text-red-700"
-                        }`}>
-                          Part {stage.id}
-                        </span>
-                        {isStagePerfect ? (
-                          <span className="text-[9.5px] font-bold text-emerald-700 flex items-center gap-0.5">
-                            <Check className="w-3 h-3 stroke-[3]" /> Passed
-                          </span>
-                        ) : (
-                          <span className="text-[9.5px] font-bold text-red-700 flex items-center gap-0.5">
-                            <XCircle className="w-3 h-3" /> Needs Fix
-                          </span>
-                        )}
-                      </div>
-                      <h5 className="text-xs font-bold text-[#042C51] line-clamp-1" title={stage.title}>
-                        {stage.title}
-                      </h5>
+                      <span className="text-[9.5px] font-black uppercase tracking-wider text-[#FF5C28]">Part {stage.id}</span>
+                      <h5 className="text-xs font-bold text-[#042C51] line-clamp-1" title={stage.title}>{stage.title}</h5>
                     </div>
-
-                    <div className="flex items-center justify-between pt-1 border-t border-slate-100">
-                      <span className={`text-xs font-extrabold ${
-                        isStagePerfect ? "text-emerald-800" : "text-red-700"
-                      }`}>
-                        Score: {stageScore}/{stageQs.length}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setActiveStageId(stage.id);
-                          setViewMode("checkpoint");
-                        }}
-                        className={`text-[10px] font-bold hover:underline cursor-pointer ${
-                          isStagePerfect ? "text-[#FF5C28]" : "text-red-700 font-extrabold"
-                        }`}
-                      >
-                        {isStagePerfect ? "Review Quiz →" : "Correct Answers →"}
-                      </button>
+                    <div className="pt-1 border-t border-slate-100">
+                      <span className="text-xs font-extrabold text-[#042C51]">Score: {stageScore}/{stageQs.length}</span>
                     </div>
                   </div>
                 );
@@ -713,85 +572,66 @@ export default function NHOOrientationViewer({ onProceedToRequirements }: NHOOri
             </div>
           </div>
 
-          {/* Final Policy Acknowledgment & Submission (LOCKED IF NOT PASSED) */}
+          {/* Final Policy Acknowledgment & Submission */}
           <div className={`p-6 border rounded-2xl space-y-4 transition-all ${
-            scoreResult.passed && allQuestionsAnswered
-              ? "bg-orange-50/70 border-orange-200 ring-2 ring-orange-200/50" 
-              : "bg-red-50/40 border-red-200"
+            allQuestionsAnswered
+              ? "bg-orange-50/70 border-orange-200 ring-2 ring-orange-200/50"
+              : "bg-slate-50 border-slate-200 opacity-80"
           }`}>
             <div className="flex items-center justify-between flex-wrap gap-2">
-              <h4 className={`text-xs font-black uppercase tracking-wider flex items-center gap-2 ${
-                scoreResult.passed ? "text-orange-950" : "text-red-900"
-              }`}>
-                <ShieldCheck className={`w-4 h-4 ${scoreResult.passed ? "text-[#FF5C28]" : "text-red-600"}`} />
+              <h4 className="text-xs font-black uppercase tracking-wider flex items-center gap-2 text-orange-950">
+                <ShieldCheck className="w-4 h-4 text-[#FF5C28]" />
                 <span>Final Orientation Acknowledgment &amp; Policy Sign-Off</span>
-                {scoreResult.passed && (
+                {allQuestionsAnswered && (
                   <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-extrabold uppercase">
-                    Checkpoints Passed ({scoreResult.score}/{scoreResult.total})
+                    All Checkpoints Answered ({totalAnsweredCount}/{NHO_QUIZ_QUESTIONS.length})
                   </span>
                 )}
               </h4>
-              {!scoreResult.passed && (
-                <span className="text-[11px] text-red-700 font-bold flex items-center gap-1">
-                  <Lock className="w-3 h-3 text-red-600" />
-                  <span>Locked: Passing score of 80% (5/6) strictly required to sign and proceed</span>
+              {!allQuestionsAnswered && (
+                <span className="text-[11px] text-slate-500 font-medium">
+                  Please answer all {NHO_QUIZ_QUESTIONS.length} questions to unlock
                 </span>
               )}
             </div>
 
-            <label className={`flex items-start gap-3 ${
-              scoreResult.passed && allQuestionsAnswered ? "cursor-pointer" : "cursor-not-allowed opacity-60"
-            }`}>
+            <label className={`flex items-start gap-3 ${allQuestionsAnswered ? "cursor-pointer" : "cursor-not-allowed"}`}>
               <input
                 type="checkbox"
-                checked={acknowledgmentChecked && scoreResult.passed}
-                disabled={!scoreResult.passed || !allQuestionsAnswered || activeApplicant.orientationStatus === "Completed"}
+                checked={acknowledgmentChecked}
+                disabled={!allQuestionsAnswered || activeApplicant.orientationStatus === "Completed"}
                 onChange={e => setAcknowledgmentChecked(e.target.checked)}
                 className="mt-0.5 rounded border-slate-300 text-[#FF5C28] focus:ring-[#FF5C28] w-4 h-4 cursor-pointer disabled:cursor-not-allowed"
               />
-              <span className={`text-xs leading-relaxed font-medium ${
-                scoreResult.passed ? "text-slate-800" : "text-red-900"
-              }`}>
-                I hereby confirm that I have personally reviewed all seven (7) modules of the SiBS New Hire Orientation, answered all interspersed checkpoint quizzes, achieved the required passing grade, and agree to uphold all company policies, workplace standards, information security protocols, and attendance procedures.
+              <span className="text-xs leading-relaxed font-medium text-slate-800">
+                I hereby confirm that I have personally reviewed all seven (7) modules of the SiBS New Hire Orientation, answered all interspersed checkpoint quizzes, and agree to uphold all company policies, workplace standards, information security protocols, and attendance procedures.
               </span>
             </label>
 
             <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-              {activeApplicant.orientationStatus === "Completed" && activeApplicant.orientationQuizPassed !== false && (
+              {activeApplicant.orientationStatus === "Completed" && (
                 <span className="text-xs font-bold text-emerald-700 flex items-center gap-1.5">
                   <CheckCircle className="w-4 h-4 text-emerald-600" />
                   <span>Orientation Confirmed &amp; Synchronized with TA Registry</span>
                 </span>
               )}
               <div className="flex items-center gap-3 ml-auto">
-                {!scoreResult.passed ? (
-                  <button
-                    type="button"
-                    onClick={handleJumpToFirstFailedStage}
-                    className="px-6 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-xs cursor-pointer flex items-center gap-2 transition-colors"
-                  >
-                    <RotateCcw className="w-4 h-4" />
-                    <span>Retake / Correct Checkpoint Quizzes</span>
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={handleConfirmCompletion}
-                    disabled={!allQuestionsAnswered || !scoreResult.passed || !acknowledgmentChecked || activeApplicant.orientationStatus === "Completed"}
-                    className="px-6 py-2.5 rounded-xl bg-[#FF5C28] hover:bg-[#e04f20] disabled:opacity-40 text-white font-bold text-xs shadow-xs transition-colors cursor-pointer disabled:cursor-not-allowed flex items-center gap-2"
-                  >
-                    <CheckCircle className="w-4 h-4" />
-                    <span>
-                      {activeApplicant.orientationStatus === "Completed" ? "Orientation Confirmed" : "Confirm Orientation Completion & Submit Score"}
-                    </span>
-                  </button>
-                )}
+                <button
+                  type="button"
+                  onClick={handleConfirmCompletion}
+                  disabled={!allQuestionsAnswered || !acknowledgmentChecked || activeApplicant.orientationStatus === "Completed"}
+                  className="px-6 py-2.5 rounded-xl bg-[#FF5C28] hover:bg-[#e04f20] disabled:opacity-40 text-white font-bold text-xs shadow-xs transition-colors cursor-pointer disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  <CheckCircle className="w-4 h-4" />
+                  <span>
+                    {activeApplicant.orientationStatus === "Completed" ? "Orientation Confirmed" : "Confirm Orientation Completion & Submit Score"}
+                  </span>
+                </button>
               </div>
             </div>
           </div>
 
-          {/* Celebratory Post-Completion Stage: Passing of Requirements (ONLY WHEN PASSED) */}
-          {activeApplicant.orientationStatus === "Completed" && activeApplicant.orientationQuizPassed !== false && (
+          {activeApplicant.orientationStatus === "Completed" && (
             <div className="p-6 rounded-2xl bg-gradient-to-r from-emerald-50 via-teal-50 to-green-50 border border-emerald-300 space-y-3">
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div className="flex items-center gap-3.5">
@@ -799,9 +639,7 @@ export default function NHOOrientationViewer({ onProceedToRequirements }: NHOOri
                     <CheckCircle className="w-6 h-6" />
                   </div>
                   <div>
-                    <h4 className="text-sm sm:text-base font-black text-emerald-950">
-                      Orientation &amp; Interspersed Quizzes Passed!
-                    </h4>
+                    <h4 className="text-sm sm:text-base font-black text-emerald-950">Orientation Completed!</h4>
                     <p className="text-xs text-emerald-800 font-medium mt-0.5">
                       Quiz Score: <strong>{activeApplicant.orientationQuizScore ?? 6}/{activeApplicant.orientationQuizTotal ?? 6} ({activeApplicant.orientationQuizPercentage ?? 100}%)</strong> · Completed {activeApplicant.orientationCompletedAt || "Today"}. Requirement submission is now unlocked.
                     </p>

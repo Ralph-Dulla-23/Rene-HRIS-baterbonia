@@ -219,7 +219,7 @@ export default function NHORoleHeader({
           <nav aria-label="New Hire Orientation sections" className="nho-tabs flex min-w-0 gap-3 overflow-x-auto border-t border-[#E6ECF2] px-4 sm:px-5">
             {(role === "TA"
           ? [
-              { id: "dashboard", label: "NHO Overview" },
+              { id: "dashboard", label: "NHO Management" },
               { id: "attendance", label: "NHO Attendance (Today)" },
               { id: "handoffs", label: "NHO Handoffs" }
             ]
