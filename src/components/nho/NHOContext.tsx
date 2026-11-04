@@ -17,7 +17,7 @@ import {
   NHOQDSNotification,
   NHOQDSAttendanceSchedule
 } from "./nhoTypes";
-import { INITIAL_NHO_APPLICANTS } from "./nhoInitialData";
+import { INITIAL_NHO_APPLICANTS, calculateQuizScore } from "./nhoInitialData";
 import { pureCreateOrLinkJourney, JOURNEY_STORAGE_KEY } from "../journey/JourneyContext";
 import { INITIAL_JOURNEYS } from "../journey/journeyInitialData";
 
@@ -2272,12 +2272,18 @@ export const NHOProvider: React.FC<{ children: React.ReactNode; initialRole?: NH
 
     setApplicants(prev => prev.map(app => {
       if (app.id !== applicantId) return app;
+      const updatedAnswers = {
+        ...(app.orientationQuizAnswers || {}),
+        [questionIndex]: optionIndex
+      };
+      const scoreResult = calculateQuizScore(updatedAnswers);
       return {
         ...app,
-        orientationQuizAnswers: {
-          ...(app.orientationQuizAnswers || {}),
-          [questionIndex]: optionIndex
-        }
+        orientationQuizAnswers: updatedAnswers,
+        orientationQuizScore: scoreResult.score,
+        orientationQuizTotal: scoreResult.total,
+        orientationQuizPercentage: scoreResult.percentage,
+        orientationQuizPassed: scoreResult.passed
       };
     }));
     return { success: true };
@@ -2318,19 +2324,25 @@ export const NHOProvider: React.FC<{ children: React.ReactNode; initialRole?: NH
       return { success: false, error: errorMsg };
     }
 
+    const scoreResult = calculateQuizScore(target.orientationQuizAnswers);
+
     setApplicants(prev => prev.map(app => {
       if (app.id !== applicantId) return app;
       const audit = createAuditLog(
         app.fullName,
         "Applicant",
         "Orientation Completed & Acknowledged",
-        "All 7 presentation slides reviewed, 5 interactive knowledge check questions answered, and final policy acknowledgment signed (Orientation Version: v1.0-sample)."
+        `All 7 presentation slides reviewed, 5 interactive knowledge check questions answered (Score: ${scoreResult.score}/${scoreResult.total} - ${scoreResult.percentage}%), and final policy acknowledgment signed (Orientation Version: v1.0-sample).`
       );
       return {
         ...app,
         orientationStatus: "Completed",
         orientationVersion: "v1.0-sample",
         orientationAcknowledged: true,
+        orientationQuizScore: scoreResult.score,
+        orientationQuizTotal: scoreResult.total,
+        orientationQuizPercentage: scoreResult.percentage,
+        orientationQuizPassed: scoreResult.passed,
         orientationCompletedAt: `${simulatedCurrentDate} ` + new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }),
         auditLogs: [audit, ...app.auditLogs]
       };

@@ -204,7 +204,7 @@ export default function NHOTADashboard({
                 <th className="py-3 px-3">NHO Date</th>
                 <th className="py-3 px-3">Attendance</th>
                 <th className="py-3 px-3">4 Majors</th>
-                <th className="py-3 px-3">Orientation</th>
+                <th className="py-3 px-3">Orientation &amp; Quiz</th>
                 <th className="py-3 px-3">3 Agreements</th>
                 <th className="py-3 px-3">IT Endorsement</th>
                 <th className="py-3 px-3">Handoff</th>
@@ -296,17 +296,29 @@ export default function NHOTADashboard({
                       </div>
                     </td>
 
-                    {/* Orientation */}
+                    {/* Orientation & Quiz Score */}
                     <td className="py-3.5 px-3">
-                      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded ${
-                        app.orientationStatus === "Completed"
-                          ? "bg-green-500/10 text-green-700"
-                          : app.orientationStatus === "In Progress"
-                            ? "bg-blue-500/10 text-blue-700"
-                            : "bg-slate-100 text-slate-600"
-                      }`}>
-                        {app.orientationStatus}
-                      </span>
+                      <div className="flex flex-col gap-1 items-start">
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${
+                          app.orientationStatus === "Completed"
+                            ? "bg-emerald-500/10 text-emerald-700 border border-emerald-200"
+                            : app.orientationStatus === "In Progress"
+                              ? "bg-blue-500/10 text-blue-700 border border-blue-200"
+                              : "bg-slate-100 text-slate-600 border border-slate-200"
+                        }`}>
+                          {app.orientationStatus}
+                        </span>
+                        {app.orientationStatus === "Completed" && (
+                          <span className="text-[9.5px] font-bold text-slate-700 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">
+                            Score: {app.orientationQuizScore ?? 5}/{app.orientationQuizTotal ?? 5} ({app.orientationQuizPercentage ?? 100}%)
+                          </span>
+                        )}
+                        {app.orientationStatus === "In Progress" && (
+                          <span className="text-[9.5px] text-slate-500 font-medium">
+                            Slide {app.orientationCurrentSlide || 1}/7
+                          </span>
+                        )}
+                      </div>
                     </td>
 
                     {/* 3 Essential Agreements */}

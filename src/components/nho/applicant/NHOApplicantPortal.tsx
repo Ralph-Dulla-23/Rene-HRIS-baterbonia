@@ -3,7 +3,7 @@ import { useNHO } from "../NHOContext";
 import { NHODocumentItem } from "../nhoTypes";
 import NHOSignatureModal from "./NHOSignatureModal";
 import NHOOrientationViewer from "./NHOOrientationViewer";
-import { CheckCircle, PenTool, Upload, ChevronRight, Check } from "lucide-react";
+import { CheckCircle, PenTool, Upload, ChevronRight, Check, Lock } from "lucide-react";
 
 interface NHOApplicantPortalProps {
   subTab?: string;
@@ -68,14 +68,36 @@ export default function NHOApplicantPortal({ subTab = "overview", onSubTabChange
   const isNonMajorOverdue = nonMajorDocs.some(doc => ["Not Submitted", "Needs Correction", "Draft"].includes(doc.status)) && Boolean(activeApplicant.nonMajorDeadlineDate) &&
     simulatedCurrentDate > (activeApplicant.nonMajorDeadlineDate || "");
   const overviewTasks = [
-    { id: "majors", label: "Major document requirements", description: `${verifiedMajorsCount} of ${majorDocs.length} verified`, complete: majorDocs.length > 0 && verifiedMajorsCount === majorDocs.length },
-    { id: "orientation", label: "Orientation and knowledge check", description: activeApplicant.orientationStatus === "Completed" ? "Completed and acknowledged" : activeApplicant.orientationStatus, complete: activeApplicant.orientationStatus === "Completed" },
-    { id: "agreements", label: "Essential employment agreements", description: `${verifiedAgreementsCount} of ${agreements.length} verified`, complete: agreements.length > 0 && verifiedAgreementsCount === agreements.length },
-    { id: "requirements", label: "Additional documents", description: `${verifiedNonMajorsCount} of ${nonMajorDocs.length} verified`, complete: nonMajorOutstandingCount === 0 },
+    { 
+      id: "orientation", 
+      label: "Orientation & knowledge check quiz", 
+      description: activeApplicant.orientationStatus === "Completed" 
+        ? `Completed & Acknowledged · Score: ${activeApplicant.orientationQuizScore ?? 5}/${activeApplicant.orientationQuizTotal ?? 5}` 
+        : activeApplicant.orientationStatus, 
+      complete: activeApplicant.orientationStatus === "Completed" 
+    },
+    { 
+      id: "majors", 
+      label: "Major document requirements", 
+      description: `${verifiedMajorsCount} of ${majorDocs.length} verified`, 
+      complete: majorDocs.length > 0 && verifiedMajorsCount === majorDocs.length 
+    },
+    { 
+      id: "agreements", 
+      label: "Essential employment agreements", 
+      description: `${verifiedAgreementsCount} of ${agreements.length} verified`, 
+      complete: agreements.length > 0 && verifiedAgreementsCount === agreements.length 
+    },
+    { 
+      id: "requirements", 
+      label: "Additional documents", 
+      description: `${verifiedNonMajorsCount} of ${nonMajorDocs.length} verified`, 
+      complete: nonMajorOutstandingCount === 0 
+    },
   ];
   const needsCandidateUpload = (docs: NHODocumentItem[]) => docs.some(doc => ["Not Submitted", "Needs Correction", "Draft"].includes(doc.status));
-  const actionableOverviewId = needsCandidateUpload(majorDocs) ? "majors" :
-    activeApplicant.orientationStatus !== "Completed" ? "orientation" :
+  const actionableOverviewId = activeApplicant.orientationStatus !== "Completed" ? "orientation" :
+    needsCandidateUpload(majorDocs) ? "majors" :
     needsCandidateUpload(agreements) ? "agreements" :
     needsCandidateUpload(nonMajorDocs) ? "requirements" : undefined;
   const nextOverviewTask = overviewTasks.find(task => task.id === actionableOverviewId) || overviewTasks.find(t => !t.complete);
@@ -164,8 +186,36 @@ export default function NHOApplicantPortal({ subTab = "overview", onSubTabChange
         </div>
       )}
 
+      {/* Sequential Lock Enforcement: Orientation must be completed first */}
+      {["majors", "agreements", "requirements"].includes(currentTab) && activeApplicant.orientationStatus !== "Completed" && (
+        <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-8 sm:p-10 text-center space-y-4">
+          <div className="w-14 h-14 rounded-2xl bg-amber-100 border border-amber-300 text-amber-800 flex items-center justify-center mx-auto shadow-xs">
+            <Lock className="w-7 h-7" />
+          </div>
+          <div className="max-w-md mx-auto space-y-2">
+            <span className="text-[10px] font-black uppercase tracking-wider text-amber-800 bg-amber-200/60 px-2.5 py-0.5 rounded-full">
+              Step 1 Incomplete
+            </span>
+            <h3 className="text-lg font-black text-[#042C51]">Complete Orientation &amp; Quiz First</h3>
+            <p className="text-xs text-slate-600 leading-relaxed font-medium">
+              In accordance with SiBS NHO workflow policy, you must review the orientation presentation modules and complete the knowledge check quiz before submitting pre-employment documents and signing agreements.
+            </p>
+          </div>
+          <div>
+            <button
+              type="button"
+              onClick={() => setTab("orientation")}
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#FF5C28] hover:bg-[#e04f20] text-white text-xs font-bold shadow-xs transition-colors cursor-pointer"
+            >
+              <span>Go to Orientation &amp; Quiz</span>
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Major requirements: compact rows with details on demand. */}
-      {currentTab === "majors" && (
+      {currentTab === "majors" && activeApplicant.orientationStatus === "Completed" && (
         <div className="overflow-hidden rounded-2xl border border-[#E6ECF2] bg-white shadow-xs relative">
           <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-[#042C51] via-[#0B365F] to-[#FF5C28]" />
           <div className="border-b border-[#EBF0F5] px-5 py-5 sm:px-6 pt-6">
@@ -234,11 +284,11 @@ export default function NHOApplicantPortal({ subTab = "overview", onSubTabChange
 
       {/* Orientation Tab */}
       {currentTab === "orientation" && (
-        <NHOOrientationViewer />
+        <NHOOrientationViewer onProceedToRequirements={() => setTab("majors")} />
       )}
 
       {/* Agreement signing retains the original electronic signature / upload modal. */}
-      {currentTab === "agreements" && (
+      {currentTab === "agreements" && activeApplicant.orientationStatus === "Completed" && (
         <div className="overflow-hidden rounded-2xl border border-[#E6ECF2] bg-white shadow-xs relative">
           <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-[#042C51] via-[#0B365F] to-[#FF5C28]" />
           <div className="border-b border-[#EBF0F5] px-5 py-5 sm:px-6 pt-6">
@@ -293,7 +343,7 @@ export default function NHOApplicantPortal({ subTab = "overview", onSubTabChange
       )}
 
       {/* Non-Major Requirements Tab */}
-      {currentTab === "requirements" && (
+      {currentTab === "requirements" && activeApplicant.orientationStatus === "Completed" && (
         <div className="space-y-4 text-xs">
           <div className="p-4 bg-white rounded-xl border border-[#E6ECF2] shadow-xs flex flex-wrap items-center justify-between gap-3">
             <div>

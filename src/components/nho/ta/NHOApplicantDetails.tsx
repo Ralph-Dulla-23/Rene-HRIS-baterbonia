@@ -407,11 +407,21 @@ export default function NHOApplicantDetails({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 pt-2">
+                <div className="grid grid-cols-3 gap-3 pt-2">
                   <div className="bg-white p-3 rounded-lg border border-[#E6ECF2]">
-                    <span className="text-slate-400 text-[10px] block">Knowledge Check Completion</span>
+                    <span className="text-slate-400 text-[10px] block">Quiz Questions</span>
                     <span className="font-bold text-slate-800 text-xs">
-                      {Object.keys(applicant.orientationQuizAnswers).length}/5 Questions Answered
+                      {Object.keys(applicant.orientationQuizAnswers || {}).length}/5 Answered
+                    </span>
+                  </div>
+                  <div className="bg-white p-3 rounded-lg border border-[#E6ECF2]">
+                    <span className="text-slate-400 text-[10px] block">Quiz Score</span>
+                    <span className={`font-bold text-xs ${
+                      applicant.orientationQuizPassed ? "text-emerald-700" : applicant.orientationStatus === "Completed" ? "text-emerald-700" : "text-amber-700"
+                    }`}>
+                      {applicant.orientationQuizScore !== undefined
+                        ? `${applicant.orientationQuizScore}/${applicant.orientationQuizTotal ?? 5} (${applicant.orientationQuizPercentage ?? 100}%)`
+                        : applicant.orientationStatus === "Completed" ? "5/5 (100%)" : "In Progress"}
                     </span>
                   </div>
                   <div className="bg-white p-3 rounded-lg border border-[#E6ECF2]">
