@@ -26,14 +26,12 @@ import NHOSendCredentialsModal from "./NHOSendCredentialsModal";
 interface NHOTADashboardProps {
   onOpenAttendanceModal: (applicant: NHOApplicant) => void;
   onOpenDetails: (applicant: NHOApplicant, defaultTab?: string) => void;
-  onOpenVerification: (applicant: NHOApplicant) => void;
   onOpenEndorsement: (applicant: NHOApplicant) => void;
 }
 
 export default function NHOTADashboard({
   onOpenAttendanceModal,
   onOpenDetails,
-  onOpenVerification,
   onOpenEndorsement
 }: NHOTADashboardProps) {
   const { applicants, setSelectedApplicantId, checkITEndorsementEligibility } = useNHO();
@@ -152,8 +150,8 @@ export default function NHOTADashboard({
       {/* HRIS Employee Records-style container: section title, labeled filters, inset tab and table. */}
       <section className="min-w-0 space-y-4 rounded-xl border border-[#E6ECF2] bg-white p-4 shadow-xs sm:p-5">
         <div>
-          <h2 className="text-base font-bold tracking-tight text-[#042C51]">NHO Applicant Records</h2>
-          <p className="mt-0.5 text-xs font-medium text-slate-500">Review orientation schedules, attendance, document verification and handoff progress.</p>
+          <h2 className="text-base font-bold tracking-tight text-[#042C51]">NHO Records</h2>
+          <p className="mt-0.5 text-xs font-medium text-slate-500">Manage candidates scheduled for New Hire Orientation, their attendance, clearance, and handoff progress.</p>
         </div>
         <div className="grid grid-cols-1 items-end gap-3 md:grid-cols-12">
           <label className="space-y-1 md:col-span-8">
@@ -190,7 +188,7 @@ export default function NHOTADashboard({
           <div className="flex items-center justify-between gap-2 border-b border-[#E6ECF2] px-4 pt-2">
             <div className="flex items-center gap-2 border-b-2 border-[#FF5C28] px-1 pb-3 pt-1 text-xs font-extrabold text-[#FF5C28]">
               <Users className="h-3.5 w-3.5" />
-              APPLICANTS
+              NHO
               <span className="rounded-full bg-[#042C51] px-2 py-0.5 text-[10px] font-black text-white">{filteredApplicants.length}</span>
             </div>
             <span className="pb-2 text-[11px] font-medium text-slate-500">{filteredApplicants.length} of {applicants.length} records</span>
@@ -201,7 +199,7 @@ export default function NHOTADashboard({
           <table className="w-full min-w-[1340px] border-collapse text-left text-xs">
             <thead>
               <tr className="border-b border-[#E6ECF2] bg-slate-50/70 text-[11px] font-black uppercase tracking-wider text-slate-500">
-                <th className="py-3 px-4">Applicant</th>
+                <th className="py-3 px-4">NHO Candidate</th>
                 <th className="py-3 px-3">Position & Account</th>
                 <th className="py-3 px-3">NHO Date</th>
                 <th className="py-3 px-3">Attendance</th>
@@ -415,14 +413,16 @@ export default function NHOTADashboard({
                         )}
 
                         <button
+                          type="button"
                           onClick={() => {
                             setSelectedApplicantId(app.id);
                             onOpenDetails(app);
                           }}
-                          className="p-1 text-slate-400 hover:text-[#042C51] transition-colors"
-                          title="View Full NHO Details"
+                          className="inline-flex items-center gap-1 rounded-lg border border-[#D8E3EF] bg-white px-2.5 py-2 text-[11px] font-bold text-[#042C51] transition-colors hover:border-[#FF5C28] hover:bg-[#FFF7F3]"
+                          aria-label={`Open NHO profile for ${app.fullName}`}
+                          title="Open NHO profile"
                         >
-                          <ChevronRight className="w-4 h-4" />
+                          View Profile <ChevronRight className="h-3.5 w-3.5" />
                         </button>
                       </div>
                     </td>
@@ -432,7 +432,7 @@ export default function NHOTADashboard({
               {filteredApplicants.length === 0 && (
                 <tr>
                   <td colSpan={10} className="py-12 text-center text-xs font-medium text-slate-500">
-                    No applicants match the selected filters.
+                    No NHO records match the selected filters.
                   </td>
                 </tr>
               )}

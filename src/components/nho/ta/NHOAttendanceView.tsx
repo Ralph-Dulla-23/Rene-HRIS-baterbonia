@@ -8,28 +8,34 @@ interface NHOAttendanceViewProps {
   onOpenDetails: (applicant: NHOApplicant) => void;
 }
 
-/** Dedicated attendance view; does not repeat the general NHO Dashboard. */
+/** Attendance view scoped to the selected NHO demo date, not the full candidate population. */
 export default function NHOAttendanceView({ onOpenAttendanceModal, onOpenDetails }: NHOAttendanceViewProps) {
-  const { applicants } = useNHO();
+  const { applicants, simulatedCurrentDate } = useNHO();
+  // The date shown in NHO's demo toolbar is authoritative for the Today cohort.
+  // In production, this should be replaced with the server's Asia/Manila business date.
+  const todaysApplicants = useMemo(
+    () => applicants.filter(app => app.scheduledNhoDate === simulatedCurrentDate),
+    [applicants, simulatedCurrentDate]
+  );
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("All");
 
   const metrics = useMemo(() => ({
-    scheduled: applicants.length,
-    show: applicants.filter(a => a.attendance === "Show").length,
-    noShow: applicants.filter(a => a.attendance === "No Show").length,
-    pending: applicants.filter(a => a.attendance === "Pending").length
-  }), [applicants]);
+    scheduled: todaysApplicants.length,
+    show: todaysApplicants.filter(a => a.attendance === "Show").length,
+    noShow: todaysApplicants.filter(a => a.attendance === "No Show").length,
+    pending: todaysApplicants.filter(a => a.attendance === "Pending").length
+  }), [todaysApplicants]);
 
-  const filtered = useMemo(() => applicants.filter(app => {
+  const filtered = useMemo(() => todaysApplicants.filter(app => {
     const term = search.trim().toLowerCase();
     const matches = [app.fullName, app.applicantNumber, app.position, app.account]
       .some(value => value.toLowerCase().includes(term));
     return matches && (status === "All" || app.attendance === status);
-  }), [applicants, search, status]);
+  }), [todaysApplicants, search, status]);
 
   const cards = [
-    { label: "Scheduled", value: metrics.scheduled, note: "Orientation candidates", icon: Users, color: "text-blue-600", iconBg: "bg-blue-50 border-blue-100" },
+    { label: "Scheduled", value: metrics.scheduled, note: "Scheduled for today", icon: Users, color: "text-blue-600", iconBg: "bg-blue-50 border-blue-100" },
     { label: "Show", value: metrics.show, note: "Attendance confirmed", icon: CheckCircle2, color: "text-emerald-600", iconBg: "bg-emerald-50 border-emerald-100" },
     { label: "No Show", value: metrics.noShow, note: "Follow-up or reschedule", icon: UserX, color: "text-red-600", iconBg: "bg-red-50 border-red-100" },
     { label: "Pending Attendance", value: metrics.pending, note: "Awaiting attendance tagging", icon: Clock3, color: "text-amber-600", iconBg: "bg-amber-50 border-amber-100" }
@@ -69,8 +75,11 @@ export default function NHOAttendanceView({ onOpenAttendanceModal, onOpenDetails
       <section className="min-w-0 rounded-xl border border-[#E6ECF2] bg-white p-4 shadow-sm sm:p-5">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h2 className="text-base font-bold tracking-tight text-[#042C51]">Attendance Records</h2>
-            <p className="mt-0.5 text-xs font-medium text-slate-500">Tag arrivals, review no-shows, and open attendance corrections for the scheduled cohort.</p>
+            <h2 className="text-base font-bold tracking-tight text-[#042C51]">NHO Attendance — Today</h2>
+            <p className="mt-0.5 text-xs font-medium text-slate-500">Only candidates scheduled for the selected NHO date are shown. Record attendance, follow up with no-shows, or open a candidate profile.</p>
+          </div>
+          <div className="rounded-lg border border-[#D8E3EF] bg-[#F7F9FC] px-3 py-2 text-xs font-bold text-[#042C51]">
+            NHO date: {simulatedCurrentDate}
           </div>
         </div>
         <div className="mb-4 grid grid-cols-1 items-end gap-3 md:grid-cols-12">
@@ -84,7 +93,7 @@ export default function NHOAttendanceView({ onOpenAttendanceModal, onOpenDetails
           <label className="space-y-1 md:col-span-4">
             <span className="block text-xs font-semibold text-slate-700">Attendance Status</span>
             <select value={status} onChange={e => setStatus(e.target.value)} className="w-full rounded-xl border border-[#E6ECF2] bg-white px-3 py-2.5 text-xs font-semibold text-[#042C51] focus:border-[#FF5C28] focus:outline-none focus:ring-1 focus:ring-[#FF5C28]">
-              <option value="All">All Attendance ({applicants.length})</option>
+              <option value="All">All Attendance ({todaysApplicants.length})</option>
               <option value="Show">Show ({metrics.show})</option>
               <option value="No Show">No Show ({metrics.noShow})</option>
               <option value="Pending">Pending ({metrics.pending})</option>
@@ -98,7 +107,7 @@ export default function NHOAttendanceView({ onOpenAttendanceModal, onOpenDetails
               <CalendarDays className="h-3.5 w-3.5" /> ATTENDANCE
               <span className="rounded-full bg-[#042C51] px-2 py-0.5 text-[10px] font-black text-white">{filtered.length}</span>
             </div>
-            <span className="pb-2 text-[11px] font-medium text-slate-500">{filtered.length} of {applicants.length} records</span>
+            <span className="pb-2 text-[11px] font-medium text-slate-500">{filtered.length} of {todaysApplicants.length} records</span>
           </div>
           <div className="max-w-full overflow-x-auto">
             <table className="w-full min-w-[930px] border-collapse text-left text-xs">
@@ -108,7 +117,7 @@ export default function NHOAttendanceView({ onOpenAttendanceModal, onOpenDetails
                 <th className="px-3 py-3">Next Step</th><th className="px-4 py-3 text-right">Actions</th>
               </tr></thead>
               <tbody className="divide-y divide-[#E6ECF2] text-slate-700">
-                {filtered.length === 0 ? <tr><td colSpan={6} className="p-8 text-center text-slate-500">No attendance records match your filters.</td></tr> : filtered.map(app => (
+                {filtered.length === 0 ? <tr><td colSpan={6} className="p-8 text-center text-slate-500">No candidates scheduled for this NHO date match your filters.</td></tr> : filtered.map(app => (
                   <tr key={app.id} className="hover:bg-slate-50/70">
                     <td className="px-4 py-3"><div className="font-bold text-[#042C51]">{app.fullName}</div><div className="font-mono text-[10px] text-slate-400">{app.applicantNumber}</div></td>
                     <td className="px-3 py-3"><div className="font-medium text-[#042C51]">{app.position}</div><div className="text-[11px] text-slate-500">{app.account}</div></td>
@@ -117,7 +126,7 @@ export default function NHOAttendanceView({ onOpenAttendanceModal, onOpenDetails
                     <td className="px-3 py-3 text-slate-500">{app.attendance === "No Show" ? "Follow-up / Reschedule" : app.attendance === "Pending" ? "Confirm attendance" : "Review requirements"}</td>
                     <td className="px-4 py-3"><div className="flex justify-end gap-2">
                       <button type="button" onClick={() => onOpenAttendanceModal(app)} className="rounded-lg border border-[#BECBDA] bg-white px-3 py-1.5 text-[11px] font-bold text-[#042C51] hover:bg-slate-50">{app.attendance === "Pending" ? "Tag Attendance" : "Edit Attendance"}</button>
-                      <button type="button" onClick={() => onOpenDetails(app)} className="rounded-lg bg-[#042C51] px-3 py-1.5 text-[11px] font-bold text-white hover:bg-[#0B365F]">View Details</button>
+                      <button type="button" onClick={() => onOpenDetails(app)} className="rounded-lg bg-[#042C51] px-3 py-1.5 text-[11px] font-bold text-white hover:bg-[#0B365F]">View Profile</button>
                     </div></td>
                   </tr>
                 ))}

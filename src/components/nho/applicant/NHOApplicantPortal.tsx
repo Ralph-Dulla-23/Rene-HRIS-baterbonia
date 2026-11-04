@@ -3,26 +3,7 @@ import { useNHO } from "../NHOContext";
 import { NHODocumentItem } from "../nhoTypes";
 import NHOSignatureModal from "./NHOSignatureModal";
 import NHOOrientationViewer from "./NHOOrientationViewer";
-import { 
-  UserCheck, 
-  Calendar, 
-  Clock, 
-  CheckCircle, 
-  AlertTriangle, 
-  FileText, 
-  PenTool, 
-  Upload, 
-  Lock, 
-  Key, 
-  Sparkles, 
-  ExternalLink,
-  ChevronRight,
-  ShieldCheck,
-  Check,
-  RotateCcw,
-  FileCheck2,
-  AlertCircle
-} from "lucide-react";
+import { CheckCircle, PenTool, Upload, ChevronRight, Check } from "lucide-react";
 
 interface NHOApplicantPortalProps {
   subTab?: string;
@@ -31,7 +12,8 @@ interface NHOApplicantPortalProps {
 
 export default function NHOApplicantPortal({ subTab = "overview", onSubTabChange }: NHOApplicantPortalProps) {
   const { 
-    activeApplicant, 
+    activeApplicant,
+    simulatedCurrentDate,
     submitOtherDocument, 
     simulatePasswordRetrieval, 
     simulateLinkExpiration,
@@ -42,6 +24,8 @@ export default function NHOApplicantPortal({ subTab = "overview", onSubTabChange
   } = useNHO();
 
   const [activeSubTab, setActiveSubTab] = useState(subTab);
+  const [expandedMajorDoc, setExpandedMajorDoc] = useState<string | null>(null);
+  const [expandedAgreementDoc, setExpandedAgreementDoc] = useState<string | null>(null);
 
   // Signature modal state
   const [signingDoc, setSigningDoc] = useState<NHODocumentItem | null>(null);
@@ -79,301 +63,165 @@ export default function NHOApplicantPortal({ subTab = "overview", onSubTabChange
 
   const verifiedMajorsCount = majorDocs.filter(d => d.status === "Verified").length;
   const verifiedAgreementsCount = agreements.filter(d => d.status === "Verified").length;
+  const verifiedNonMajorsCount = nonMajorDocs.filter(d => d.status === "Verified").length;
+  const nonMajorOutstandingCount = nonMajorDocs.length - verifiedNonMajorsCount;
+  const isNonMajorOverdue = nonMajorDocs.some(doc => ["Not Submitted", "Needs Correction", "Draft"].includes(doc.status)) && Boolean(activeApplicant.nonMajorDeadlineDate) &&
+    simulatedCurrentDate > (activeApplicant.nonMajorDeadlineDate || "");
+  const overviewTasks = [
+    { id: "majors", label: "Major document requirements", description: `${verifiedMajorsCount} of ${majorDocs.length} verified`, complete: majorDocs.length > 0 && verifiedMajorsCount === majorDocs.length },
+    { id: "orientation", label: "Orientation and knowledge check", description: activeApplicant.orientationStatus === "Completed" ? "Completed and acknowledged" : activeApplicant.orientationStatus, complete: activeApplicant.orientationStatus === "Completed" },
+    { id: "agreements", label: "Essential employment agreements", description: `${verifiedAgreementsCount} of ${agreements.length} verified`, complete: agreements.length > 0 && verifiedAgreementsCount === agreements.length },
+    { id: "requirements", label: "Additional documents", description: `${verifiedNonMajorsCount} of ${nonMajorDocs.length} verified`, complete: nonMajorOutstandingCount === 0 },
+  ];
+  const needsCandidateUpload = (docs: NHODocumentItem[]) => docs.some(doc => ["Not Submitted", "Needs Correction", "Draft"].includes(doc.status));
+  const actionableOverviewId = needsCandidateUpload(majorDocs) ? "majors" :
+    activeApplicant.orientationStatus !== "Completed" ? "orientation" :
+    needsCandidateUpload(agreements) ? "agreements" :
+    needsCandidateUpload(nonMajorDocs) ? "requirements" : undefined;
+  const nextOverviewTask = overviewTasks.find(task => task.id === actionableOverviewId) || overviewTasks.find(t => !t.complete);
+  const waitingForReview = !actionableOverviewId && overviewTasks.some(task => !task.complete);
 
   return (
     <div className="space-y-6">
-      {/* Overview Tab */}
+      {/* A clear landing workspace; the checklist belongs to the portal shell. */}
       {currentTab === "overview" && (
-        <div className="space-y-6">
-          {/* Welcome Card */}
-          <div className="bg-gradient-to-r from-[#042C51] to-[#0B365F] text-white rounded-2xl p-6 sm:p-8 shadow-xs relative overflow-hidden">
-            <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-white/5 transform skew-x-12 pointer-events-none" />
-            <div className="max-w-2xl space-y-2 relative z-10">
-              <span className="px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider bg-[#FF5C28] text-white">
-                Applicant Orientation Portal
-              </span>
-              <h1 className="text-xl sm:text-2xl font-black tracking-tight">
-                Welcome, {activeApplicant.firstName}!
-              </h1>
-              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed font-normal">
-                Congratulations on your appointment as <strong>{activeApplicant.position}</strong> at SiBS. Complete your post-NHO onboarding tasks below: upload your 4 major requirements, complete interactive orientation, and execute your agreements.
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1.55fr)_minmax(260px,1fr)]">
+          <div className="rounded-2xl border border-[#E4EBF3] bg-white p-6 shadow-[0_3px_14px_rgba(4,44,81,0.025)] sm:p-7">
+            <p className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#FF5C28]">
+              {waitingForReview ? "Awaiting verification" : nextOverviewTask ? "Your next action" : "Onboarding complete"}
+            </p>
+            <h2 className="mt-2 max-w-xl text-[21px] font-extrabold tracking-tight text-[#042C51]">
+              {waitingForReview ? "Your submitted files are under review" : nextOverviewTask ? nextOverviewTask.label : "All onboarding tasks are verified"}
+            </h2>
+            <p className="mt-2 max-w-xl text-[13px] leading-relaxed text-[#677A8E]">
+              {waitingForReview ? "You have no pending candidate actions right now. Talent Acquisition must verify the remaining submissions. You can review their status below." :
+               nextOverviewTask?.id === "majors" ? "Submit the required pre-employment documents individually. Talent Acquisition will review each submission before verification." :
+               nextOverviewTask?.id === "orientation" ? "Read through the seven orientation modules and complete the five-question knowledge check and acknowledgment." :
+               nextOverviewTask?.id === "agreements" ? "Review the required agreements and submit an electronic signature or a signed copy for verification." :
+               nextOverviewTask?.id === "requirements" ? "Your mandatory documents and agreements are complete. Finish any remaining additional uploads to close out your checklist." :
+               "There are no outstanding documents or onboarding activities in your current checklist. You can still review your previous submissions."}
+            </p>
+            {nextOverviewTask && (
+              <div className="mt-5 flex flex-wrap items-center gap-3">
+                <button type="button" onClick={() => setTab(nextOverviewTask.id)}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#FF5C28] px-5 py-3 text-xs font-extrabold text-white transition-colors hover:bg-[#E34F20] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF5C28]">
+                  {waitingForReview ? "View submitted items" : nextOverviewTask.id === "orientation" ? "Continue orientation" : nextOverviewTask.id === "agreements" ? "Review agreements" : "Open requirements"}
+                  <ChevronRight size={15} />
+                </button>
+                <span className="text-[12px] font-semibold text-[#6C7F93]">{nextOverviewTask.description}</span>
+              </div>
+            )}
+            {!nextOverviewTask && (
+              <div className="mt-5 inline-flex items-center gap-2 rounded-xl bg-[#EAF8EF] px-4 py-3 text-[12px] font-bold text-[#18794E]">
+                <CheckCircle size={17} /> All requirements verified
+              </div>
+            )}
+            {isNonMajorOverdue && !waitingForReview && nextOverviewTask?.id === "requirements" && (
+              <p className="mt-4 rounded-lg bg-[#FFF0EF] px-3 py-2 text-xs font-semibold text-[#B83D36]">
+                The additional-document deadline ({activeApplicant.nonMajorDeadlineDate}) has passed. Please submit the outstanding document and contact TA if an extension is needed.
               </p>
-            </div>
+            )}
           </div>
-
-          {/* Quick Status Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5 text-xs">
-            {/* NHO Attendance */}
-            <div className="p-4 bg-white rounded-xl border border-[#E6ECF2] shadow-xs">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                NHO Attendance
-              </span>
-              <div className={`text-base font-bold mt-1 ${
-                activeApplicant.attendance === "Show" ? "text-green-600" : "text-amber-600"
-              }`}>
-                {activeApplicant.attendance}
+          <div className="space-y-4">
+            <div className="rounded-2xl border border-[#E4EBF3] bg-white p-5 shadow-[0_3px_14px_rgba(4,44,81,0.025)]">
+              <h3 className="text-sm font-extrabold text-[#042C51]">Important information</h3>
+              <div className="mt-4 space-y-3 text-[12px]">
+                <div className="flex items-start justify-between gap-3">
+                  <span className="text-[#75859B]">NHO attendance</span>
+                  <span className="text-right font-bold text-[#042C51]">{activeApplicant.attendance}<span className="block font-medium text-[#72849A]">{activeApplicant.scheduledNhoDate}</span></span>
+                </div>
+                <div className="h-px bg-[#EDF1F5]" />
+                <div className="flex items-start justify-between gap-3">
+                  <span className="text-[#75859B]">Additional document deadline</span>
+                  <span className={`text-right font-bold ${isNonMajorOverdue ? "text-[#BD3C35]" : "text-[#042C51]"}`}>
+                    {activeApplicant.nonMajorDeadlineDate || "Not scheduled"}
+                    {isNonMajorOverdue && <span className="block text-[10px]">Overdue</span>}
+                  </span>
+                </div>
+                <div className="h-px bg-[#EDF1F5]" />
+                <div className="flex items-start justify-between gap-3">
+                  <span className="text-[#75859B]">Pending additional documents</span>
+                  <span className="font-bold text-[#042C51]">{nonMajorOutstandingCount}</span>
+                </div>
               </div>
-              <span className="text-[11px] text-slate-500">
-                {activeApplicant.scheduledNhoDate}
-              </span>
             </div>
-
-            {/* 4 Major Requirements */}
-            <div className="p-4 bg-white rounded-xl border border-[#E6ECF2] shadow-xs">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                4 Major Requirements
-              </span>
-              <div className={`text-base font-bold mt-1 ${
-                verifiedMajorsCount === 4 ? "text-green-600" : "text-[#042C51]"
-              }`}>
-                {verifiedMajorsCount} of 4 Verified
+            <div className="rounded-2xl border border-[#E4EBF3] bg-white p-5 shadow-[0_3px_14px_rgba(4,44,81,0.025)]">
+              <h3 className="text-sm font-extrabold text-[#042C51]">Already completed</h3>
+              <div className="mt-3 space-y-2.5">
+                {overviewTasks.filter(task => task.complete).length ? overviewTasks.filter(task => task.complete).map(task => (
+                  <button type="button" key={task.id} onClick={() => setTab(task.id)}
+                    className="flex w-full items-center gap-2 rounded-lg py-1 text-left text-[12px] font-semibold text-[#4B647B] hover:text-[#042C51]">
+                    <CheckCircle className="h-4 w-4 shrink-0 text-[#188555]" />
+                    <span className="min-w-0 flex-1">{task.label}</span>
+                    <ChevronRight className="h-3.5 w-3.5 shrink-0 text-[#A9B5C3]" />
+                  </button>
+                )) : <p className="text-xs text-[#72849A]">Completed tasks will appear here once verified.</p>}
               </div>
-              <span className="text-[11px] text-slate-500">
-                Self-Service Portal Uploads
-              </span>
-            </div>
-
-            {/* Orientation */}
-            <div className="p-4 bg-white rounded-xl border border-[#E6ECF2] shadow-xs">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                SiBS Orientation
-              </span>
-              <div className={`text-base font-bold mt-1 ${
-                activeApplicant.orientationStatus === "Completed" ? "text-green-600" : "text-blue-600"
-              }`}>
-                {activeApplicant.orientationStatus}
-              </div>
-              <span className="text-[11px] text-slate-500">
-                {activeApplicant.orientationAcknowledged ? "7 Slides & Quiz Done" : "Slides in progress"}
-              </span>
-            </div>
-
-            {/* Essential Agreements */}
-            <div className="p-4 bg-white rounded-xl border border-[#E6ECF2] shadow-xs">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                3 Essential Agreements
-              </span>
-              <div className={`text-base font-bold mt-1 ${
-                verifiedAgreementsCount === 3 ? "text-green-600" : "text-[#042C51]"
-              }`}>
-                {verifiedAgreementsCount} of 3 Verified
-              </div>
-              <span className="text-[11px] text-slate-500">
-                Required before IT Endorsement
-              </span>
-            </div>
-
-            {/* Non-Major Deadline */}
-            <div className="p-4 bg-white rounded-xl border border-[#E6ECF2] shadow-xs">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                Non-Major 14-Day Due Date
-              </span>
-              <div className="text-base font-bold text-[#042C51] mt-1">
-                {activeApplicant.nonMajorDeadlineDate || "Not Started"}
-              </div>
-              <span className="text-[11px] text-slate-500">
-                14 days from NHO session
-              </span>
-            </div>
-          </div>
-
-          {/* Action Grid: Major Requirements, Orientation & Agreements */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* 1. Major Requirements shortcut */}
-            <div className="p-6 bg-white rounded-2xl border border-[#E6ECF2] shadow-xs flex flex-col justify-between space-y-4">
-              <div>
-                <span className="text-[10px] font-bold text-[#FF5C28] uppercase tracking-wider block">
-                  Mandatory Major Requirements
-                </span>
-                <h3 className="text-base font-bold text-[#042C51] mt-1">
-                  Upload 4 Major Documents
-                </h3>
-                <p className="text-xs text-slate-600 mt-1 leading-relaxed">
-                  Upload your Medical Records (Fit to Work), NBI Clearance, PSA Birth Certificate, and Valid Government ID for TA verification.
-                </p>
-              </div>
-
-              <button
-                onClick={() => setTab("majors")}
-                className="w-full py-2.5 rounded-xl bg-[#FF5C28] hover:bg-[#e04f20] text-white font-bold text-xs shadow-xs cursor-pointer flex items-center justify-center gap-2"
-              >
-                <span>{verifiedMajorsCount === 4 ? "Review Uploaded Majors" : "Upload Major Requirements"}</span>
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* 2. Orientation shortcut */}
-            <div className="p-6 bg-white rounded-2xl border border-[#E6ECF2] shadow-xs flex flex-col justify-between space-y-4">
-              <div>
-                <span className="text-[10px] font-bold text-[#042C51] uppercase tracking-wider block">
-                  Interactive Learning
-                </span>
-                <h3 className="text-base font-bold text-[#042C51] mt-1">
-                  SiBS Orientation Modules
-                </h3>
-                <p className="text-xs text-slate-600 mt-1 leading-relaxed">
-                  Review the 7 onboarding modules covering company policies, clean screen rules, and HR contacts, followed by the 5-question knowledge check.
-                </p>
-              </div>
-
-              <button
-                onClick={() => setTab("orientation")}
-                className="w-full py-2.5 rounded-xl bg-[#042C51] hover:bg-[#0B365F] text-white font-bold text-xs shadow-xs cursor-pointer flex items-center justify-center gap-2"
-              >
-                <span>{activeApplicant.orientationStatus === "Completed" ? "Review Orientation Modules" : "Continue Orientation"}</span>
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* 3. Essential Agreements shortcut */}
-            <div className="p-6 bg-white rounded-2xl border border-[#E6ECF2] shadow-xs flex flex-col justify-between space-y-4">
-              <div>
-                <span className="text-[10px] font-bold text-[#042C51] uppercase tracking-wider block">
-                  Employment Covenants
-                </span>
-                <h3 className="text-base font-bold text-[#042C51] mt-1">
-                  3 Essential Agreements
-                </h3>
-                <p className="text-xs text-slate-600 mt-1 leading-relaxed">
-                  Sign Company Policy Acceptance, Training Bond, and NDA using the electronic drawn signature canvas or upload signed copies.
-                </p>
-              </div>
-
-              <button
-                onClick={() => setTab("agreements")}
-                className="w-full py-2.5 rounded-xl bg-[#042C51] hover:bg-[#0B365F] text-white font-bold text-xs shadow-xs cursor-pointer flex items-center justify-center gap-2"
-              >
-                <span>Review & Sign Agreements</span>
-                <ChevronRight className="w-4 h-4" />
-              </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Major Requirements Tab (Section 4 of user requirements) */}
+      {/* Major requirements: compact rows with details on demand. */}
       {currentTab === "majors" && (
-        <div className="space-y-4 text-xs">
-          <div className="p-5 bg-white rounded-2xl border border-[#E6ECF2] shadow-xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div>
-              <span className="text-[10px] font-bold text-[#FF5C28] uppercase tracking-wider block">
-                Post-NHO Portal Requirements
-              </span>
-              <h2 className="text-base font-bold text-[#042C51]">Four (4) Mandatory Major Pre-Employment Requirements</h2>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Upload each major requirement individually. TA reviews submissions in the Document Verification queue before endorsing you to IT for Kronos ID creation.
-              </p>
-            </div>
-            <div className="shrink-0 flex items-center gap-2">
-              <span className={`px-3 py-1.5 rounded-xl font-bold text-xs ${
-                verifiedMajorsCount === 4
-                  ? "bg-green-100 text-green-800"
-                  : "bg-amber-100 text-amber-800"
-              }`}>
-                {verifiedMajorsCount} of 4 Cleared
-              </span>
-            </div>
+        <div className="overflow-hidden rounded-2xl border border-[#E4EBF3] bg-white shadow-[0_3px_14px_rgba(4,44,81,0.025)]">
+          <div className="border-b border-[#EBF0F5] px-5 py-5 sm:px-6">
+            <h2 className="text-[15px] font-extrabold text-[#042C51]">Mandatory pre-employment documents</h2>
+            <p className="mt-1 text-[12px] leading-relaxed text-[#6C7D91]">
+              Submit each document individually. Talent Acquisition reviews uploaded files before IT endorsement.
+            </p>
+            <p className="mt-3 text-[11px] font-bold text-[#5B728A]">{verifiedMajorsCount} of {majorDocs.length} verified</p>
           </div>
-
-          <div className="space-y-3">
+          <div className="divide-y divide-[#EBF0F5]">
             {[
-              { code: "MAJOR-MED-01", name: "1. Medical Records / Fit to Work Certificate", desc: "Medical clearance issued by accredited diagnostic clinic indicating fitness for duty." },
-              { code: "MAJOR-NBI-02", name: "2. NBI Clearance (Original / Valid)", desc: "Valid official National Bureau of Investigation clearance certificate with QR code." },
-              { code: "MAJOR-PSA-03", name: "3. PSA Birth Certificate", desc: "Philippine Statistics Authority (PSA) issued Certificate of Live Birth." },
-              { code: "MAJOR-ID-04", name: "4. Valid Government ID", desc: "Government photo ID: Passport, UMID, PhilID / National ID, or Driver's License." }
-            ].map(item => {
+              { code: "MAJOR-MED-01", name: "Medical Records / Fit to Work Certificate", desc: "Medical clearance from an accredited clinic confirming fitness for duty." },
+              { code: "MAJOR-NBI-02", name: "NBI Clearance (Original / Valid)", desc: "Valid NBI clearance certificate, including its QR code when provided." },
+              { code: "MAJOR-PSA-03", name: "PSA Birth Certificate", desc: "Philippine Statistics Authority Certificate of Live Birth." },
+              { code: "MAJOR-ID-04", name: "Valid Government ID", desc: "Passport, UMID, PhilID / National ID, or Driver's License." }
+            ].map((item, index) => {
               const doc: NHODocumentItem = activeApplicant.documents.find(d => d.templateCode === item.code) || {
-                id: `doc-${item.code}`,
-                name: item.name,
-                category: "Major" as const,
-                isMajor: true,
-                isEssentialAgreement: false,
-                status: "Not Submitted" as const,
-                deadlineStatus: "On Time" as const,
-                dueDate: activeApplicant.scheduledNhoDate,
-                templateCode: item.code,
-                documentOwner: "TA" as const
+                id: `doc-${item.code}`, name: item.name, category: "Major" as const, isMajor: true,
+                isEssentialAgreement: false, status: "Not Submitted" as const, deadlineStatus: "On Time" as const,
+                dueDate: activeApplicant.scheduledNhoDate, templateCode: item.code, documentOwner: "TA" as const,
               };
-
               const isVer = doc.status === "Verified";
-              const isPending = doc.status === "For Verification";
-              const isNeedsCorr = doc.status === "Needs Correction";
-              const isNotSubmitted = doc.status === "Not Submitted";
-
+              const needsCorrection = doc.status === "Needs Correction";
+              const isExpanded = expandedMajorDoc === doc.id;
               return (
-                <div key={item.code} className="p-5 bg-white border border-[#E6ECF2] rounded-2xl shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
-                  <div className="space-y-1.5 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-bold text-[#042C51] text-sm">{item.name}</span>
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                        isVer
-                          ? "bg-green-100 text-green-800"
-                          : isPending
-                            ? "bg-blue-100 text-blue-800"
-                            : isNeedsCorr
-                              ? "bg-red-100 text-red-800"
-                              : "bg-slate-100 text-slate-600"
-                      }`}>
-                        {doc.status}
+                <div key={item.code} className="px-4 py-4 sm:px-6">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <button type="button" onClick={() => setExpandedMajorDoc(isExpanded ? null : doc.id)}
+                      aria-expanded={isExpanded} aria-controls={`major-detail-${item.code}`}
+                      className="flex min-w-0 flex-1 items-start gap-3 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#FF5C28]">
+                      <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-extrabold ${isVer ? "bg-[#E7F6ED] text-[#17804D]" : "bg-[#F0F3F7] text-[#546B82]"}`}>
+                        {isVer ? <Check size={17} /> : index + 1}
                       </span>
+                      <span className="min-w-0 space-y-1">
+                        <span className="block text-[13px] font-bold text-[#042C51]">{item.name}</span>
+                        <span className={`block text-[11px] font-bold ${isVer ? "text-[#17804D]" : needsCorrection ? "text-[#B93B35]" : doc.status === "For Verification" ? "text-[#315F94]" : "text-[#78889A]"}`}>{doc.status}</span>
+                        {doc.fileName && <span className="block max-w-full break-all text-[11px] text-[#71849A]">{doc.fileName}</span>}
+                      </span>
+                      <ChevronRight size={15} className={`mt-2 shrink-0 text-[#8699AC] transition-transform ${isExpanded ? "rotate-90" : ""}`} />
+                    </button>
+                    <div className="flex shrink-0 items-center gap-2 pl-11 sm:pl-0">
+                      {!isVer ? (
+                        <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-[#FF5C28] px-3.5 py-2 text-[11px] font-bold text-white hover:bg-[#E24F20]">
+                          <Upload size={14} /> {needsCorrection ? "Resubmit" : doc.status === "For Verification" ? "Replace file" : "Upload file"}
+                          <input type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={event => handleUploadFile(doc, event)} className="sr-only" />
+                        </label>
+                      ) : <span className="inline-flex items-center gap-1.5 rounded-lg bg-[#E8F6ED] px-3 py-2 text-[11px] font-bold text-[#17794B]"><CheckCircle size={14} /> Verified</span>}
                     </div>
-
-                    <p className="text-slate-500 text-xs">
-                      {item.desc}
-                    </p>
-
-                    {doc.fileName && (
-                      <div className="text-[11px] text-slate-600 flex flex-wrap items-center gap-2 pt-0.5">
-                        <span className="font-mono bg-slate-100 px-2 py-0.5 rounded text-slate-700">
-                          {doc.fileName} {doc.fileSize ? `(${doc.fileSize})` : ""}
-                        </span>
-                        {doc.submittedDate && (
-                          <span className="text-slate-400">
-                            • Submitted: {doc.submittedDate}
-                          </span>
-                        )}
-                      </div>
-                    )}
-
-                    {isNeedsCorr && doc.correctionRemarks && (
-                      <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-xl text-red-950 text-xs flex items-start gap-2">
-                        <AlertTriangle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
-                        <div>
-                          <strong className="font-bold">TA Correction Remarks:</strong> {doc.correctionRemarks}
-                          <span className="block text-[11px] text-red-800 mt-0.5">
-                            Please replace or re-upload the corrected document below.
-                          </span>
-                        </div>
-                      </div>
-                    )}
-
-                    {isVer && doc.verifiedBy && (
-                      <span className="text-[11px] text-green-700 block font-medium">
-                        Verified by {doc.verifiedBy} on {doc.verifiedDate || activeApplicant.clearedDate || "NHO session"}
-                      </span>
-                    )}
                   </div>
-
-                  <div className="flex items-center gap-2 shrink-0">
-                    {!isVer && (
-                      <label className="px-4 py-2 rounded-xl bg-[#FF5C28] hover:bg-[#e04f20] text-white font-bold text-xs shadow-xs cursor-pointer flex items-center gap-1.5 transition-colors">
-                        <Upload className="w-3.5 h-3.5" />
-                        <span>{isNeedsCorr ? "Resubmit / Replace File" : isPending ? "Replace Uploaded File" : "Upload File"}</span>
-                        <input
-                          type="file"
-                          onChange={e => handleUploadFile(doc, e)}
-                          className="hidden"
-                        />
-                      </label>
-                    )}
-
-                    {isVer && (
-                      <div className="flex items-center gap-1.5 text-green-700 font-bold bg-green-50 px-3.5 py-1.5 rounded-xl border border-green-200 text-xs">
-                        <CheckCircle className="w-4 h-4 text-green-600" />
-                        <span>Verified</span>
-                      </div>
-                    )}
-                  </div>
+                  {isExpanded && (
+                    <div id={`major-detail-${item.code}`} className="ml-11 mt-3 space-y-2 rounded-xl bg-[#F7F9FC] px-4 py-3 text-[12px] leading-relaxed text-[#63778D]">
+                      <p>{item.desc}</p>
+                      {doc.fileSize && <p>File size: {doc.fileSize}</p>}
+                      {doc.submittedDate && <p>Submitted: {doc.submittedDate}</p>}
+                      {isVer && doc.verifiedBy && <p className="font-semibold text-[#17794B]">Verified by {doc.verifiedBy} on {doc.verifiedDate || activeApplicant.clearedDate || "NHO session"}</p>}
+                      {needsCorrection && doc.correctionRemarks && <p className="rounded-lg bg-[#FFF0EF] px-3 py-2 font-semibold text-[#B83D36]">Correction required: {doc.correctionRemarks}</p>}
+                      {!doc.fileName && <p>No file has been submitted yet.</p>}
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -386,75 +234,53 @@ export default function NHOApplicantPortal({ subTab = "overview", onSubTabChange
         <NHOOrientationViewer />
       )}
 
-      {/* Essential Agreements Tab */}
+      {/* Agreement signing retains the original electronic signature / upload modal. */}
       {currentTab === "agreements" && (
-        <div className="space-y-4 text-xs">
-          <div className="p-4 bg-white rounded-xl border border-[#E6ECF2] shadow-xs">
-            <h2 className="text-base font-bold text-[#042C51]">Essential Employment Agreements</h2>
-            <p className="text-xs text-slate-500 mt-0.5">
-              These three essential documents must be executed and verified before your IT endorsement for Kronos ID creation.
-            </p>
+        <div className="overflow-hidden rounded-2xl border border-[#E4EBF3] bg-white shadow-[0_3px_14px_rgba(4,44,81,0.025)]">
+          <div className="border-b border-[#EBF0F5] px-5 py-5 sm:px-6">
+            <h2 className="text-[15px] font-extrabold text-[#042C51]">Essential employment agreements</h2>
+            <p className="mt-1 text-[12px] leading-relaxed text-[#6C7D91]">Sign electronically or upload a signed copy. Talent Acquisition must verify all agreements before IT endorsement.</p>
+            <p className="mt-3 text-[11px] font-bold text-[#5B728A]">{verifiedAgreementsCount} of {agreements.length} verified</p>
           </div>
-
-          <div className="space-y-3">
-            {agreements.map(doc => {
+          <div className="divide-y divide-[#EBF0F5]">
+            {agreements.map((doc, index) => {
               const isVer = doc.status === "Verified";
-              const isPending = doc.status === "For Verification";
-              const isNeedsCorr = doc.status === "Needs Correction";
-
+              const needsCorrection = doc.status === "Needs Correction";
+              const isExpanded = expandedAgreementDoc === doc.id;
               return (
-                <div key={doc.id} className="p-5 bg-white border border-[#E6ECF2] rounded-2xl shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-[#042C51] text-sm">{doc.name}</span>
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                        isVer
-                          ? "bg-green-100 text-green-800"
-                          : isPending
-                            ? "bg-blue-100 text-blue-800"
-                            : isNeedsCorr
-                              ? "bg-red-100 text-red-800"
-                              : "bg-slate-100 text-slate-600"
-                      }`}>
-                        {doc.status}
+                <div key={doc.id} className="px-4 py-4 sm:px-6">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <button type="button" onClick={() => setExpandedAgreementDoc(isExpanded ? null : doc.id)}
+                      aria-expanded={isExpanded} aria-controls={`agreement-detail-${doc.id}`}
+                      className="flex min-w-0 flex-1 items-start gap-3 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#FF5C28]">
+                      <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-extrabold ${isVer ? "bg-[#E7F6ED] text-[#17804D]" : "bg-[#F0F3F7] text-[#546B82]"}`}>
+                        {isVer ? <Check size={17} /> : index + 1}
                       </span>
+                      <span className="min-w-0 space-y-1">
+                        <span className="block text-[13px] font-bold text-[#042C51]">{doc.name}</span>
+                        <span className={`block text-[11px] font-bold ${isVer ? "text-[#17804D]" : needsCorrection ? "text-[#B93B35]" : doc.status === "For Verification" ? "text-[#315F94]" : "text-[#78889A]"}`}>{doc.status}</span>
+                        {doc.fileName && <span className="block break-all text-[11px] text-[#71849A]">{doc.fileName}</span>}
+                      </span>
+                      <ChevronRight size={15} className={`mt-2 shrink-0 text-[#8699AC] transition-transform ${isExpanded ? "rotate-90" : ""}`} />
+                    </button>
+                    <div className="flex shrink-0 items-center gap-2 pl-11 sm:pl-0">
+                      {!isVer ? (
+                        <button type="button" onClick={() => setSigningDoc(doc)}
+                          className="inline-flex items-center gap-2 rounded-lg bg-[#FF5C28] px-3.5 py-2 text-[11px] font-bold text-white hover:bg-[#E24F20]">
+                          <PenTool size={14} /> {needsCorrection ? "Correct signing" : doc.status === "Not Submitted" ? "Sign agreement" : "Update signature"}
+                        </button>
+                      ) : <span className="inline-flex items-center gap-1.5 rounded-lg bg-[#E8F6ED] px-3 py-2 text-[11px] font-bold text-[#17794B]"><CheckCircle size={14} /> Verified</span>}
                     </div>
-
-                    <p className="text-slate-500 text-xs">
-                      {doc.description || "SiBS Official Employment Covenant"}
-                    </p>
-
-                    {doc.submittedDate && (
-                      <span className="text-[11px] text-slate-400 block">
-                        Submitted: {doc.submittedDate} via {doc.submissionMethod} ({doc.fileName})
-                      </span>
-                    )}
-
-                    {isNeedsCorr && doc.correctionRemarks && (
-                      <div className="mt-2 p-2.5 bg-red-50 border border-red-200 rounded-lg text-red-950 text-xs">
-                        <strong>Correction Required:</strong> {doc.correctionRemarks}
-                      </div>
-                    )}
                   </div>
-
-                  <div className="flex items-center gap-2 shrink-0">
-                    {!isVer && (
-                      <button
-                        onClick={() => setSigningDoc(doc)}
-                        className="px-4 py-2 rounded-xl bg-[#FF5C28] hover:bg-[#e04f20] text-white font-bold text-xs shadow-xs cursor-pointer flex items-center gap-1.5"
-                      >
-                        <PenTool className="w-3.5 h-3.5" />
-                        <span>{isNeedsCorr ? "Re-Sign / Correct" : doc.status === "Not Submitted" ? "Sign Agreement" : "Update Signature"}</span>
-                      </button>
-                    )}
-
-                    {isVer && (
-                      <div className="flex items-center gap-1.5 text-green-700 font-bold bg-green-50 px-3 py-1.5 rounded-xl border border-green-200">
-                        <CheckCircle className="w-4 h-4 text-green-600" />
-                        <span>Verified by TA</span>
-                      </div>
-                    )}
-                  </div>
+                  {isExpanded && (
+                    <div id={`agreement-detail-${doc.id}`} className="ml-11 mt-3 space-y-2 rounded-xl bg-[#F7F9FC] px-4 py-3 text-[12px] leading-relaxed text-[#63778D]">
+                      <p>{doc.description || "SiBS employment agreement"}</p>
+                      {doc.submissionMethod && <p>Submission method: {doc.submissionMethod}</p>}
+                      {doc.submittedDate && <p>Submitted: {doc.submittedDate}</p>}
+                      {isVer && doc.verifiedBy && <p className="font-semibold text-[#17794B]">Verified by {doc.verifiedBy}{doc.verifiedDate ? ` on ${doc.verifiedDate}` : ""}</p>}
+                      {needsCorrection && doc.correctionRemarks && <p className="rounded-lg bg-[#FFF0EF] px-3 py-2 font-semibold text-[#B83D36]">Correction required: {doc.correctionRemarks}</p>}
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -474,14 +300,17 @@ export default function NHOApplicantPortal({ subTab = "overview", onSubTabChange
             </div>
             <div className="text-right">
               <span className="text-[10px] text-slate-400 font-bold block uppercase">Deadline</span>
-              <span className="font-bold text-[#042C51] text-xs">{activeApplicant.nonMajorDeadlineDate || "Not Started"}</span>
+              <span className={`font-bold text-xs ${isNonMajorOverdue ? "text-red-700" : "text-[#042C51]"}`}>
+                {activeApplicant.nonMajorDeadlineDate || "Not Started"}{isNonMajorOverdue ? " · Overdue" : ""}
+              </span>
             </div>
           </div>
 
           <div className="bg-white rounded-2xl border border-[#E6ECF2] shadow-xs divide-y divide-[#E6ECF2]">
-            {nonMajorDocs.map(doc => {
+            {[...nonMajorDocs].sort((a, b) => Number(a.status === "Verified") - Number(b.status === "Verified")).map(doc => {
               const isVer = doc.status === "Verified";
               const isPending = doc.status === "For Verification";
+              const deadlineLabel = !isVer && ["Not Submitted", "Needs Correction", "Draft"].includes(doc.status) && isNonMajorOverdue ? "Overdue" : doc.deadlineStatus;
 
               return (
                 <div key={doc.id} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -491,14 +320,17 @@ export default function NHOApplicantPortal({ subTab = "overview", onSubTabChange
                       <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
                         isVer
                           ? "bg-green-100 text-green-800"
-                          : doc.deadlineStatus === "Overdue"
+                          : deadlineLabel === "Overdue"
                             ? "bg-red-100 text-red-800"
                             : "bg-slate-100 text-slate-600"
                       }`}>
-                        {doc.status} ({doc.deadlineStatus})
+                        {doc.status} ({deadlineLabel})
                       </span>
                     </div>
                     <p className="text-slate-500 text-[11px]">{doc.description}</p>
+                    {doc.status === "Needs Correction" && doc.correctionRemarks && (
+                      <p className="rounded-lg bg-red-50 px-3 py-2 text-[11px] font-semibold text-red-700">Correction needed: {doc.correctionRemarks}</p>
+                    )}
                     {doc.fileName && (
                       <span className="text-[10px] text-slate-400 block font-mono">
                         Uploaded: {doc.fileName}
@@ -510,9 +342,10 @@ export default function NHOApplicantPortal({ subTab = "overview", onSubTabChange
                     {!isVer && (
                       <label className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs cursor-pointer flex items-center gap-1.5 transition-colors">
                         <Upload className="w-3.5 h-3.5 text-slate-500" />
-                        <span>Upload File</span>
+                        <span>{doc.status === "Needs Correction" ? "Resubmit file" : isPending ? "Replace file" : "Upload file"}</span>
                         <input
                           type="file"
+                          accept=".pdf,.jpg,.jpeg,.png"
                           onChange={e => handleUploadFile(doc, e)}
                           className="hidden"
                         />

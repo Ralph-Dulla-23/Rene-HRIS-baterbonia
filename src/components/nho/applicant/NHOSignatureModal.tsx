@@ -1,15 +1,7 @@
 import React, { useRef, useState, useEffect } from "react";
 import { useNHO } from "../NHOContext";
 import { NHODocumentItem } from "../nhoTypes";
-import { 
-  X, 
-  RotateCcw, 
-  Check, 
-  FileText, 
-  Upload, 
-  ShieldCheck, 
-  AlertCircle 
-} from "lucide-react";
+import { X, RotateCcw, Check, Upload } from "lucide-react";
 
 interface NHOSignatureModalProps {
   isOpen: boolean;
@@ -182,11 +174,13 @@ export default function NHOSignatureModal({
 
         {/* Body */}
         <div className="p-6 overflow-y-auto space-y-4 flex-1 text-xs">
-          {/* Agreement summary context */}
-          <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1">
-            <span className="font-bold text-[#042C51] block text-xs">Contract Terms Acknowledgment</span>
-            <p className="text-[11px] text-slate-600 leading-relaxed">
-              By executing this agreement, you affirm that you have reviewed the provisions of <strong>{document.name}</strong>, understand your employee obligations, and agree to uphold all stipulated operational and confidentiality policies.
+          {/* The demo has document metadata but no approved full agreement PDF. */}
+          <div className="space-y-2 rounded-xl border border-slate-200 bg-slate-50 p-4">
+            <span className="block text-xs font-bold text-[#042C51]">Agreement being signed</span>
+            <p className="text-xs font-bold text-[#042C51]">{document.name}</p>
+            <p className="text-[11px] leading-relaxed text-slate-600">{document.description || "Essential SiBS employment agreement"}</p>
+            <p className="rounded-lg bg-amber-50 px-3 py-2 text-[11px] leading-relaxed text-amber-900">
+              Prototype notice: The approved full agreement is not attached in this demo. Before live use, candidates must be able to read the complete agreement before signing.
             </p>
           </div>
 

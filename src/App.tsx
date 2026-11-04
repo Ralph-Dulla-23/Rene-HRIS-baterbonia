@@ -59,6 +59,7 @@ import EmailLogs from "./components/EmailLogs";
 import RecruitmentFlowchart from "./components/RecruitmentFlowchart";
 import CandidateExperiencePage from "./components/CandidateExperiencePage";
 import PublicCandidateExperienceSurveyPage from "./components/PublicCandidateExperienceSurveyPage";
+import PublicApplicantPortalPage from "./components/PublicApplicantPortalPage";
 import FrontendDesignPdfView from "./components/FrontendDesignPdfView";
 import WorkflowProcessScreenViewer from "./components/WorkflowProcessScreenViewer";
 import FigmaExportModal from "./components/FigmaExportModal";
@@ -492,6 +493,10 @@ function AuthenticatedWorkspace() {
           <div className="mt-20 px-6 flex-1 flex flex-col w-full">
             <PublicTalentPoolApplicationPage onNavigateToTalentPool={() => setCurrentModule("Talent Pool")} />
           </div>
+        ) : currentModule === "Public Applicant Portal" || currentModule === "NHO Applicant Portal" ? (
+          <div className="mt-16 flex-1 flex flex-col w-full min-w-0">
+            <PublicApplicantPortalPage onBackToWorkspace={() => setCurrentModule("New Hire Orientation")} />
+          </div>
         ) : currentModule === "Offers" ? (
           <div className="mt-20 px-6 flex-1 flex flex-col w-full">
             <Offers userEmail={user.email} onSwitchModule={setCurrentModule} />
@@ -746,8 +751,10 @@ function AppEntry() {
   const params = typeof window==='undefined' ? new URLSearchParams() : new URLSearchParams(window.location.search);
   const isSurvey=Boolean(params.get('surveyToken')||params.get('candidateSurvey'));
   const isPublicApplication=params.get('module')==='Public Application Form';
+  const isApplicantPortal=params.get('module')==='Public Applicant Portal'||Boolean(params.get('nhoToken'))||Boolean(params.get('portalToken'));
   if (!user && isSurvey) return <PublicCandidateExperienceSurveyPage onNavigateToCandidateExperience={()=>{window.location.href=window.location.pathname;}} />;
   if (!user && isPublicApplication) return <PublicTalentPoolApplicationPage onNavigateToTalentPool={()=>{window.location.href=window.location.pathname;}} />;
-  if (!user) return <SibsLoginLandingPage onNavigateToPublicApp={()=>{window.location.href='?module=Public%20Application%20Form';}} onNavigateToSurvey={()=>{window.location.href='?candidateSurvey=demo';}} />;
+  if (!user && isApplicantPortal) return <PublicApplicantPortalPage onBackToLogin={()=>{window.location.href=window.location.pathname;}} />;
+  if (!user) return <SibsLoginLandingPage onNavigateToPublicApp={()=>{window.location.href='?module=Public%20Application%20Form';}} onNavigateToSurvey={()=>{window.location.href='?candidateSurvey=demo';}} onNavigateToApplicantPortal={()=>{window.location.href='?module=Public%20Applicant%20Portal';}} />;
   return <AuthenticatedWorkspace key={user.sibsId} />;
 }

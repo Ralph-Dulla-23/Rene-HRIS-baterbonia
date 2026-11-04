@@ -6,10 +6,11 @@ import { useDemoAuth } from '../auth/DemoAuthContext';
 interface Props {
   onNavigateToPublicApp?: () => void;
   onNavigateToSurvey?: () => void;
+  onNavigateToApplicantPortal?: () => void;
 }
 
 /** Sign-in-only prototype with collapsible right-side demo credentials drawer. */
-export default function SibsLoginLandingPage({ onNavigateToPublicApp, onNavigateToSurvey }: Props) {
+export default function SibsLoginLandingPage({ onNavigateToPublicApp, onNavigateToSurvey, onNavigateToApplicantPortal }: Props) {
   const { signIn } = useDemoAuth();
   const [id, setId] = useState('');
   const [password, setPassword] = useState('');
@@ -179,8 +180,8 @@ export default function SibsLoginLandingPage({ onNavigateToPublicApp, onNavigate
 
         {/* Footer Links & Prototype Notice */}
         <footer className="mt-4 border-t border-white/10 pt-3 text-center">
-          {(onNavigateToPublicApp || onNavigateToSurvey) && (
-            <div className="flex justify-center gap-4 text-[11px] text-slate-300">
+          {(onNavigateToPublicApp || onNavigateToSurvey || onNavigateToApplicantPortal) && (
+            <div className="flex flex-wrap justify-center gap-4 text-[11px] text-slate-300">
               {onNavigateToPublicApp && (
                 <button type="button" className="underline hover:text-white transition-colors" onClick={onNavigateToPublicApp}>
                   Public application
@@ -189,6 +190,11 @@ export default function SibsLoginLandingPage({ onNavigateToPublicApp, onNavigate
               {onNavigateToSurvey && (
                 <button type="button" className="underline hover:text-white transition-colors" onClick={onNavigateToSurvey}>
                   Candidate survey
+                </button>
+              )}
+              {onNavigateToApplicantPortal && (
+                <button type="button" className="underline hover:text-white transition-colors" onClick={onNavigateToApplicantPortal}>
+                  Applicant portal
                 </button>
               )}
             </div>

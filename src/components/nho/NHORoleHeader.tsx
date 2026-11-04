@@ -8,7 +8,8 @@ import {
   CheckCircle, 
   AlertTriangle,
   ChevronDown,
-  Info
+  Info,
+  ExternalLink
 } from "lucide-react";
 
 interface NHORoleHeaderProps {
@@ -16,13 +17,21 @@ interface NHORoleHeaderProps {
   subTab?: string;
   onSubTabChange?: (tab: string) => void;
   sectionHeader: { badge: string; title: string; description: string };
+  onOpenStandalonePortal?: () => void;
 }
 
-export default function NHORoleHeader({ onOpenWalkthrough, subTab, onSubTabChange, sectionHeader }: NHORoleHeaderProps) {
+export default function NHORoleHeader({ 
+  onOpenWalkthrough, 
+  subTab, 
+  onSubTabChange, 
+  sectionHeader,
+  onOpenStandalonePortal 
+}: NHORoleHeaderProps) {
   const {user} = useDemoAuth();
   const isAdminPreview = user?.role === 'Super Admin';
   const { 
     role, 
+    setRole,
     selectedApplicantId, 
     setSelectedApplicantId, 
     applicants, 
@@ -159,15 +168,59 @@ export default function NHORoleHeader({ onOpenWalkthrough, subTab, onSubTabChang
             )}
           </div>
         </div>
+
+        {/* Workflow Role Switcher Bar with direct Applicant Portal toggle */}
+        <div className="flex flex-wrap items-center justify-between gap-3 px-4 sm:px-5 py-2.5 bg-[#F7F9FC] border-t border-[#E6ECF2]">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mr-1">View As Portal:</span>
+            {rolesList.filter(r => !r.hidden).map(r => (
+              <button
+                key={r.id}
+                type="button"
+                onClick={() => setRole(r.id)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                  role === r.id
+                    ? "bg-[#042C51] text-white shadow-xs"
+                    : "bg-white text-slate-600 hover:text-[#042C51] border border-[#E6ECF2] hover:bg-slate-50"
+                }`}
+              >
+                <span>{r.id === "Applicant" ? "Applicant / Employee Portal" : r.label}</span>
+                {r.id === "Applicant" && (
+                  <span className={`text-[9px] px-1.5 py-0.5 rounded font-extrabold uppercase ${
+                    role === "Applicant" ? "bg-[#FF5C28] text-white" : "bg-orange-100 text-[#FF5C28]"
+                  }`}>
+                    Uploads &amp; Quiz
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+          <div className="flex items-center gap-2">
+            {onOpenStandalonePortal && (
+              <button
+                type="button"
+                onClick={onOpenStandalonePortal}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-[#FF5C28] hover:bg-[#e04f20] text-white shadow-xs transition-colors cursor-pointer"
+                title="Open clean standalone public portal without staff sidebar and header"
+              >
+                <span>Standalone Employee View</span>
+                <ExternalLink size={12} />
+              </button>
+            )}
+            <div className="text-[11px] text-slate-500 font-medium hidden lg:block">
+              {role === "Applicant" 
+                ? "Testing temporary access, file submissions, agreements & orientation quiz" 
+                : "Operating recruitment, verification and provisioning workflows"}
+            </div>
+          </div>
+        </div>
+
         {subTab && onSubTabChange && (
           <nav aria-label="New Hire Orientation sections" className="nho-tabs flex min-w-0 gap-3 overflow-x-auto border-t border-[#E6ECF2] px-4 sm:px-5">
             {(role === "TA"
           ? [
-              { id: "dashboard", label: "NHO Dashboard" },
-              { id: "attendance", label: "NHO Attendance" },
-              { id: "applicant-details", label: "Applicant Details" },
-              { id: "doc-verification", label: "Document Verification" },
-              { id: "it-endorsements", label: "IT Endorsements" },
+              { id: "dashboard", label: "NHO Overview" },
+              { id: "attendance", label: "NHO Attendance (Today)" },
               { id: "handoffs", label: "NHO Handoffs" }
             ]
           : role === "Applicant"

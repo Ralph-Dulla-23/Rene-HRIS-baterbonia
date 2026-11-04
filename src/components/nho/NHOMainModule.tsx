@@ -9,7 +9,6 @@ import NHOAttendanceModal from "./ta/NHOAttendanceModal";
 import NHOApplicantDetails from "./ta/NHOApplicantDetails";
 import NHODocumentVerificationModal from "./ta/NHODocumentVerificationModal";
 import NHODocumentVerificationQueue from "./ta/NHODocumentVerificationQueue";
-import NHOITEndorsementView from "./ta/NHOITEndorsementView";
 import NHOHandoffsView from "./ta/NHOHandoffsView";
 import NHOApplicantPortal from "./applicant/NHOApplicantPortal";
 import NHOITDashboard from "./it/NHOITDashboard";
@@ -18,6 +17,7 @@ import NHOQDSDashboard from "./qds/NHOQDSDashboard";
 import NHOWFMDashboard from "./wfm/NHOWFMDashboard";
 import NHOHRDashboard from "./hr/NHOHRDashboard";
 import { NHOApplicant, NHODocumentItem } from "./nhoTypes";
+import NHOITEndorsementModal from "./ta/NHOITEndorsementModal";
 
 
 function NHOInnerModule({ onSwitchModule }: { onSwitchModule?: (module: string, journeyId?: string) => void }) {
@@ -36,6 +36,9 @@ function NHOInnerModule({ onSwitchModule }: { onSwitchModule?: (module: string, 
 
   // Modal states
   const [isWalkthroughOpen, setIsWalkthroughOpen] = useState(false);
+  const [isApplicantProfileOpen, setIsApplicantProfileOpen] = useState(false);
+  const [applicantProfileTab, setApplicantProfileTab] = useState("overview");
+  const [isEndorsementModalOpen, setIsEndorsementModalOpen] = useState(false);
   const [isAttendanceModalOpen, setIsAttendanceModalOpen] = useState(false);
   const [targetAttendanceApplicantId, setTargetAttendanceApplicantId] = useState<string>(activeApplicant.id);
 
@@ -74,9 +77,11 @@ function NHOInnerModule({ onSwitchModule }: { onSwitchModule?: (module: string, 
     setIsAttendanceModalOpen(true);
   };
 
-  const handleOpenApplicantDetails = (app: NHOApplicant, defaultTab?: string) => {
+  const handleOpenApplicantDetails = (app: NHOApplicant, defaultTab = "overview") => {
     setSelectedApplicantId(app.id);
-    setTaSubTab("applicant-details");
+    setApplicantProfileTab(defaultTab);
+    setIsEndorsementModalOpen(false);
+    setIsApplicantProfileOpen(true);
   };
 
   const handleOpenVerification = (doc: any) => {
@@ -86,13 +91,18 @@ function NHOInnerModule({ onSwitchModule }: { onSwitchModule?: (module: string, 
 
   const handleOpenEndorsement = (app: NHOApplicant) => {
     setSelectedApplicantId(app.id);
-    setTaSubTab("it-endorsements");
+    setIsApplicantProfileOpen(false);
+    setIsEndorsementModalOpen(true);
   };
 
   const handleWalkthroughNavigation = (targetRole: string, targetSubTab: string) => {
     if (!isAdminPreview && targetRole !== role) return;
     setRole(targetRole as any);
-    if (targetRole === "TA") setTaSubTab(targetSubTab);
+    if (targetRole === "TA") {
+      if (targetSubTab === "applicant-details") handleOpenApplicantDetails(activeApplicant);
+      else if (targetSubTab === "it-endorsements") handleOpenEndorsement(activeApplicant);
+      else setTaSubTab(targetSubTab);
+    }
     else if (targetRole === "Applicant") setApplicantSubTab(targetSubTab);
     else if (targetRole === "IT") setItSubTab(targetSubTab);
     else if (targetRole === "Trainer") setTrainerSubTab(targetSubTab);
@@ -104,8 +114,8 @@ function NHOInnerModule({ onSwitchModule }: { onSwitchModule?: (module: string, 
   const currentSectionHeader = useMemo(() => {
     if (role === "TA") {
       const sections: Record<string, { badge: string; title: string; description: string }> = {
-        dashboard: { badge: "Recruitment Operations", title: "New Hire Orientation", description: "Manage scheduled orientations, attendance, document clearance, IT endorsement, and handoffs." },
-        attendance: { badge: "Recruitment Operations", title: "NHO Attendance", description: "Record show / no-show attendance and manage attendance corrections and rescheduling." },
+        dashboard: { badge: "Recruitment Operations", title: "NHO Overview", description: "Manage New Hire Orientation schedules, candidate progress, attendance, document clearance, and handoffs." },
+        attendance: { badge: "Recruitment Operations", title: "NHO Attendance (Today)", description: "Record show / no-show attendance for candidates scheduled on the selected NHO date, and manage corrections or rescheduling." },
         "applicant-details": { badge: "Recruitment Operations", title: "Applicant NHO Details", description: "Review the selected applicant's NHO progress, documents, agreements, and activity history." },
         "doc-verification": { badge: "Recruitment Operations", title: "Document Verification", description: "Validate uploaded majors, agreements, and supporting onboarding requirements." },
         "it-endorsements": { badge: "Recruitment Operations", title: "IT Endorsements", description: "Review IT endorsement readiness and submit qualified applicants for account provisioning." },
@@ -156,6 +166,7 @@ function NHOInnerModule({ onSwitchModule }: { onSwitchModule?: (module: string, 
         subTab={getCurrentSubTab()}
         onSubTabChange={handleSubTabChange}
         sectionHeader={currentSectionHeader}
+        onOpenStandalonePortal={() => onSwitchModule?.('Employee Public Portal')}
       />
 
       {/* Main Container Content */}
@@ -167,10 +178,6 @@ function NHOInnerModule({ onSwitchModule }: { onSwitchModule?: (module: string, 
               <NHOTADashboard
                 onOpenAttendanceModal={handleOpenAttendanceModal}
                 onOpenDetails={handleOpenApplicantDetails}
-                onOpenVerification={app => {
-                  const doc = app.documents[0];
-                  if (doc) handleOpenVerification(doc);
-                }}
                 onOpenEndorsement={handleOpenEndorsement}
               />
             )}
@@ -182,27 +189,8 @@ function NHOInnerModule({ onSwitchModule }: { onSwitchModule?: (module: string, 
               />
             )}
 
-            {taSubTab === "applicant-details" && (
-              <NHOApplicantDetails
-                applicant={activeApplicant}
-                onBack={() => setTaSubTab("dashboard")}
-                onOpenAttendance={() => handleOpenAttendanceModal(activeApplicant)}
-                onOpenEndorsement={() => setTaSubTab("it-endorsements")}
-                onOpenDocVerification={handleOpenVerification}
-              />
-            )}
-
             {taSubTab === "doc-verification" && (
               <NHODocumentVerificationQueue />
-            )}
-
-            {taSubTab === "it-endorsements" && (
-              <NHOITEndorsementView
-                onSelectApplicant={app => setSelectedApplicantId(app.id)}
-                onBack={() => setTaSubTab("dashboard")}
-                onOpenDetails={handleOpenApplicantDetails}
-                onOpenAttendance={handleOpenAttendanceModal}
-              />
             )}
 
             {taSubTab === "handoffs" && (
@@ -256,6 +244,29 @@ function NHOInnerModule({ onSwitchModule }: { onSwitchModule?: (module: string, 
           />
         )}
       </main>
+
+      {/* NHO candidate details open over the records table; no standalone Applicant Details tab. */}
+      {role === "TA" && isApplicantProfileOpen && (
+        <NHOApplicantDetails
+          key={`${activeApplicant.id}:${applicantProfileTab}`}
+          applicant={activeApplicant}
+          initialTab={applicantProfileTab}
+          onClose={() => setIsApplicantProfileOpen(false)}
+          onOpenAttendance={() => handleOpenAttendanceModal(activeApplicant)}
+          onOpenEndorsement={() => handleOpenEndorsement(activeApplicant)}
+          onOpenDocVerification={handleOpenVerification}
+        />
+      )}
+
+      {/* IT endorsement remains accessible from the NHO table and profile, not as a top-level tab. */}
+      {role === "TA" && isEndorsementModalOpen && (
+        <NHOITEndorsementModal
+          applicant={activeApplicant}
+          onClose={() => setIsEndorsementModalOpen(false)}
+          onOpenDetails={handleOpenApplicantDetails}
+          onOpenAttendance={handleOpenAttendanceModal}
+        />
+      )}
 
       {/* Attendance Modal */}
       {isAttendanceModalOpen && (

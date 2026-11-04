@@ -1421,15 +1421,15 @@ export default function Onboarding({
       {/* SECTION A: EXECUTIVE OVERVIEW & METRICS */}
       {/* ======================================================== */}
       <section id="section-overview" className="space-y-4 select-none">
-        {/* Row 1: Candidate Onboarding & True Hire Conversion (6 Metrics) */}
+        {/* Row 1: Candidate Onboarding & True Hire Conversion (5 Metrics) */}
         <div>
           <div className="mb-2 flex items-center justify-between">
             <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
               Candidate Onboarding &amp; True Hire Conversion
             </span>
-            <span className="text-[10px] font-bold text-slate-400">6 Metrics</span>
+            <span className="text-[10px] font-bold text-slate-400">5 Metrics</span>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3.5 min-w-0">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3.5 min-w-0">
             {/* 1. Total Records */}
             <div className="bg-white p-3.5 rounded-xl border border-[#E6ECF2] shadow-sm flex flex-col justify-between relative overflow-hidden h-[115px] hover:-translate-y-0.5 hover:shadow-md transition-all">
               <div className="flex items-center justify-between">
@@ -1472,21 +1472,7 @@ export default function Onboarding({
               </div>
             </div>
 
-            {/* 4. No Show */}
-            <div className="bg-white p-3.5 rounded-xl border border-[#E6ECF2] shadow-sm flex flex-col justify-between relative overflow-hidden h-[115px] hover:-translate-y-0.5 hover:shadow-md transition-all">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">No Show</span>
-                <div className="w-7 h-7 rounded-full bg-rose-50 flex items-center justify-center text-[#E74C3C]">
-                  <AlertTriangle className="w-3.5 h-3.5" />
-                </div>
-              </div>
-              <div className="mt-1.5">
-                <div className="text-xl font-extrabold text-[#E74C3C] tracking-tight">{metrics.noShow}</div>
-                <div className="text-[9px] text-slate-400 font-bold mt-1 uppercase tracking-wide">Did not report</div>
-              </div>
-            </div>
-
-            {/* 5. Withdrawal */}
+            {/* 4. Withdrawal */}
             <div className="bg-white p-3.5 rounded-xl border border-[#E6ECF2] shadow-sm flex flex-col justify-between relative overflow-hidden h-[115px] hover:-translate-y-0.5 hover:shadow-md transition-all">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Withdrawal</span>
@@ -1500,7 +1486,7 @@ export default function Onboarding({
               </div>
             </div>
 
-            {/* 6. Show Rate */}
+            {/* 5. Show Rate */}
             <div className="bg-white p-3.5 rounded-xl border border-[#E6ECF2] shadow-sm flex flex-col justify-between relative overflow-hidden h-[115px] hover:-translate-y-0.5 hover:shadow-md transition-all">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Show Rate</span>

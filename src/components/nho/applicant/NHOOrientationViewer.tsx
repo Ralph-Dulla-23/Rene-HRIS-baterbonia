@@ -1,18 +1,7 @@
 import React, { useState } from "react";
 import { useNHO } from "../NHOContext";
 import { NHO_QUIZ_QUESTIONS } from "../nhoInitialData";
-import { 
-  ChevronLeft, 
-  ChevronRight, 
-  CheckCircle, 
-  AlertCircle, 
-  Sparkles, 
-  HelpCircle, 
-  BookOpen, 
-  ShieldCheck, 
-  RotateCcw,
-  Check
-} from "lucide-react";
+import { ChevronLeft, ChevronRight, CheckCircle, AlertCircle, Sparkles, BookOpen, Check } from "lucide-react";
 
 export default function NHOOrientationViewer() {
   const { 
@@ -158,7 +147,7 @@ export default function NHOOrientationViewer() {
 
       {/* Slides Area */}
       {isViewingSlides ? (
-        <div className="p-8 md:p-12 min-h-[380px] flex flex-col justify-between space-y-6">
+        <div className="flex min-h-[340px] flex-col justify-between space-y-8 p-6 sm:p-8 lg:p-10">
           <div className="space-y-4 max-w-3xl">
             <span className="text-xs font-bold text-[#FF5C28] uppercase tracking-wider block">
               {slides[currentSlide - 1].kicker}
@@ -172,7 +161,7 @@ export default function NHOOrientationViewer() {
           </div>
 
           {/* Navigation Controls */}
-          <div className="flex items-center justify-between pt-6 border-t border-[#E6ECF2]">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[#E6ECF2] pt-5">
             <button
               onClick={handlePrevSlide}
               disabled={currentSlide === 1}
@@ -182,7 +171,7 @@ export default function NHOOrientationViewer() {
               <span>Previous Slide</span>
             </button>
 
-            <div className="flex items-center gap-1">
+            <div className="order-3 flex w-full items-center justify-center gap-1.5 sm:order-none sm:w-auto" aria-label="Orientation slide navigation">
               {slides.map(s => (
                 <button
                   key={s.num}
@@ -195,6 +184,8 @@ export default function NHOOrientationViewer() {
                         : "bg-slate-200"
                   }`}
                   title={`Go to slide ${s.num}`}
+                  aria-label={`Go to slide ${s.num}`}
+                  aria-current={s.num === currentSlide ? "step" : undefined}
                 />
               ))}
             </div>
