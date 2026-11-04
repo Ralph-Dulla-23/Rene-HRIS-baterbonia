@@ -64,7 +64,7 @@ export default function NHOApplicantDetails({
   const { isEligible, checks } = checkITEndorsementEligibility(applicant);
 
   const quizInfo = (() => {
-    const total = applicant.orientationQuizTotal ?? 5;
+    const total = applicant.orientationQuizTotal ?? NHO_QUIZ_QUESTIONS.length;
     let score = applicant.orientationQuizScore;
     if (score === undefined) {
       if (applicant.orientationQuizAnswers && Object.keys(applicant.orientationQuizAnswers).length > 0) {
@@ -76,13 +76,13 @@ export default function NHOApplicantDetails({
         });
         score = calculated;
       } else if (applicant.orientationStatus === "Completed") {
-        score = 4;
+        score = NHO_QUIZ_QUESTIONS.length;
       } else {
         score = 0;
       }
     }
     const percentage = applicant.orientationQuizPercentage ?? Math.round((score / total) * 100);
-    const passed = applicant.orientationQuizPassed ?? (score >= 4 || percentage >= 80);
+    const passed = applicant.orientationQuizPassed ?? (score >= 5 || percentage >= 80);
     return { score, total, percentage, passed };
   })();
 
@@ -169,7 +169,7 @@ export default function NHOApplicantDetails({
             { 
               id: "orientation", 
               label: applicant.orientationStatus === "Completed"
-                ? `Orientation (Score: ${quizInfo.score}/${quizInfo.total} · ${quizInfo.percentage}%)`
+                ? `Orientation (${quizInfo.passed ? "Passed" : "FAILED"}: ${quizInfo.score}/${quizInfo.total} · ${quizInfo.percentage}%)`
                 : `Orientation (${applicant.orientationStatus})` 
             },
             { id: "agreements", label: `Essential Agreements (${applicant.documents.filter(d => d.isEssentialAgreement && d.status === "Verified").length}/3)` },
@@ -223,16 +223,18 @@ export default function NHOApplicantDetails({
                 </div>
 
                 {/* Card 3: Orientation & Quiz Score */}
-                <div className="p-4 rounded-xl bg-white border-2 border-emerald-300 shadow-xs relative overflow-hidden">
-                  <div className="absolute top-0 left-0 right-0 h-1 bg-[#FF5C28]" />
+                <div className={`p-4 rounded-xl bg-white border-2 shadow-xs relative overflow-hidden ${
+                  quizInfo.passed ? "border-emerald-300" : "border-red-300"
+                }`}>
+                  <div className={`absolute top-0 left-0 right-0 h-1 ${quizInfo.passed ? "bg-[#FF5C28]" : "bg-red-500"}`} />
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
-                      Orientation & Quiz
+                      Orientation &amp; Quiz
                     </span>
                     <span className={`text-[9.5px] font-extrabold px-1.5 py-0.5 rounded ${
-                      quizInfo.passed ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"
+                      quizInfo.passed ? "bg-emerald-100 text-emerald-800" : "bg-red-100 text-red-800 border border-red-200"
                     }`}>
-                      {quizInfo.passed ? "Passed (≥80%)" : "In Progress"}
+                      {quizInfo.passed ? "Passed (≥80%)" : "FAILED (<80%)"}
                     </span>
                   </div>
                   <div className="flex items-baseline gap-2 mt-1">
@@ -514,13 +516,19 @@ export default function NHOApplicantDetails({
                     </div>
                   </div>
 
-                  <div className="bg-white p-3.5 rounded-xl border border-emerald-200 shadow-xs">
+                  <div className={`p-3.5 rounded-xl border shadow-xs ${
+                    quizInfo.passed ? "bg-white border-emerald-200" : "bg-red-50 border-red-300"
+                  }`}>
                     <span className="text-slate-400 text-[10px] uppercase font-bold block">Quiz Performance</span>
-                    <span className="font-extrabold text-emerald-700 text-sm block mt-0.5">
-                      {quizInfo.score} / {quizInfo.total} Correct ({quizInfo.percentage}%)
+                    <span className={`font-extrabold text-sm block mt-0.5 ${
+                      quizInfo.passed ? "text-emerald-700" : "text-red-700"
+                    }`}>
+                      {quizInfo.score} / {quizInfo.total} Correct ({quizInfo.percentage}%) {quizInfo.passed ? "(Passed)" : "(FAILED)"}
                     </span>
-                    <span className="text-[10px] text-emerald-800 font-semibold mt-1 block">
-                      Satisfies IT Endorsement Criteria
+                    <span className={`text-[10px] font-semibold mt-1 block ${
+                      quizInfo.passed ? "text-emerald-800" : "text-red-700"
+                    }`}>
+                      {quizInfo.passed ? "Satisfies IT Endorsement Criteria" : "Does Not Meet 80% Passing Threshold"}
                     </span>
                   </div>
 

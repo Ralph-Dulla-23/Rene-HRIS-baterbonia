@@ -309,11 +309,24 @@ export default function NHOTADashboard({
                           {app.orientationStatus}
                         </span>
                         {app.orientationStatus === "Completed" && (
-                          <span className="text-[9.5px] font-bold text-slate-700 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">
-                            Score: {app.orientationQuizScore ?? 5}/{app.orientationQuizTotal ?? 5} ({app.orientationQuizPercentage ?? 100}%)
+                          <span className={`text-[9.5px] font-bold px-1.5 py-0.5 rounded border ${
+                            app.orientationQuizPassed !== false
+                              ? "text-emerald-800 bg-emerald-50 border-emerald-200"
+                              : "text-red-800 bg-red-100 border-red-300 font-extrabold"
+                          }`}>
+                            Score: {app.orientationQuizScore ?? 6}/{app.orientationQuizTotal ?? 6} ({app.orientationQuizPercentage ?? 100}%) {app.orientationQuizPassed !== false ? "· Passed" : "· FAILED"}
                           </span>
                         )}
-                        {app.orientationStatus === "In Progress" && (
+                        {app.orientationStatus === "In Progress" && app.orientationQuizScore !== undefined && (
+                          <span className={`text-[9.5px] font-bold px-1.5 py-0.5 rounded border ${
+                            app.orientationQuizPassed
+                              ? "text-emerald-800 bg-emerald-50 border-emerald-200"
+                              : "text-red-800 bg-red-100 border-red-300 font-extrabold"
+                          }`}>
+                            Score: {app.orientationQuizScore}/{app.orientationQuizTotal ?? 6} ({app.orientationQuizPassed ? "Passed" : "FAILED"})
+                          </span>
+                        )}
+                        {app.orientationStatus === "In Progress" && app.orientationQuizScore === undefined && (
                           <span className="text-[9.5px] text-slate-500 font-medium">
                             Slide {app.orientationCurrentSlide || 1}/7
                           </span>

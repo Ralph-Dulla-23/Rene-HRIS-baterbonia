@@ -2325,6 +2325,11 @@ export const NHOProvider: React.FC<{ children: React.ReactNode; initialRole?: NH
     }
 
     const scoreResult = calculateQuizScore(target.orientationQuizAnswers);
+    if (!scoreResult.passed) {
+      const errorMsg = `Cannot complete orientation: Passing score of at least 80% (5 of 6) is strictly required. Current score: ${scoreResult.score}/${scoreResult.total} (${scoreResult.percentage}%). Please review and correct your checkpoint answers.`;
+      showToast(errorMsg, "error");
+      return { success: false, error: errorMsg };
+    }
 
     setApplicants(prev => prev.map(app => {
       if (app.id !== applicantId) return app;
@@ -2716,7 +2721,7 @@ export const NHOProvider: React.FC<{ children: React.ReactNode; initialRole?: NH
           label: quizScoreDisplay
             ? `6. Orientation Completed & Acknowledged (${quizScoreDisplay})`
             : "6. Orientation Completed & Acknowledged", 
-          passed: app.orientationStatus === "Completed" && app.orientationAcknowledged 
+          passed: app.orientationStatus === "Completed" && app.orientationAcknowledged && app.orientationQuizPassed !== false 
         },
         { label: "7. Company Policy Acceptance Verified", passed: getDocStatus("AGR-POL-01") },
         { label: "8. Training Bond Verified", passed: getDocStatus("AGR-BOND-02") },

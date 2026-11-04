@@ -57,6 +57,7 @@ export default function NHOApplicantPortal({ subTab = "overview", onSubTabChange
     setNewPasswordInput("");
   };
 
+  const isOrientationPassed = activeApplicant.orientationStatus === "Completed" && activeApplicant.orientationQuizPassed !== false;
   const majorDocs = activeApplicant.documents.filter(d => d.isMajor);
   const agreements = activeApplicant.documents.filter(d => d.isEssentialAgreement);
   const nonMajorDocs = activeApplicant.documents.filter(d => !d.isMajor && !d.isEssentialAgreement);
@@ -71,10 +72,12 @@ export default function NHOApplicantPortal({ subTab = "overview", onSubTabChange
     { 
       id: "orientation", 
       label: "Orientation & knowledge check quiz", 
-      description: activeApplicant.orientationStatus === "Completed" 
-        ? `Completed & Acknowledged · Score: ${activeApplicant.orientationQuizScore ?? 5}/${activeApplicant.orientationQuizTotal ?? 5}` 
-        : activeApplicant.orientationStatus, 
-      complete: activeApplicant.orientationStatus === "Completed" 
+      description: isOrientationPassed 
+        ? `Passed & Acknowledged · Score: ${activeApplicant.orientationQuizScore ?? 6}/${activeApplicant.orientationQuizTotal ?? 6}` 
+        : activeApplicant.orientationQuizPassed === false
+          ? `Score: ${activeApplicant.orientationQuizScore ?? 0}/${activeApplicant.orientationQuizTotal ?? 6} · FAILED (<80%)`
+          : activeApplicant.orientationStatus, 
+      complete: isOrientationPassed 
     },
     { 
       id: "majors", 
@@ -96,7 +99,7 @@ export default function NHOApplicantPortal({ subTab = "overview", onSubTabChange
     },
   ];
   const needsCandidateUpload = (docs: NHODocumentItem[]) => docs.some(doc => ["Not Submitted", "Needs Correction", "Draft"].includes(doc.status));
-  const actionableOverviewId = activeApplicant.orientationStatus !== "Completed" ? "orientation" :
+  const actionableOverviewId = !isOrientationPassed ? "orientation" :
     needsCandidateUpload(majorDocs) ? "majors" :
     needsCandidateUpload(agreements) ? "agreements" :
     needsCandidateUpload(nonMajorDocs) ? "requirements" : undefined;
@@ -214,8 +217,39 @@ export default function NHOApplicantPortal({ subTab = "overview", onSubTabChange
         </div>
       )}
 
+            {/* Locked screen if attempting to access requirements without passing orientation */}
+      {["majors", "agreements", "requirements"].includes(currentTab) && !isOrientationPassed && (
+        <div className="overflow-hidden rounded-2xl border-2 border-red-300 bg-red-50/70 p-6 sm:p-8 shadow-xs text-center space-y-4">
+          <div className="w-12 h-12 rounded-2xl bg-red-100 text-red-600 border border-red-300 flex items-center justify-center mx-auto shadow-xs">
+            <Lock className="w-6 h-6" />
+          </div>
+          <div className="space-y-1.5 max-w-md mx-auto">
+            <h3 className="text-base font-black text-red-950">
+              Passing of Requirements is Locked
+            </h3>
+            <p className="text-xs text-red-800 leading-relaxed font-medium">
+              You must complete all orientation slides and achieve a passing score of at least <strong>80% (5 of 6 correct)</strong> on the checkpoint quizzes before accessing or submitting requirements.
+            </p>
+            {activeApplicant.orientationQuizScore !== undefined && activeApplicant.orientationQuizPassed === false && (
+              <p className="text-[11px] font-bold text-red-700 bg-red-100/90 px-3 py-1 rounded-lg inline-block border border-red-200">
+                Current Score: {activeApplicant.orientationQuizScore}/{activeApplicant.orientationQuizTotal ?? 6} ({activeApplicant.orientationQuizPercentage ?? 0}%) · FAILED
+              </p>
+            )}
+          </div>
+          <div className="pt-2">
+            <button
+              type="button"
+              onClick={() => setTab("orientation")}
+              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold shadow-xs cursor-pointer transition-colors"
+            >
+              <span>Complete &amp; Pass Orientation Checkpoints →</span>
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Major requirements: compact rows with details on demand. */}
-      {currentTab === "majors" && activeApplicant.orientationStatus === "Completed" && (
+      {currentTab === "majors" && isOrientationPassed && (
         <div className="overflow-hidden rounded-2xl border border-[#E6ECF2] bg-white shadow-xs relative">
           <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-[#042C51] via-[#0B365F] to-[#FF5C28]" />
           <div className="border-b border-[#EBF0F5] px-5 py-5 sm:px-6 pt-6">
@@ -288,7 +322,7 @@ export default function NHOApplicantPortal({ subTab = "overview", onSubTabChange
       )}
 
       {/* Agreement signing retains the original electronic signature / upload modal. */}
-      {currentTab === "agreements" && activeApplicant.orientationStatus === "Completed" && (
+      {currentTab === "agreements" && isOrientationPassed && (
         <div className="overflow-hidden rounded-2xl border border-[#E6ECF2] bg-white shadow-xs relative">
           <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-[#042C51] via-[#0B365F] to-[#FF5C28]" />
           <div className="border-b border-[#EBF0F5] px-5 py-5 sm:px-6 pt-6">
@@ -343,7 +377,7 @@ export default function NHOApplicantPortal({ subTab = "overview", onSubTabChange
       )}
 
       {/* Non-Major Requirements Tab */}
-      {currentTab === "requirements" && activeApplicant.orientationStatus === "Completed" && (
+      {currentTab === "requirements" && isOrientationPassed && (
         <div className="space-y-4 text-xs">
           <div className="p-4 bg-white rounded-xl border border-[#E6ECF2] shadow-xs flex flex-wrap items-center justify-between gap-3">
             <div>
