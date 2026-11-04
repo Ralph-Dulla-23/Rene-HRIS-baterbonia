@@ -134,6 +134,19 @@ export function getOnboardingStageBadgeClass(stage: string) {
   }
 }
 
+export function renderOnboardingStatusBadge(stage: string, finalOutcome?: string) {
+  const effectiveStage = (finalOutcome === "No Show" || finalOutcome === "Pre-start Withdrawal")
+    ? finalOutcome
+    : stage;
+
+  return (
+    <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[9.5px] font-extrabold shadow-2xs ${getOnboardingStageBadgeClass(effectiveStage)}`}>
+      <span className="w-1.5 h-1.5 rounded-full bg-current" />
+      {effectiveStage}
+    </span>
+  );
+}
+
 const INITIAL_ONBOARDING_RECORDS: OnboardingRecord[] = [
   {
     id: "ONB-2026-001",
@@ -661,9 +674,9 @@ export default function Onboarding({
 
     if (matchingJourney) {
       const handoff = matchingJourney.day30Handoff || matchingJourney.day30?.handoff;
-      if (matchingJourney.daysElapsed >= 27 && (!handoff || handoff.status === "Pending")) {
+      if (matchingJourney.daysElapsed >= 14 && (!handoff || handoff.status !== "Accepted")) {
         handoffBadge = {
-          label: "Day 30 Handoff to TL Due",
+          label: handoff?.status === "Submitted" ? `Awaiting TL Acceptance (${handoff.targetTlName || "TL"})` : "Post-FST Handoff Due",
           tone: "bg-orange-100 text-[#FF5C28] border-orange-300 font-black",
           isAlert: true,
           key: "day30-due"
@@ -677,7 +690,7 @@ export default function Onboarding({
         };
       } else if (handoff?.status === "Accepted") {
         handoffBadge = {
-          label: `Handoff to TL Accepted (${handoff.targetTlName || "TL"})`,
+          label: `Post-FST Handoff Accepted (${handoff.targetTlName || "TL"})`,
           tone: "bg-emerald-100 text-emerald-800 border-emerald-300 font-bold",
           isAlert: false,
           key: "accepted"
@@ -893,7 +906,7 @@ export default function Onboarding({
         const day90Val = j.day90?.compositeScore ?? null;
 
         const handoff = j.day30Handoff || j.day30?.handoff;
-        const isHandoffDue = j.daysElapsed >= 20 && (!handoff || handoff.status === "Accepted");
+        const isHandoffDue = j.daysElapsed >= 14 && (!handoff || handoff.status !== "Accepted");
         const openActions = coachingActions.filter(a => (a.emp === empKey || a.emp === j.id) && a.status !== "Done").length;
         const pendingRev = [30, 60, 90].filter(k => j.daysElapsed >= k && !j.reviews?.[k]?.hr).length;
 
@@ -921,8 +934,8 @@ export default function Onboarding({
           assignedTrainer: j.trainerName || "L&D Unassigned",
           assignedTL: j.tl || "Unassigned TL",
           handoffBadge: {
-            label: isHandoffDue ? "Day 30 Handoff to TL Due" : (handoff?.status === "Accepted" ? "Handoff to TL Accepted" : "Handed Off to Training"),
-            tone: isHandoffDue ? "bg-orange-100 text-[#FF5C28] border-orange-300 font-black" : "bg-blue-100 text-blue-800 border-blue-200 font-bold",
+            label: isHandoffDue ? (handoff?.status === "Submitted" ? "Awaiting TL Acceptance" : "Post-FST Handoff Due") : (handoff?.status === "Accepted" ? "Post-FST Handoff Accepted" : "Handed Off to Training"),
+            tone: isHandoffDue ? "bg-orange-100 text-[#FF5C28] border-orange-300 font-black" : (handoff?.status === "Accepted" ? "bg-emerald-100 text-emerald-800 border-emerald-300 font-bold" : "bg-blue-100 text-blue-800 border-blue-200 font-bold"),
             isAlert: isHandoffDue,
             key: isHandoffDue ? "day30-due" : "normal"
           },
@@ -975,7 +988,7 @@ export default function Onboarding({
         journeyPhaseFilter === "Day 30 Nesting" ? row.journeyPhase.includes("Day 30") :
         journeyPhaseFilter === "Day 60 Operations" ? row.journeyPhase.includes("Day 60") :
         journeyPhaseFilter === "Day 90 Regularization" ? row.journeyPhase.includes("Day 90") :
-        journeyPhaseFilter === "Day 30 Handoff Due" ? row.handoffBadge.isAlert :
+        (journeyPhaseFilter === "Post-FST Handoff Due" || journeyPhaseFilter === "Day 30 Handoff Due") ? row.handoffBadge.isAlert :
         true;
 
       const matchAccount = accountFilter === "All" || row.account === accountFilter;
@@ -1665,14 +1678,14 @@ export default function Onboarding({
               </div>
             </div>
 
-            {/* 5. Day 30 TL Handoffs */}
+            {/* 5. Post-FST Handoffs */}
             <div className={`p-3.5 rounded-xl border shadow-sm flex flex-col justify-between relative overflow-hidden h-[115px] hover:-translate-y-0.5 hover:shadow-md transition-all ${
               pendingDay30HandoffsCount > 0 
                 ? "bg-orange-50/30 border-[#FF5C28]" 
                 : "bg-white border-[#E6ECF2]"
             }`}>
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-black uppercase text-[#FF5C28] tracking-wider">Day 30 TL Handoffs</span>
+                <span className="text-[10px] font-black uppercase text-[#FF5C28] tracking-wider">Post-FST Handoffs</span>
                 <div className="flex items-center gap-1">
                   {pendingDay30HandoffsCount > 0 && (
                     <span className="text-[9px] font-extrabold text-white bg-[#FF5C28] px-1.5 py-0.5 rounded-full uppercase tracking-wider">
@@ -1686,7 +1699,7 @@ export default function Onboarding({
               </div>
               <div className="mt-1.5">
                 <div className="text-xl font-extrabold text-[#042C51] tracking-tight">{pendingDay30HandoffsCount}</div>
-                <div className="text-[9px] text-slate-400 font-bold mt-1 uppercase tracking-wide">Trainer → TL transition needed</div>
+                <div className="text-[9px] text-slate-400 font-bold mt-1 uppercase tracking-wide">FST ➔ PST transition needed</div>
               </div>
             </div>
           </div>
@@ -1770,7 +1783,7 @@ export default function Onboarding({
               <option value="Day 30 Nesting">Day 30 Nesting</option>
               <option value="Day 60 Operations">Day 60 Operations</option>
               <option value="Day 90 Regularization">Day 90 Regularization</option>
-              <option value="Day 30 Handoff Due">⚠️ Day 30 Handoff Due</option>
+              <option value="Post-FST Handoff Due">⚠️ Post-FST Handoff Due</option>
             </select>
 
             {/* 4. Account */}
@@ -1816,7 +1829,7 @@ export default function Onboarding({
               className="h-9 w-full rounded-xl border border-[#D7DEE8] bg-[#F8FAFC] px-2.5 text-xs font-semibold text-[#042C51] outline-none transition hover:border-[#FF5C28]/40 hover:bg-white focus:border-[#FF5C28] cursor-pointer"
             >
               <option value="All">All HR Actions &amp; Alerts</option>
-              <option value="Handoff Due">⚠️ Day 30 Handoff Due</option>
+              <option value="Handoff Due">⚠️ Post-FST Handoff Due</option>
               <option value="True Hire">True Hire Placements</option>
               <option value="Drop-offs">Drop-offs (No Show / Withdrawn)</option>
               <option value="Open Actions">Open Coaching Actions</option>
@@ -1911,29 +1924,14 @@ export default function Onboarding({
                           {/* 2. ONBOARDING STATUS */}
                           <td className="px-3.5 py-3 align-middle">
                             <div className="space-y-1 min-w-[150px]">
-                              <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[9.5px] font-extrabold shadow-2xs ${getOnboardingStageBadgeClass(row.onboardingStage)}`}>
-                                <span className="w-1.5 h-1.5 rounded-full bg-current" />
-                                {row.onboardingStage}
-                              </span>
+                              <div>
+                                {renderOnboardingStatusBadge(row.onboardingStage, row.finalOutcome)}
+                              </div>
 
                               <div className="flex items-center gap-1 text-[10px] text-slate-600 font-semibold">
                                 <Calendar size={11} className="text-[#98A2B3] shrink-0" />
                                 <span>Start: {formatDisplayDate(row.actualStartDate || row.expectedStartDate)}</span>
                               </div>
-
-                              {row.finalOutcome === "True Hire" ? (
-                                <span className="inline-flex items-center gap-1 text-[9px] font-extrabold text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200">
-                                  <CheckCircle2 size={10} /> True Hire Confirmed
-                                </span>
-                              ) : row.finalOutcome === "No Show" || row.finalOutcome === "Pre-start Withdrawal" ? (
-                                <span className="inline-flex items-center gap-1 text-[9px] font-extrabold text-rose-700 bg-rose-50 px-1.5 py-0.2 rounded border border-rose-200">
-                                  <XCircle size={10} /> {row.finalOutcome}
-                                </span>
-                              ) : (
-                                <span className="text-[9px] font-bold text-amber-700 bg-amber-50 px-1.5 py-0.2 rounded border border-amber-200">
-                                  Pending Start
-                                </span>
-                              )}
                             </div>
                           </td>
 

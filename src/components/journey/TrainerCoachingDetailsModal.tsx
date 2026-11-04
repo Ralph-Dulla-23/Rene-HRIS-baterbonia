@@ -22,9 +22,20 @@ function Information({ label, value }: { label: string; value?: React.ReactNode 
 
 export default function TrainerCoachingDetailsModal({ employee, sessions, evaluations, asOf, onClose, initialSessionId }: Props) {
   const records = coachingForEmployee(sessions, employee);
-  const displayedRecords = records.length > 0 ? records : sessions;
+  const selectedSession = sessions.find(s => s.id === (initialSessionId ?? null));
+  const employeeRecordsWithSelected = (selectedSession && !records.some(r => r.id === selectedSession.id))
+    ? [selectedSession, ...records]
+    : records;
+  const displayedRecords = employeeRecordsWithSelected.length > 0 ? employeeRecordsWithSelected : sessions;
   const [sessionId, setSessionId] = useState<number | null>(initialSessionId ?? displayedRecords[0]?.id ?? null);
-  const session = displayedRecords.find(s => s.id === sessionId) ?? displayedRecords[0] ?? null;
+
+  useEffect(() => {
+    if (initialSessionId !== undefined && initialSessionId !== null) {
+      setSessionId(initialSessionId);
+    }
+  }, [initialSessionId]);
+
+  const session = displayedRecords.find(s => s.id === sessionId) ?? sessions.find(s => s.id === sessionId) ?? displayedRecords[0] ?? null;
   const evaluation = session ? evaluationFor(session, evaluations) : null;
   const comparison = kpiComparison(evaluation);
   const selectedParameters = new Set(session?.qaParameters ?? []);

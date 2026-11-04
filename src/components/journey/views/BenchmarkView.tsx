@@ -268,11 +268,11 @@ export default function BenchmarkView({ onOpenLinkModal, onSwitchModule }: Bench
                   HR Action Required
                 </span>
                 <h3 className="text-sm font-black text-[#042C51]">
-                  Day 30 Employee Custody Handoff: Trainer → Team Leader Transition ({pendingDay30HandoffsCount} Pending)
+                  Post-FST Employee Custody Handoff: Trainer → Team Leader Transition ({pendingDay30HandoffsCount} Pending)
                 </h3>
               </div>
               <p className="text-xs text-slate-600 mt-1 max-w-3xl leading-relaxed">
-                Trainees completing Day 1–30 Nesting must receive formal Trainer readiness endorsement and Team Leader acceptance before transitioning into live operational ramp. Review pending handoffs below.
+                Trainees completing Fundamental Skill Training (FST Days 1–14) must receive formal Trainer readiness endorsement and Team Leader acceptance before transitioning into Product Skills Training (PST Days 15–28). Review pending handoffs below.
               </p>
             </div>
           </div>

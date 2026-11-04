@@ -178,14 +178,6 @@ export default function Sidebar({ currentModule, role, onModuleChange, activeTab
           moduleKey: "Employee Journey", 
           tabKey: "trainer-monitoring" 
         },
-        { 
-          name: "Trainee Learning & Progress", 
-          displayName: "Trainee Learning", 
-          icon: GraduationCap, 
-          isEnabled: true, 
-          moduleKey: "Employee Journey", 
-          tabKey: "trainee-dashboard" 
-        },
         { name: "Candidate Experience", icon: BookOpen, isEnabled: true, moduleKey: "Candidate Experience" },
       ]
     },
@@ -234,7 +226,20 @@ export default function Sidebar({ currentModule, role, onModuleChange, activeTab
     }
   ];
 
+  // Direct items placed directly under WORKSPACES
+  const workspaceDirectItems: MenuItem[] = [
+    { 
+      name: "Trainee Learning", 
+      displayName: "Trainee Learning", 
+      icon: GraduationCap, 
+      isEnabled: true, 
+      moduleKey: "Employee Journey", 
+      tabKey: "trainee-dashboard" 
+    },
+  ];
+
   const visibleCoreItems = coreHrItems.filter(item=>item.moduleKey && canAccessMenuItem(role,item.moduleKey,item.tabKey));
+  const visibleWorkspaceDirectItems = workspaceDirectItems.filter(item=>item.moduleKey && canAccessMenuItem(role,item.moduleKey,item.tabKey));
   const visibleGroups = workspaceGroups
     .map(group => ({...group, items: group.items.filter(item=>item.moduleKey && canAccessMenuItem(role,item.moduleKey,item.tabKey))}))
     .filter(group => group.items.length > 0);
@@ -263,9 +268,9 @@ export default function Sidebar({ currentModule, role, onModuleChange, activeTab
     }
 
     if (item.moduleKey === "Employee Journey") {
-      const isJourneyMod = currentModule === "Employee Journey" || currentModule === "30/60/90 Employee Journey" || currentModule === "Trainee Dashboard" || currentModule === "Trainee Learning & Progress";
+      const isJourneyMod = currentModule === "Employee Journey" || currentModule === "30/60/90 Employee Journey" || currentModule === "Trainee Dashboard" || currentModule === "Trainee Learning & Progress" || currentModule === "Trainee Learning";
       if (item.tabKey) {
-        return isJourneyMod && (activeTab === item.tabKey || ((currentModule === "Trainee Dashboard" || currentModule === "Trainee Learning & Progress") && item.tabKey === "trainee-dashboard"));
+        return isJourneyMod && (activeTab === item.tabKey || ((currentModule === "Trainee Dashboard" || currentModule === "Trainee Learning & Progress" || currentModule === "Trainee Learning") && item.tabKey === "trainee-dashboard"));
       }
       return isJourneyMod;
     }
@@ -406,6 +411,44 @@ export default function Sidebar({ currentModule, role, onModuleChange, activeTab
             <h3 className="px-3 text-[10px] font-black text-[#6B90B5] uppercase tracking-widest leading-none">
               WORKSPACES
             </h3>
+
+            {/* Direct items directly under WORKSPACES */}
+            {visibleWorkspaceDirectItems.length > 0 && (
+              <ul className="space-y-0.5">
+                {visibleWorkspaceDirectItems.map((item, idx) => {
+                  const isActive = isItemActive(item);
+                  const isEnabled = item.isEnabled;
+                  return (
+                    <li key={`ws-direct-${idx}`}>
+                      <button
+                        type="button"
+                        onClick={() => handleItemClick(item)}
+                        className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-150 text-left ${
+                          isActive
+                            ? "bg-[#FF5C28] text-white font-bold rounded-xl shadow-xs cursor-pointer"
+                            : isEnabled
+                              ? "text-slate-200 hover:bg-[#063560] hover:text-white cursor-pointer"
+                              : "text-slate-400/70 hover:text-slate-300/90 cursor-pointer"
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5 truncate">
+                          <item.icon className={`w-4 h-4 shrink-0 transition-colors ${
+                            isActive 
+                              ? "text-white"
+                              : isEnabled 
+                                ? "text-slate-400" 
+                                : "text-slate-500/60"
+                          }`} />
+                          <span className={`truncate ${!isEnabled ? "opacity-80" : ""}`}>
+                            {item.displayName || item.name}
+                          </span>
+                        </div>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
 
             <div className="space-y-2">
               {visibleGroups.map((group) => {

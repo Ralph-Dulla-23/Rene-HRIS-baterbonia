@@ -147,10 +147,7 @@ export default function OnboardingDetailsModal({
   const [coachDue, setCoachDue] = useState("2026-10-25");
   const [coachNotes, setCoachNotes] = useState("");
 
-  // Coaching history reflection states
-  const [coachingScope, setCoachingScope] = useState<"individual" | "all">("individual");
-  const [coachingCandidateFilter, setCoachingCandidateFilter] = useState<string>("all");
-  const [selectedHistorySessionId, setSelectedHistorySessionId] = useState<number | null>(null);
+  // Coaching history modal states
   const [showRecordGrowModal, setShowRecordGrowModal] = useState(false);
   const [newGrowType, setNewGrowType] = useState("Weekly 1:1");
   const [newGrowGoal, setNewGrowGoal] = useState("");
@@ -238,27 +235,6 @@ export default function OnboardingDetailsModal({
   const employeeCoaching = coachingActions.filter(c => c.emp === empKey || c.emp === journey.id);
   const employeeEsepSessions = coachingForEmployee(esepSessions, journey);
 
-  const displayedEsepSessions = (() => {
-    if (coachingScope === "individual") {
-      return employeeEsepSessions;
-    }
-    if (coachingCandidateFilter === "all") {
-      return esepSessions;
-    }
-    return esepSessions.filter(s => {
-      const sName = ((s as any).empName || (s as any).candidateName || "").toLowerCase();
-      const match = journeys.find(j => (j.sibsEmployeeId || j.id) === s.emp || j.fullName.toLowerCase() === coachingCandidateFilter.toLowerCase());
-      return s.emp === coachingCandidateFilter || sName === coachingCandidateFilter.toLowerCase() || match?.fullName.toLowerCase() === coachingCandidateFilter.toLowerCase();
-    });
-  })();
-
-  const activeCoachingSession = (() => {
-    if (selectedHistorySessionId) {
-      const found = displayedEsepSessions.find(s => s.id === selectedHistorySessionId);
-      if (found) return found;
-    }
-    return displayedEsepSessions[0] || employeeEsepSessions[0] || esepSessions[0] || null;
-  })();
 
   const employeeAssignments = assignments.filter(a => a.emp === empKey || a.emp === journey.id);
   const empProg = progress.filter(p => p.emp === empKey || p.emp === journey.id);
@@ -495,7 +471,7 @@ export default function OnboardingDetailsModal({
       status: "Completed" as const
     };
     addEsepSession(newSession);
-    setSelectedHistorySessionId(newSessionId);
+    setSelectedGrowSessionId(newSessionId);
     setShowRecordGrowModal(false);
     setNewGrowGoal("");
     setNewGrowReality("");
@@ -506,7 +482,7 @@ export default function OnboardingDetailsModal({
 
   const candidateDisplayName = (record as any).candidateName || (record as any).name || journey.fullName;
   const candidateDisplayEmail = (record as any).candidateEmail || (record as any).email || journey.email;
-  const isHandoffDue = (journey.daysElapsed || 1) >= 20 && (!journey.day30Handoff || journey.day30Handoff.status === "Pending");
+  const isHandoffDue = (journey.daysElapsed || 1) >= 14 && (!journey.day30Handoff || journey.day30Handoff.status !== "Accepted");
 
   return (
     <AnimatePresence>
@@ -554,7 +530,7 @@ export default function OnboardingDetailsModal({
                   {isHandoffDue ? (
                     <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-[#FF5C28] text-white shadow-2xs flex items-center gap-1">
                       <AlertTriangle size={11} />
-                      DAY 30 HANDOFF TO TL PENDING
+                      POST-FST HANDOFF TO TL PENDING
                     </span>
                   ) : (record as any).onboardingStage ? (
                     <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-white/20 text-white border border-white/30">
@@ -662,14 +638,14 @@ export default function OnboardingDetailsModal({
                 <div>
                   <div className="flex items-center gap-2 flex-wrap">
                     <strong className="text-xs font-black text-[#042C51]">
-                      DAY 30 CHECKPOINT HANDOFF DUE • HR &amp; SUPERVISOR ACTION REQUIRED
+                      POST-FST CHECKPOINT HANDOFF DUE • HR &amp; SUPERVISOR ACTION REQUIRED
                     </strong>
                     <span className="px-2 py-0.2 rounded text-[9.5px] font-bold bg-amber-100 text-amber-900 border border-amber-300">
-                      PST &amp; QA Audit Complete (88%)
+                      FST Fundamentals Complete (Days 1–14)
                     </span>
                   </div>
                   <p className="text-[11px] text-slate-600 mt-0.5">
-                    Trainee has completed Product Skills Training (PST) and independent QA audit. Trainer Maria Cruz must endorse custody transfer to Team Leader Anton Reyes for operational Ramp.
+                    Trainee has completed Fundamental Skill Training (FST Days 1–14). Trainer {journey.trainerName || "Maria Cruz"} must endorse custody &amp; readiness transfer to Team Leader {journey.tl || "Anton Reyes"} before Product Skills Training (PST Days 15–28).
                   </p>
                 </div>
               </div>
@@ -1129,7 +1105,7 @@ export default function OnboardingDetailsModal({
 
                     <div className="flex items-center gap-2 self-start sm:self-auto shrink-0 flex-wrap">
                       <span className="px-2.5 py-1 rounded-full text-[10.5px] font-black bg-slate-100 text-slate-700 border border-slate-200">
-                        {displayedEsepSessions.filter(s => evaluationFor(s, esepEvaluations)).length} evaluated / {displayedEsepSessions.length} GROW sessions
+                        {employeeEsepSessions.filter(s => evaluationFor(s, esepEvaluations)).length} evaluated / {employeeEsepSessions.length} GROW sessions
                       </span>
                       <button
                         type="button"
@@ -1314,283 +1290,211 @@ export default function OnboardingDetailsModal({
                     </form>
                   )}
 
-                  {/* 2-Column Split: Coaching Session History List (Left) + Selected Session GROW View (Right) */}
-                  <div className="grid grid-cols-1 lg:grid-cols-[280px_minmax(0,1fr)] gap-4 items-start pt-1">
-                    {/* Left Column: Coaching Session History (Matching image_e8189e2b.png) */}
-                    <aside
-                      aria-label="Coaching session history"
-                      className="w-full overflow-hidden rounded-2xl border border-[#E6ECF2] bg-[#FAFCFF] p-3.5 space-y-3 self-start shadow-2xs"
-                    >
-                      <div className="flex items-center justify-between px-1">
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-xs font-black text-[#042C51] uppercase tracking-wider">
-                            Coaching session history
+                  {/* Employee Coaching Sessions Table (Replacing 2-column split with table design) */}
+                  <div className="rounded-2xl border border-[#E6ECF2] bg-white overflow-hidden shadow-2xs">
+                    <div className="p-4 sm:p-5 border-b border-[#E6ECF2] bg-[#FAFCFF] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h4 className="text-sm font-extrabold text-[#042C51]">
+                            Individual Coaching Sessions &amp; GROW Evaluations
+                          </h4>
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#042C51] text-white">
+                            {employeeEsepSessions.length}
                           </span>
                         </div>
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-200/80 text-slate-700">
-                          {displayedEsepSessions.length}
-                        </span>
+                        <p className="text-xs text-slate-500 mt-0.5">
+                          Click any coaching session row to view the full supervisory GROW form, diagnostic parameters, and recorded evaluation results.
+                        </p>
                       </div>
-
-                      {/* Scope Switcher: Per Individual vs All Coaching History */}
-                      <div className="grid grid-cols-2 p-1 bg-white rounded-xl border border-[#BECBDA] text-[11px] font-bold shadow-2xs">
-                        <button
-                          type="button"
-                          onClick={() => setCoachingScope("individual")}
-                          className={`py-1 px-1.5 rounded-lg text-center transition-all cursor-pointer truncate ${
-                            coachingScope === "individual"
-                              ? "bg-[#042C51] text-white shadow-xs font-extrabold"
-                              : "text-slate-600 hover:text-[#042C51]"
-                          }`}
-                          title={`Coaching history for ${candidateDisplayName}`}
-                        >
-                          Per Individual
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setCoachingScope("all")}
-                          className={`py-1 px-1.5 rounded-lg text-center transition-all cursor-pointer truncate ${
-                            coachingScope === "all"
-                              ? "bg-[#042C51] text-white shadow-xs font-extrabold"
-                              : "text-slate-600 hover:text-[#042C51]"
-                          }`}
-                          title="View all team coaching history"
-                        >
-                          All History ({esepSessions.length})
-                        </button>
-                      </div>
-
-                      {/* Dropdown when viewing All History */}
-                      {coachingScope === "all" && (
-                        <div className="space-y-1">
-                          <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block px-1">Filter Candidate</label>
-                          <select
-                            value={coachingCandidateFilter}
-                            onChange={(e) => setCoachingCandidateFilter(e.target.value)}
-                            className="w-full p-2 text-xs rounded-xl bg-white border border-[#BECBDA] text-[#042C51] font-semibold focus:ring-1 focus:ring-[#FF5C28] cursor-pointer"
-                          >
-                            <option value="all">All Candidates &amp; Trainees ({esepSessions.length})</option>
-                            <option value="Theresa Mae Santos">Theresa Mae Santos ({employeeEsepSessions.length})</option>
-                            <option value="Alyssa Rivera">Alyssa Rivera (SIBS-2901)</option>
-                            <option value="Nica Flores">Nica Flores (SIBS-2903)</option>
-                            <option value="Marco Santos">Marco Santos (SIBS-2902)</option>
-                          </select>
-                        </div>
-                      )}
-
-                      {/* Coaching Session Cards List matching image_e8189e2b.png */}
-                      <div className="space-y-2 max-h-[480px] overflow-y-auto pr-0.5">
-                        {displayedEsepSessions.map((s) => {
-                          const isSelected = s.id === activeCoachingSession?.id;
-                          const sStatus = coachingStatus(s, esepEvaluations, simulatedCurrentDate);
-                          return (
-                            <button
-                              key={s.id}
-                              type="button"
-                              onClick={() => setSelectedHistorySessionId(s.id)}
-                              aria-pressed={isSelected}
-                              className={`w-full text-left transition-all cursor-pointer ${
-                                isSelected
-                                  ? 'bg-[#FFF7F2] border-l-4 border-l-[#FF5C28] rounded-r-xl rounded-l-xs p-3 space-y-1 shadow-2xs'
-                                  : 'bg-white border border-[#E6ECF2] rounded-xl p-3 space-y-1 hover:bg-slate-50'
-                              }`}
-                            >
-                              <div className="flex items-center justify-between gap-1">
-                                <span className="block text-xs font-bold text-[#042C51] truncate">{s.type}</span>
-                                {coachingScope === "all" && (
-                                  <span className="text-[9.5px] font-bold px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 truncate max-w-[100px]">
-                                    {(s as any).empName || s.emp}
-                                  </span>
-                                )}
-                              </div>
-                              <span className="block text-[11px] text-slate-500">{s.date} • ESEP-{s.id}</span>
-                              <span className="block text-[11px] text-[#215789] font-medium">{s.facilitator}</span>
-                              <span className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-bold mt-1 ${
-                                sStatus === 'Evaluated'
-                                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                                  : sStatus === 'Overdue'
-                                    ? 'bg-red-50 text-red-700 border border-red-200'
-                                    : 'bg-amber-50 text-amber-800 border border-amber-200'
-                              }`}>
-                                {sStatus}
-                              </span>
-                            </button>
-                          );
-                        })}
-
-                        {displayedEsepSessions.length === 0 && (
-                          <div className="p-4 text-center rounded-xl border border-dashed border-[#BECBDA] bg-white text-xs text-slate-500 space-y-1">
-                            <p className="font-semibold">No coaching records.</p>
-                            <button
-                              type="button"
-                              onClick={() => setCoachingScope("all")}
-                              className="text-[11px] text-[#FF5C28] hover:underline font-bold cursor-pointer"
-                            >
-                              View all history
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    </aside>
-
-                    {/* Right Column: Selected Session Full GROW Breakdown */}
-                    <div className="space-y-4 min-w-0">
-                      {activeCoachingSession ? (() => {
-                        const evaluation = evaluationFor(activeCoachingSession, esepEvaluations);
-                        const comparison = kpiComparison(evaluation);
-                        const status = coachingStatus(activeCoachingSession, esepEvaluations, simulatedCurrentDate);
-
-                        return (
-                          <div className="rounded-2xl border border-[#E6ECF2] bg-[#FAFCFF] p-4 sm:p-5 space-y-4 shadow-2xs">
-                            {/* Session Card Header */}
-                            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200/70 pb-3">
-                              <div>
-                                <div className="flex items-center gap-2 flex-wrap">
-                                  <h4 className="text-sm font-extrabold text-[#042C51]">
-                                    {activeCoachingSession.type} • {activeCoachingSession.date}
-                                  </h4>
-                                  <span className="px-2 py-0.2 rounded text-[10px] font-mono font-bold bg-slate-200/80 text-slate-700">
-                                    ESEP-{activeCoachingSession.id}
-                                  </span>
-                                  {(activeCoachingSession as any).empName && (
-                                    <span className="px-2 py-0.2 rounded text-[10px] font-bold bg-[#042C51] text-white">
-                                      {(activeCoachingSession as any).empName}
-                                    </span>
-                                  )}
-                                </div>
-                                <p className="text-xs text-slate-500 mt-0.5 font-medium">
-                                  Facilitator: <strong className="text-slate-700">{activeCoachingSession.facilitator}</strong> ({activeCoachingSession.facilitatorRole})
-                                  {activeCoachingSession.taskOrder ? ` • ${activeCoachingSession.taskOrder}` : ""}
-                                </p>
-                              </div>
-
-                              <div className="flex items-center gap-2">
-                                {activeCoachingSession.reasons && activeCoachingSession.reasons.length > 0 && (
-                                  <div className="hidden md:flex items-center gap-1">
-                                    {activeCoachingSession.reasons.map((r, ri) => (
-                                      <span key={ri} className="px-2 py-0.5 rounded text-[9.5px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
-                                        {r}
-                                      </span>
-                                    ))}
-                                  </div>
-                                )}
-                                <span className={`px-2.5 py-0.5 rounded-full text-[10.5px] font-extrabold ${
-                                  status === "Evaluated" 
-                                    ? "bg-emerald-100 text-emerald-800 border border-emerald-200" 
-                                    : status === "Overdue" 
-                                    ? "bg-red-100 text-red-800 border border-red-200" 
-                                    : "bg-amber-100 text-amber-800 border border-amber-200"
-                                }`}>
-                                  {status}
-                                </span>
-                              </div>
-                            </div>
-
-                            {/* 2-Column Grid (Goal, Observed Behavior, Agreed Action, Commitment Follow-up) */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-                              <div className="p-3 rounded-xl bg-white border border-[#E6ECF2] space-y-1">
-                                <span className="text-[10px] font-black uppercase text-slate-400 block tracking-wider">
-                                  COACHING GOAL
-                                </span>
-                                <p className="font-bold text-[#042C51] text-xs leading-snug">
-                                  {activeCoachingSession.goal}
-                                </p>
-                              </div>
-
-                              <div className="p-3 rounded-xl bg-white border border-[#E6ECF2] space-y-1">
-                                <span className="text-[10px] font-black uppercase text-slate-400 block tracking-wider">
-                                  ISSUE / OBSERVED BEHAVIOR
-                                </span>
-                                <p className="font-bold text-slate-700 text-xs leading-snug">
-                                  {activeCoachingSession.reality}
-                                </p>
-                              </div>
-
-                              <div className="p-3 rounded-xl bg-white border border-[#E6ECF2] space-y-1">
-                                <span className="text-[10px] font-black uppercase text-slate-400 block tracking-wider">
-                                  AGREED ACTION / WAY FORWARD
-                                </span>
-                                <p className="font-bold text-[#042C51] text-xs leading-snug">
-                                  {activeCoachingSession.will || activeCoachingSession.actionPlan}
-                                </p>
-                              </div>
-
-                              <div className="p-3 rounded-xl bg-white border border-[#E6ECF2] space-y-1">
-                                <span className="text-[10px] font-black uppercase text-slate-400 block tracking-wider">
-                                  COMMITMENT FOLLOW-UP
-                                </span>
-                                <p className="font-bold text-[#042C51] text-xs">
-                                  {activeCoachingSession.due || "Pending schedule"}
-                                </p>
-                              </div>
-                            </div>
-
-                            {/* Follow-up Evaluation Banner */}
-                            {evaluation ? (
-                              <div className="p-3.5 rounded-xl bg-[#F0FDF4] border border-emerald-200 text-xs space-y-1">
-                                <div className="flex items-center gap-2">
-                                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                                  <strong className="text-emerald-950 font-extrabold">
-                                    Follow-up result • {comparison ? `Recorded KPI ${comparison.before} → ${comparison.after} (${comparison.differenceLabel})` : "Follow-up Evaluated"}
-                                  </strong>
-                                </div>
-                                <p className="text-emerald-900 font-medium pl-6 leading-relaxed">
-                                  {evaluation.notes}
-                                </p>
-                                <p className="text-[10.5px] text-emerald-700 font-semibold pl-6 pt-0.5">
-                                  Reviewed {evaluation.date} • {evaluation.owner} • Evidence: {evaluation.source}
-                                </p>
-                              </div>
-                            ) : (
-                              <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900 flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                  <Clock className="w-4 h-4 text-amber-600 shrink-0" />
-                                  <span>Awaiting supervisor follow-up evaluation. Target commitment due: <strong>{activeCoachingSession.due}</strong></span>
-                                </div>
-                                <span className="text-[10px] font-extrabold uppercase text-amber-800">Pending Review</span>
-                              </div>
-                            )}
-
-                            {/* View GROW Details Button */}
-                            <div className="flex justify-end gap-2 pt-1">
-                              <button
-                                type="button"
-                                onClick={() => setSelectedGrowSessionId(activeCoachingSession.id)}
-                                className="px-3.5 py-1.5 rounded-xl border border-[#BECBDA] text-[#042C51] bg-white hover:bg-[#F7F9FC] hover:border-[#FF5C28] hover:text-[#FF5C28] text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer shadow-2xs transition-all"
-                              >
-                                <Eye size={13} className="text-[#FF5C28]" />
-                                <span>View Full GROW Form &amp; Results</span>
-                              </button>
-                            </div>
-                          </div>
-                        );
-                      })() : (
-                        <div className="p-8 text-center rounded-2xl border border-dashed border-[#BECBDA] bg-[#FAFCFF] space-y-3">
-                          <p className="text-sm font-bold text-[#042C51]">
-                            No coaching sessions recorded for {candidateDisplayName}.
-                          </p>
-                          <p className="text-xs text-slate-500 max-w-md mx-auto">
-                            Candidate is tracking within operational benchmarks. You can view all team coaching sessions or record a new GROW coaching session.
-                          </p>
-                          <div className="flex items-center justify-center gap-2 pt-1">
-                            <button
-                              type="button"
-                              onClick={() => setCoachingScope("all")}
-                              className="px-3 py-1.5 rounded-xl bg-[#042C51] text-white text-xs font-bold hover:bg-[#0B365F] transition-colors"
-                            >
-                              View All Team History ({esepSessions.length})
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setShowRecordGrowModal(true)}
-                              className="px-3 py-1.5 rounded-xl bg-[#FF5C28] text-white text-xs font-bold hover:bg-[#e04f20] transition-colors"
-                            >
-                              + Record GROW Log
-                            </button>
-                          </div>
+                      {employeeEsepSessions.length > 0 && (
+                        <div className="flex items-center gap-1.5 text-xs text-slate-500 font-semibold self-start sm:self-auto shrink-0">
+                          <span className="inline-block w-2 h-2 rounded-full bg-emerald-500" />
+                          <span>Click row to open evaluation</span>
                         </div>
                       )}
                     </div>
+
+                    {employeeEsepSessions.length > 0 ? (
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left text-xs border-collapse">
+                          <thead>
+                            <tr className="border-b border-[#E6ECF2] bg-[#F7F9FC] text-[10.5px] font-black uppercase tracking-wider text-[#667085]">
+                              <th className="py-3 px-4">Session Date &amp; ID</th>
+                              <th className="py-3 px-4">Type</th>
+                              <th className="py-3 px-4">Coach / Supervisor</th>
+                              <th className="py-3 px-4 min-w-[220px]">Coaching Goal &amp; Observed Focus</th>
+                              <th className="py-3 px-4">Focus Metric</th>
+                              <th className="py-3 px-4 min-w-[190px]">Evaluation / KPI Result</th>
+                              <th className="py-3 px-4">Status</th>
+                              <th className="py-3 px-4 text-right">Action</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-[#E6ECF2]">
+                            {employeeEsepSessions.map((session) => {
+                              const evaluation = evaluationFor(session, esepEvaluations);
+                              const comparison = kpiComparison(evaluation);
+                              const status = coachingStatus(session, esepEvaluations, simulatedCurrentDate);
+
+                              return (
+                                <tr
+                                  key={session.id}
+                                  onClick={() => setSelectedGrowSessionId(session.id)}
+                                  className="hover:bg-[#F7F9FC] transition-colors cursor-pointer group"
+                                  title={`Click to open full evaluation for ESEP-${session.id}`}
+                                >
+                                  {/* Session Date & ID */}
+                                  <td className="py-3.5 px-4 whitespace-nowrap">
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-mono text-[10.5px] font-bold px-2 py-0.5 rounded bg-slate-100 text-[#042C51] border border-slate-200">
+                                        ESEP-{session.id}
+                                      </span>
+                                      <span className="font-bold text-[#042C51] text-xs">
+                                        {session.date}
+                                      </span>
+                                    </div>
+                                  </td>
+
+                                  {/* Type */}
+                                  <td className="py-3.5 px-4 whitespace-nowrap">
+                                    <span className="font-extrabold text-[#042C51] block text-xs">
+                                      {session.type}
+                                    </span>
+                                    {session.taskOrder && (
+                                      <span className="text-[10px] text-slate-400 font-medium block">
+                                        {session.taskOrder}
+                                      </span>
+                                    )}
+                                  </td>
+
+                                  {/* Coach / Supervisor */}
+                                  <td className="py-3.5 px-4 whitespace-nowrap">
+                                    <div className="font-bold text-[#042C51] text-xs">
+                                      {session.facilitator}
+                                    </div>
+                                    <div className="text-[10.5px] text-[#215789] font-medium">
+                                      {session.facilitatorRole || session.coachDesignation || "Supervisor"}
+                                    </div>
+                                  </td>
+
+                                  {/* Coaching Goal & Observed Focus */}
+                                  <td className="py-3.5 px-4">
+                                    <div className="font-bold text-[#042C51] text-xs line-clamp-1 max-w-[280px]" title={session.goal}>
+                                      {session.goal}
+                                    </div>
+                                    {session.reality && (
+                                      <div className="text-[11px] text-slate-500 line-clamp-1 max-w-[280px] mt-0.5" title={session.reality}>
+                                        {session.reality}
+                                      </div>
+                                    )}
+                                  </td>
+
+                                  {/* Focus Metric / Reasons */}
+                                  <td className="py-3.5 px-4 whitespace-nowrap">
+                                    {session.reasons && session.reasons.length > 0 ? (
+                                      <div className="flex flex-wrap gap-1 max-w-[150px]">
+                                        {session.reasons.map((r, ri) => (
+                                          <span
+                                            key={ri}
+                                            className="px-2 py-0.5 rounded text-[9.5px] font-bold bg-slate-100 text-slate-700 border border-slate-200/80"
+                                          >
+                                            {r}
+                                          </span>
+                                        ))}
+                                      </div>
+                                    ) : (
+                                      <span className="text-slate-400 text-xs">—</span>
+                                    )}
+                                  </td>
+
+                                  {/* Evaluation / KPI Result */}
+                                  <td className="py-3.5 px-4">
+                                    {evaluation ? (
+                                      <div className="space-y-0.5">
+                                        {comparison ? (
+                                          <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] font-bold">
+                                            <CheckCircle2 size={12} className="text-emerald-600 shrink-0" />
+                                            <span>KPI: {comparison.before} → {comparison.after} ({comparison.differenceLabel})</span>
+                                          </div>
+                                        ) : (
+                                          <div className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-800">
+                                            <CheckCircle2 size={12} className="text-emerald-600 shrink-0" />
+                                            <span>Follow-up Evaluated</span>
+                                          </div>
+                                        )}
+                                        {evaluation.notes && (
+                                          <div className="text-[10.5px] text-slate-500 line-clamp-1 max-w-[220px]" title={evaluation.notes}>
+                                            {evaluation.notes}
+                                          </div>
+                                        )}
+                                      </div>
+                                    ) : (
+                                      <div className="flex items-center gap-1.5 text-amber-800 text-xs font-semibold">
+                                        <Clock size={12} className="text-amber-600 shrink-0" />
+                                        <span>Due: {session.due || "Pending"}</span>
+                                      </div>
+                                    )}
+                                  </td>
+
+                                  {/* Status */}
+                                  <td className="py-3.5 px-4 whitespace-nowrap">
+                                    <span
+                                      className={`inline-block rounded-full px-2.5 py-0.5 text-[10px] font-black ${
+                                        status === "Evaluated"
+                                          ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                          : status === "Overdue"
+                                          ? "bg-red-50 text-red-700 border border-red-200"
+                                          : "bg-amber-50 text-amber-800 border border-amber-200"
+                                      }`}
+                                    >
+                                      {status}
+                                    </span>
+                                  </td>
+
+                                  {/* Action Button */}
+                                  <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setSelectedGrowSessionId(session.id);
+                                      }}
+                                      className="px-3 py-1.5 rounded-xl border border-[#BECBDA] bg-white group-hover:border-[#FF5C28] group-hover:bg-[#FFF7F2] text-[#042C51] group-hover:text-[#FF5C28] text-xs font-bold transition-all inline-flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                                    >
+                                      <Eye size={12} className="text-[#FF5C28]" />
+                                      <span>View Evaluation</span>
+                                    </button>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    ) : (
+                      <div className="p-8 text-center bg-[#FAFCFF] space-y-3">
+                        <div className="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-600 flex items-center justify-center mx-auto">
+                          <CheckCircle2 size={24} />
+                        </div>
+                        <div>
+                          <p className="text-sm font-extrabold text-[#042C51]">
+                            No coaching sessions recorded for {candidateDisplayName}
+                          </p>
+                          <p className="text-xs text-slate-500 max-w-md mx-auto mt-1">
+                            Candidate is tracking within operational benchmarks. Master coaching history across all teams is available in the ESEP tab. If developmental coaching is required, record a new GROW log below.
+                          </p>
+                        </div>
+                        <div className="pt-2">
+                          <button
+                            type="button"
+                            onClick={() => setShowRecordGrowModal(true)}
+                            className="px-4 py-2 rounded-xl bg-[#042C51] hover:bg-[#0B365F] text-white text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer shadow-xs transition-colors"
+                          >
+                            <Plus size={13} className="text-[#FF5C28]" />
+                            <span>Record GROW Session</span>
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -1666,13 +1570,25 @@ export default function OnboardingDetailsModal({
 
                     <div className="p-3 rounded-lg bg-[#FAFCFF] border border-[#E6ECF2] flex items-center justify-between">
                       <div>
-                        <strong className="text-[#042C51] block">2. Training → Live Operations (Day 30)</strong>
-                        <span className="text-slate-500 text-[11px]">Trainer {journey.trainerName || "Maria Cruz"} ➔ TL {journey.tl || "Anton Reyes"}</span>
+                        <strong className="text-[#042C51] block">2. Post-FST → PST Transition Handoff (Day 14)</strong>
+                        <span className="text-slate-500 text-[11px]">Trainer {journey.trainerName || "Maria Cruz"} ➔ TL {journey.tl || "Anton Reyes"} • Triggered after FST, before PST</span>
                       </div>
                       <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
                         journey.day30Handoff?.status === "Accepted" ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"
                       }`}>
                         {journey.day30Handoff?.status || "Pending"}
+                      </span>
+                    </div>
+
+                    <div className="p-3 rounded-lg bg-[#FAFCFF] border border-[#E6ECF2] flex items-center justify-between">
+                      <div>
+                        <strong className="text-[#042C51] block">3. PST Completion → Live Operations (Day 30)</strong>
+                        <span className="text-slate-500 text-[11px]">Product Skills Training conclusion &amp; operational call queue ramp</span>
+                      </div>
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                        (journey.daysElapsed || 1) >= 30 ? "bg-emerald-100 text-emerald-800" : "bg-slate-100 text-slate-600"
+                      }`}>
+                        {(journey.daysElapsed || 1) >= 30 ? "In Operations" : "Upcoming"}
                       </span>
                     </div>
                   </div>

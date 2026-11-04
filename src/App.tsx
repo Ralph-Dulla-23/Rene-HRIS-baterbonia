@@ -394,14 +394,14 @@ function AuthenticatedWorkspace() {
               />
             </div>
 
-          ) : currentModule === "Employee Journey" || currentModule === "30/60/90 Employee Journey" || currentModule === "Trainee Dashboard" || currentModule === "Trainee Learning & Progress" ? (
+          ) : currentModule === "Employee Journey" || currentModule === "30/60/90 Employee Journey" || currentModule === "Trainee Dashboard" || currentModule === "Trainee Learning & Progress" || currentModule === "Trainee Learning" ? (
             <div className="mt-20 px-6 flex-1 flex flex-col w-full">
               <EmployeeJourneyModule 
                 onSwitchModule={setCurrentModule}
                 initialFocusedJourneyId={focusedJourneyId}
                 demoUser={user}
                 defaultView={
-                  (currentModule === "Trainee Dashboard" || currentModule === "Trainee Learning & Progress") && canAccessJourneyTab(user.role,"trainee-dashboard") ? "trainee-dashboard" :
+                  (currentModule === "Trainee Dashboard" || currentModule === "Trainee Learning & Progress" || currentModule === "Trainee Learning") && canAccessJourneyTab(user.role,"trainee-dashboard") ? "trainee-dashboard" :
                   (activeTab === "trainee-dashboard" || 
                   activeTab === "benchmark" || 
                   activeTab === "esep-coaching" ||

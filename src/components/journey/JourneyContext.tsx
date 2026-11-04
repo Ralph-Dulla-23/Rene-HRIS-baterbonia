@@ -899,8 +899,8 @@ export function JourneyProvider({ children }: { children: ReactNode }) {
     return journeys.filter(j => {
       const days = j.daysElapsed || 1;
       const handoff = j.day30Handoff || j.day30?.handoff;
-      // An employee has handoff pending if days >= 20 and handoff status is not Accepted
-      return days >= 20 && (!handoff || handoff.status !== "Accepted");
+      // Triggered after FST (Days 1–14) before/during PST: days >= 14 and not accepted
+      return days >= 14 && (!handoff || handoff.status !== "Accepted");
     }).length;
   }, [journeys]);
 

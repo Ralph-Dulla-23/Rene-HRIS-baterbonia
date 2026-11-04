@@ -109,11 +109,11 @@ export default function Day30HandoffCard({
   );
   const [trainerNotes, setTrainerNotes] = useState(
     currentHandoff?.trainerNotes || 
-    `${journey.fullName} has successfully concluded Day 1–30 Nesting. Trainee shows strong technical foundation and adherence to standard protocols. Ready for operational transfer with bi-weekly AHT spot checks.`
+    `${journey.fullName} has successfully concluded Fundamental Skill Training (FST Days 1–14). Trainee shows strong technical foundation and adherence to standard protocols. Ready for Product Skills Training (PST Days 15–28).`
   );
   const [tlAcceptanceNotes, setTlAcceptanceNotes] = useState(
     currentHandoff?.tlAcceptanceNotes || 
-    `Operational custody accepted by ${targetTlName}. Trainee scheduled for live queue ramp and assigned to Pod A supervisor rotation.`
+    `Operational custody and PST training readiness accepted by ${targetTlName}. Trainee cleared to begin Product Skills Training (PST Days 15–28).`
   );
 
   const selectedTlObj = AVAILABLE_TEAM_LEADERS.find(
@@ -166,12 +166,12 @@ export default function Day30HandoffCard({
       trainerNotes
     });
     setIsFormOpen(false);
-    onUpdateSuccess?.(`Day 30 Handoff endorsed by Trainer ${trainerName} to Team Leader ${targetTlName}!`);
+    onUpdateSuccess?.(`Post-FST Handoff endorsed by Trainer ${trainerName} to Team Leader ${targetTlName}!`);
   };
 
   const handleAcceptHandoff = () => {
     acceptTrainerToTlHandoff(journey.id, targetTlName, tlAcceptanceNotes);
-    onUpdateSuccess?.(`Day 30 Handoff accepted! Operational custody formally transferred to ${targetTlName}.`);
+    onUpdateSuccess?.(`Post-FST Handoff accepted! Custody formally transferred to ${targetTlName} for PST.`);
   };
 
   return (
@@ -185,14 +185,14 @@ export default function Day30HandoffCard({
           <div className="space-y-0.5">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#042C51] text-white">
-                Day 30 Checkpoint
+                Post-FST Checkpoint (Day 14)
               </span>
               <h3 className="text-sm sm:text-base font-black text-[#042C51]">
-                Employee Custody Handoff: Trainer → Team Leader
+                Employee Training Handoff: FST → PST Transition
               </h3>
             </div>
             <p className="text-xs text-slate-500">
-              Formal transition of supervisory and operational custody upon completion of Day 1–30 Nesting.
+              Formal transition and readiness endorsement upon completion of Fundamental Skill Training (FST Days 1–14) prior to Product Skills Training (PST Days 15–28).
             </p>
           </div>
 
@@ -224,7 +224,7 @@ export default function Day30HandoffCard({
           <div className="md:col-span-3 bg-white p-3 rounded-xl border border-[#E6ECF2] shadow-2xs space-y-1">
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
-                Departing Supervisor (L&D Nesting)
+                Departing Supervisor (FST Fundamentals)
               </span>
               <span className="text-[9.5px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
                 Trainer
@@ -256,7 +256,7 @@ export default function Day30HandoffCard({
               <ArrowRight className="w-4 h-4" />
             </div>
             <span className="text-[9px] font-black uppercase text-[#042C51] tracking-wider mt-1 text-center">
-              Day 30 Handoff
+              FST ➔ PST Handoff
             </span>
           </div>
 
@@ -264,7 +264,7 @@ export default function Day30HandoffCard({
           <div className="md:col-span-3 bg-white p-3 rounded-xl border border-[#E6ECF2] shadow-2xs space-y-1">
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
-                Incoming Supervisor (Production Operations)
+                Incoming Supervisor (PST &amp; Operations)
               </span>
               <span className="text-[9.5px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
                 Team Leader
@@ -319,27 +319,27 @@ export default function Day30HandoffCard({
           </div>
         </div>
 
-        {/* Nesting Performance Summary at Day 30 */}
+        {/* FST Performance Summary at Day 14 */}
         <div className="space-y-2">
           <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block">
-            Nesting Performance & Readiness Evidence (30-Day Checkpoint)
+            FST Performance &amp; Readiness Evidence (Post-FST Checkpoint • Day 14)
           </span>
 
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 sm:gap-2.5 text-xs">
             <div className="p-2.5 bg-[#FAFCFF] border border-[#E6ECF2] rounded-xl text-center">
               <span className="text-[9.5px] font-semibold text-slate-500 block">FST (Fundamentals)</span>
               <strong className="text-base font-black text-[#042C51] block mt-0.5">{fstVal}%</strong>
-              <span className="text-[9px] text-slate-400">Days 1–14</span>
+              <span className="text-[9px] text-slate-400">Days 1–14 (Target ≥ 80%)</span>
             </div>
 
             <div className="p-2.5 bg-[#FAFCFF] border border-[#E6ECF2] rounded-xl text-center">
-              <span className="text-[9.5px] font-semibold text-slate-500 block">PST (Product)</span>
+              <span className="text-[9.5px] font-semibold text-slate-500 block">PST Target Readiness</span>
               <strong className="text-base font-black text-[#042C51] block mt-0.5">{pstVal}%</strong>
-              <span className="text-[9px] text-slate-400">Days 15–28</span>
+              <span className="text-[9px] text-slate-400">Curriculum Pre-test</span>
             </div>
 
             <div className="p-2.5 bg-[#FAFCFF] border border-[#E6ECF2] rounded-xl text-center">
-              <span className="text-[9.5px] font-semibold text-slate-500 block">Independent QA</span>
+              <span className="text-[9.5px] font-semibold text-slate-500 block">Initial QA Audit</span>
               <strong className="text-base font-black text-[#042C51] block mt-0.5">{qaVal}%</strong>
               <span className="text-[9px] text-slate-400">Audit Evidence</span>
             </div>
@@ -370,7 +370,7 @@ export default function Day30HandoffCard({
           <div className="p-3 bg-[#FAFCFF] border border-[#E6ECF2] rounded-xl space-y-1.5">
             <span className="text-[10px] font-black uppercase tracking-wider text-emerald-700 flex items-center gap-1">
               <Check className="w-3 h-3 text-emerald-600" />
-              Verified Core Competencies & Strengths
+              Verified Core Competencies &amp; Strengths
             </span>
             <div className="flex flex-wrap gap-1.5 pt-1">
               {(currentHandoff?.coreStrengths || coreStrengths).map(st => (
@@ -384,7 +384,7 @@ export default function Day30HandoffCard({
           <div className="p-3 bg-[#FAFCFF] border border-[#E6ECF2] rounded-xl space-y-1.5">
             <span className="text-[10px] font-black uppercase tracking-wider text-amber-700 flex items-center gap-1">
               <AlertTriangle className="w-3 h-3 text-amber-600" />
-              Ramp Transition Focus Areas (For Team Leader)
+              PST Curriculum Focus Areas (For Team Leader)
             </span>
             <div className="flex flex-wrap gap-1.5 pt-1">
               {(currentHandoff?.focusAreas || focusAreas).map(fa => (

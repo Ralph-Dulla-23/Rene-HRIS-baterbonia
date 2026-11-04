@@ -23,16 +23,15 @@ export function getEmphasizedEmployeeStatus(journey: EmployeeJourney): Emphasize
   const daysElapsed = journey.daysElapsed || 1;
   const handoff = journey.day30Handoff || journey.day30?.handoff;
   
-  // Day 30 Checkpoint window: post-PST (Days 15-28) and QA audit (Days 20-35)
-  // or anytime handoff is active and not yet accepted
-  const inDay30HandoffWindow = (daysElapsed >= 20 && daysElapsed <= 38) || (handoff && handoff.status !== "Accepted" && daysElapsed <= 45);
+  // Post-FST Handoff window: triggered after FST (Days 1-14) before PST (Days 15-28)
+  const inFstHandoffWindow = (daysElapsed >= 14 && (!handoff || handoff.status !== "Accepted"));
 
-  if (inDay30HandoffWindow) {
+  if (inFstHandoffWindow) {
     if (!handoff || handoff.status === "Pending") {
       return {
-        label: "⚠️ Day 30 Handoff to TL Pending",
-        shortLabel: "Day 30 Handoff Due",
-        sublabel: "Post-PST & QA Audit Complete • Trainer Endorsement Due to TL (HR Notified)",
+        label: "⚠️ Post-FST Handoff to TL Pending",
+        shortLabel: "Post-FST Handoff Due",
+        sublabel: "FST Complete (Days 1–14) • Trainer Endorsement Due before PST (Days 15–28)",
         badgeClass: "bg-[#FF5C28] text-white border border-[#FF5C28] shadow-xs animate-pulse font-black",
         pillBg: "bg-[#FF5C28]",
         pillBorder: "border-[#FF5C28]",
@@ -48,7 +47,7 @@ export function getEmphasizedEmployeeStatus(journey: EmployeeJourney): Emphasize
       return {
         label: "⏳ Awaiting TL Handoff Acceptance",
         shortLabel: "Awaiting TL Sign-off",
-        sublabel: `Endorsed by ${handoff.trainerName || "Trainer"} • Awaiting Team Leader Custody Sign-off`,
+        sublabel: `Endorsed by ${handoff.trainerName || "Trainer"} • Awaiting Team Leader Custody Sign-off for PST`,
         badgeClass: "bg-[#E67E22] text-white border border-[#E67E22] shadow-xs font-black",
         pillBg: "bg-[#E67E22]",
         pillBorder: "border-[#E67E22]",
@@ -62,9 +61,9 @@ export function getEmphasizedEmployeeStatus(journey: EmployeeJourney): Emphasize
     
     if (handoff.status === "Accepted") {
       return {
-        label: "✓ Handed Off to Team Leader (Ramp)",
-        shortLabel: "Handed Off to TL",
-        sublabel: `Custody Transferred to TL ${handoff.targetTlName || journey.tl || "Team Leader"}`,
+        label: "✓ FST Handoff Completed",
+        shortLabel: "FST Handoff Complete",
+        sublabel: `Custody Transferred to TL ${handoff.targetTlName || journey.tl || "Team Leader"} for PST`,
         badgeClass: "bg-emerald-600 text-white border border-emerald-700 shadow-xs font-black",
         pillBg: "bg-emerald-600",
         pillBorder: "border-emerald-700",

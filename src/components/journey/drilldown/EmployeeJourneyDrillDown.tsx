@@ -418,7 +418,7 @@ export default function EmployeeJourneyDrillDown({
               ["handoffs", "⇄", "Handoffs"]
             ].map(([id, icon, label]) => {
               const isHandoffTab = id === "handoffs";
-              const isHandoffActionDue = isHandoffTab && (journey.day30Handoff?.status !== "Accepted" && (journey.daysElapsed || 1) >= 20);
+              const isHandoffActionDue = isHandoffTab && (journey.day30Handoff?.status !== "Accepted" && (journey.daysElapsed || 1) >= 14);
 
               return (
                 <button
@@ -443,7 +443,7 @@ export default function EmployeeJourneyDrillDown({
           </div>
         </div>
 
-        {/* Day 30 Post-Audit Handoff High-Priority Alert Banner for HR and Supervisors */}
+        {/* Post-FST Handoff High-Priority Alert Banner for HR and Supervisors */}
         {emphasizedStatus.isHandoffDue && emphasizedStatus.handoffStatus === "Pending" && (
           <div className="bg-gradient-to-r from-orange-50 via-amber-50/70 to-orange-50 border-b-2 border-[#FF5C28] px-5 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-[#042C51] shrink-0 shadow-2xs">
             <div className="flex items-start sm:items-center gap-3">
@@ -453,14 +453,14 @@ export default function EmployeeJourneyDrillDown({
               <div>
                 <div className="flex flex-wrap items-center gap-2">
                   <strong className="text-[#FF5C28] font-black uppercase tracking-wider text-[11px]">
-                    Day 30 Checkpoint Handoff Due • HR & Supervisor Action Required
+                    Post-FST Checkpoint Handoff Due • HR &amp; Supervisor Action Required
                   </strong>
                   <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-orange-100 text-[#FF5C28] border border-orange-200">
-                    PST & QA Audit Complete ({qaScoreVal}%)
+                    FST Fundamentals Complete (Days 1–14)
                   </span>
                 </div>
                 <p className="text-[11.5px] text-slate-600 mt-0.5">
-                  Trainee has completed Product Skills Training (PST) and independent QA audit. Trainer {journey.trainerName || "Maria Cruz"} must endorse custody transfer to Team Leader {journey.tl || "Anton Reyes"} for operational Ramp. HR has been notified.
+                  Trainee has completed Fundamental Skill Training (FST Days 1–14). Trainer {journey.trainerName || "Maria Cruz"} must endorse custody transfer to Team Leader {journey.tl || "Anton Reyes"} before Product Skills Training (PST Days 15–28). HR has been notified.
                 </p>
               </div>
             </div>
@@ -740,7 +740,7 @@ export default function EmployeeJourneyDrillDown({
                     const prevEnd = i === 0 ? 0 : [14, 28, 30, 59, 60, 89][i - 1];
                     const active = daysElapsed >= (i === 2 ? 29 : i === 0 ? 1 : prevEnd + 1) && daysElapsed <= Number(last);
                     const isSelected = selectedPhaseIndex === i;
-                    const isDay30HandoffDue = i === 2 && (journey.day30Handoff?.status !== "Accepted" && daysElapsed >= 20);
+                    const isFstHandoffDue = i === 0 && (journey.day30Handoff?.status !== "Accepted" && daysElapsed >= 14);
 
                     return (
                       <button
@@ -758,7 +758,7 @@ export default function EmployeeJourneyDrillDown({
                         <div>
                           <div className="flex items-center justify-between gap-1">
                             <span className="text-[10px] font-bold text-slate-500 block">{date}</span>
-                            {isDay30HandoffDue && (
+                            {isFstHandoffDue && (
                               <span className="text-[8px] font-black uppercase px-1 py-0.2 rounded bg-[#FF5C28] text-white">
                                 Handoff Due
                               </span>
