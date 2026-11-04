@@ -45,9 +45,10 @@ const modules: Record<DemoRole,string[]> = {
 };
 
 export function normalizeModule(module: string): string {
+  if (module === 'Employee Portal' || module === 'Employee Dashboard' || module === 'Employee Self-Service') return 'Employee Dashboard';
   if (module === '30 / 60 / 90 Reviews' || module === '30/60/90 Reviews') return 'Onboarding';
   if (module === '30/60/90 Employee Journey' || module === 'Trainee Dashboard' || module === 'Trainee Learning & Progress' || module === 'Trainee Learning') return 'Employee Journey';
-  if (module === 'New Hire Orientation (NHO)' || module === 'Public Applicant Portal' || module === 'NHO Applicant Portal') return 'New Hire Orientation';
+  if (module === 'New Hire Orientation (NHO)' || module === 'Public Applicant Portal' || module === 'NHO Applicant Portal' || module === 'Applicant Portal') return 'New Hire Orientation';
   if (module === 'Separate QDS Application' || module === 'QDS') return 'QDS Application';
   if (module === 'HR Dashboard') return 'HR Admin Dashboard';
   if (module === 'Leaves') return 'Leaves & Time Off';

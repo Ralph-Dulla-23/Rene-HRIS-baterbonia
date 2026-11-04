@@ -36,10 +36,13 @@ import {
   GitFork,
   Award,
   ShieldAlert,
+  ShieldCheck,
   User,
-  Bell
+  GraduationCap,
+  ExternalLink
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
+import { useJourney } from "./journey/JourneyContext";
 
 interface SidebarProps {
   currentModule: string;
@@ -72,6 +75,14 @@ export default function Sidebar({ currentModule, role, onModuleChange, activeTab
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isSettingsPopupOpen, setIsSettingsPopupOpen] = useState<boolean>(false);
   
+  let pendingDay30HandoffsCount = 0;
+  try {
+    const journeyCtx = useJourney();
+    pendingDay30HandoffsCount = journeyCtx.pendingDay30HandoffsCount;
+  } catch {
+    // Outside provider fallback
+  }
+
   // All workspace groups are expanded by default to match the reference images
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
 
@@ -92,13 +103,14 @@ export default function Sidebar({ currentModule, role, onModuleChange, activeTab
     }
   }, [toastMessage]);
 
-  // Section 1: CORE HR (Top direct items with all 5 dashboards)
+  // Section 1: CORE HR (Top direct items with all dashboards and core modules)
   const coreHrItems: MenuItem[] = [
     { name: "Super Admin Dashboard", icon: LayoutGrid, isEnabled: true, moduleKey: "Super Admin Dashboard" },
     { name: "HR Admin Dashboard", icon: LayoutGrid, isEnabled: true, moduleKey: "HR Admin Dashboard" },
     { name: "TA Dashboard", icon: LayoutGrid, isEnabled: true, moduleKey: "TA Dashboard" },
     { name: "OM Dashboard", icon: LayoutGrid, isEnabled: true, moduleKey: "OM Dashboard" },
     { name: "Employee Dashboard", icon: LayoutGrid, isEnabled: true, moduleKey: "Employee Dashboard" },
+    { name: "QDS Dashboard", icon: ShieldAlert, isEnabled: true, moduleKey: "Employee Journey", tabKey: "qds-dashboard" },
     { name: "Employee Directory", icon: Users, isEnabled: true, moduleKey: "Employee Directory" },
     { name: "Time & Attendance", icon: Clock, isEnabled: true, moduleKey: "Time & Attendance" },
     { name: "Leaves", icon: Calendar, isEnabled: true, moduleKey: "Leaves & Time Off" },
@@ -143,21 +155,40 @@ export default function Sidebar({ currentModule, role, onModuleChange, activeTab
         { name: "Candidate Pipeline", icon: LayoutGrid, isEnabled: true, moduleKey: "Candidate Pipeline" },
         { name: "Offers", icon: Gift, isEnabled: true, moduleKey: "Offers" },
         { name: "New Hire Orientation (NHO)", icon: Sparkles, isEnabled: true, moduleKey: "New Hire Orientation", badge: "V1" },
-        { name: "Onboarding", icon: ClipboardCheck, isEnabled: true, moduleKey: "Onboarding" },
+        { 
+          name: "Onboarding & Employee Journey", 
+          displayName: "Onboarding & Journey", 
+          icon: ClipboardCheck, 
+          isEnabled: true, 
+          moduleKey: "Onboarding", 
+          tabKey: "records",
+          badge: pendingDay30HandoffsCount > 0 ? `⚠️ ${pendingDay30HandoffsCount} HANDOFF DUE` : undefined
+        },
+        { 
+          name: "ESEP Coaching", 
+          displayName: "ESEP Coaching", 
+          icon: ShieldCheck, 
+          isEnabled: true, 
+          moduleKey: "ESEP Coaching" 
+        },
+        { 
+          name: "Trainer Monitoring", 
+          displayName: "Trainer Monitoring", 
+          icon: Users, 
+          isEnabled: true, 
+          moduleKey: "Employee Journey", 
+          tabKey: "trainer-monitoring" 
+        },
         { name: "Candidate Experience", icon: BookOpen, isEnabled: true, moduleKey: "Candidate Experience" },
+        { 
+          name: "Applicant Portal", 
+          displayName: "Applicant Portal", 
+          icon: ExternalLink, 
+          isEnabled: true, 
+          moduleKey: "Public Applicant Portal", 
+          badge: "PUBLIC" 
+        },
       ]
-    },
-    {
-      id: "employee-journey-workspace",
-      title: "Employee Journey & Mentorship",
-      icon: Award,
-      items: [
-        { name: "30 / 60 / 90 Benchmark", icon: Award, isEnabled: true, moduleKey: "Employee Journey", tabKey: "benchmark", badge: "ROSTER" },
-        { name: "Trainee Dashboard", icon: User, isEnabled: true, moduleKey: "Employee Journey", tabKey: "trainee-dashboard" },
-        { name: "Journey Notifications", icon: Bell, isEnabled: true, moduleKey: "Employee Journey", tabKey: "notifications" },
-        { name: "Journey Configuration", icon: Settings, isEnabled: true, moduleKey: "Employee Journey", tabKey: "configuration" },
-      ]
-
     },
     {
       id: "recruitment-operations",
@@ -204,7 +235,20 @@ export default function Sidebar({ currentModule, role, onModuleChange, activeTab
     }
   ];
 
+  // Direct items placed directly under WORKSPACES
+  const workspaceDirectItems: MenuItem[] = [
+    { 
+      name: "Trainee Learning", 
+      displayName: "Trainee Learning", 
+      icon: GraduationCap, 
+      isEnabled: true, 
+      moduleKey: "Employee Journey", 
+      tabKey: "trainee-dashboard" 
+    },
+  ];
+
   const visibleCoreItems = coreHrItems.filter(item=>item.moduleKey && canAccessMenuItem(role,item.moduleKey,item.tabKey));
+  const visibleWorkspaceDirectItems = workspaceDirectItems.filter(item=>item.moduleKey && canAccessMenuItem(role,item.moduleKey,item.tabKey));
   const visibleGroups = workspaceGroups
     .map(group => ({...group, items: group.items.filter(item=>item.moduleKey && canAccessMenuItem(role,item.moduleKey,item.tabKey))}))
     .filter(group => group.items.length > 0);
@@ -233,10 +277,11 @@ export default function Sidebar({ currentModule, role, onModuleChange, activeTab
     }
 
     if (item.moduleKey === "Employee Journey") {
+      const isJourneyMod = currentModule === "Employee Journey" || currentModule === "30/60/90 Employee Journey" || currentModule === "Trainee Dashboard" || currentModule === "Trainee Learning & Progress" || currentModule === "Trainee Learning";
       if (item.tabKey) {
-        return (currentModule === "Employee Journey" || currentModule === "30/60/90 Employee Journey") && activeTab === item.tabKey;
+        return isJourneyMod && (activeTab === item.tabKey || ((currentModule === "Trainee Dashboard" || currentModule === "Trainee Learning & Progress" || currentModule === "Trainee Learning") && item.tabKey === "trainee-dashboard"));
       }
-      return currentModule === "Employee Journey" || currentModule === "30/60/90 Employee Journey";
+      return isJourneyMod;
     }
 
     if (item.moduleKey === "HR Admin Dashboard") {
@@ -262,6 +307,14 @@ export default function Sidebar({ currentModule, role, onModuleChange, activeTab
       return currentModule === "Time & Attendance";
     }
 
+    if (item.moduleKey === "Public Applicant Portal") {
+      return currentModule === "Public Applicant Portal" || currentModule === "Applicant Portal" || currentModule === "NHO Applicant Portal";
+    }
+
+    if (item.moduleKey === "Employee Dashboard") {
+      return currentModule === "Employee Dashboard" || currentModule === "Employee Portal";
+    }
+
     if (!item.moduleKey) return false;
     return currentModule === item.moduleKey;
   };
@@ -278,24 +331,24 @@ export default function Sidebar({ currentModule, role, onModuleChange, activeTab
       )}
 
       <aside 
-        className={`w-56 bg-[#042C51] text-white flex flex-col h-screen fixed top-0 left-0 z-50 lg:z-20 border-r border-[#083a69] select-none shadow-xl transition-transform duration-300 ease-in-out ${
+        className={`w-64 bg-[#042C51] text-white flex flex-col h-screen fixed top-0 left-0 z-50 lg:z-20 border-r border-[#083a69] select-none shadow-xl transition-transform duration-300 ease-in-out ${
           isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         }`} 
         id="sidebar-navigation"
       >
         {/* Brand Header */}
-        <div className="px-3 py-3.5 h-[68px] border-b border-[#083a69] flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
+        <div className="p-4 sm:p-5 border-b border-[#083a69] flex items-center justify-between">
+          <div className="flex items-center gap-3">
             {/* Orange rounded square with S and small glowing accent dot */}
-            <div className="relative w-10 h-10 rounded-xl bg-[#FF5C28] flex items-center justify-center shadow-lg shadow-[#ff5c28]/25 shrink-0">
+            <div className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-[#FF6B3D] to-[#FF5C28] flex items-center justify-center shadow-lg shadow-[#ff5c28]/25 shrink-0">
               <span className="text-xl font-black text-white tracking-tighter">S</span>
               <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-[#FFA488] border-2 border-[#042C51] shadow-xs" />
             </div>
             <div>
               <div className="flex items-center gap-1.5">
                 <h1 className="text-base font-extrabold tracking-tight">
-                  <span className="text-white">SiBS</span>{" "}
-                  <span className="text-[#FF5C28]">HRIS</span>
+                  <span className="text-[#FF8A65]">SiBS</span>{" "}
+                  <span className="text-white">HRIS</span>
                 </h1>
               </div>
               <p className="text-[8.5px] font-bold tracking-widest uppercase text-[#8FAEC9]">
@@ -327,11 +380,11 @@ export default function Sidebar({ currentModule, role, onModuleChange, activeTab
         </div>
 
         {/* Main Nav Items */}
-        <div className="flex-1 overflow-y-auto px-2 py-3 space-y-5 scrollbar-thin scrollbar-thumb-slate-700">
+        <div className="flex-1 overflow-y-auto px-3 py-4 space-y-6 scrollbar-thin scrollbar-thumb-slate-700">
           
           {/* ==================== 1. CORE HR SECTION ==================== */}
           <div className="space-y-1">
-            <h3 className="px-3 text-[10px] font-black text-[#91A9C2] uppercase tracking-wider leading-none mb-2">
+            <h3 className="px-3 text-[10px] font-black text-[#6B90B5] uppercase tracking-widest leading-none mb-2">
               CORE HR
             </h3>
             <ul className="space-y-0.5">
@@ -343,7 +396,7 @@ export default function Sidebar({ currentModule, role, onModuleChange, activeTab
                     <button
                       type="button"
                       onClick={() => handleItemClick(item)}
-                      className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition-all duration-150 text-left ${
+                      className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-150 text-left ${
                         isActive
                           ? "bg-[#FF5C28] text-white font-bold rounded-xl shadow-xs cursor-pointer"
                           : isEnabled
@@ -372,11 +425,49 @@ export default function Sidebar({ currentModule, role, onModuleChange, activeTab
 
           {/* ==================== 2. WORKSPACES SECTION ==================== */}
           <div className="space-y-3">
-            <h3 className="px-3 text-[10px] font-black text-[#91A9C2] uppercase tracking-wider leading-none">
+            <h3 className="px-3 text-[10px] font-black text-[#6B90B5] uppercase tracking-widest leading-none">
               WORKSPACES
             </h3>
 
-            <div className="space-y-1.5">
+            {/* Direct items directly under WORKSPACES */}
+            {visibleWorkspaceDirectItems.length > 0 && (
+              <ul className="space-y-0.5">
+                {visibleWorkspaceDirectItems.map((item, idx) => {
+                  const isActive = isItemActive(item);
+                  const isEnabled = item.isEnabled;
+                  return (
+                    <li key={`ws-direct-${idx}`}>
+                      <button
+                        type="button"
+                        onClick={() => handleItemClick(item)}
+                        className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-150 text-left ${
+                          isActive
+                            ? "bg-[#FF5C28] text-white font-bold rounded-xl shadow-xs cursor-pointer"
+                            : isEnabled
+                              ? "text-slate-200 hover:bg-[#063560] hover:text-white cursor-pointer"
+                              : "text-slate-400/70 hover:text-slate-300/90 cursor-pointer"
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5 truncate">
+                          <item.icon className={`w-4 h-4 shrink-0 transition-colors ${
+                            isActive 
+                              ? "text-white"
+                              : isEnabled 
+                                ? "text-slate-400" 
+                                : "text-slate-500/60"
+                          }`} />
+                          <span className={`truncate ${!isEnabled ? "opacity-80" : ""}`}>
+                            {item.displayName || item.name}
+                          </span>
+                        </div>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+
+            <div className="space-y-2">
               {visibleGroups.map((group) => {
                 const hasActiveChild = group.items.some(item => isItemActive(item));
                 const isCollapsed = hasActiveChild ? false : Boolean(collapsedGroups[group.id]);
@@ -410,7 +501,7 @@ export default function Sidebar({ currentModule, role, onModuleChange, activeTab
                               <button
                                 type="button"
                                 onClick={() => handleItemClick(item)}
-                                className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition-all duration-150 text-left ${
+                                className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-150 text-left ${
                                   isActive
                                     ? "bg-[#063b6d] text-white font-bold border border-blue-400/25 shadow-sm cursor-pointer"
                                     : isEnabled
@@ -430,7 +521,12 @@ export default function Sidebar({ currentModule, role, onModuleChange, activeTab
                                     {item.displayName || item.name}
                                   </span>
                                 </div>
-                                {item.badge && (
+                                {(item.moduleKey === "Onboarding" || item.tabKey === "30-60-90" || item.tabKey === "benchmark") && pendingDay30HandoffsCount > 0 ? (
+                                  <span className="px-1.5 py-0.5 text-[8.5px] font-black rounded uppercase tracking-wider shrink-0 bg-[#FF5C28] text-white flex items-center gap-1 shadow-xs animate-pulse">
+                                    <span>⚠️</span>
+                                    <span>{pendingDay30HandoffsCount} HANDOFF DUE</span>
+                                  </span>
+                                ) : item.badge && (
                                   <span className={`px-1.5 py-0.5 text-[8.5px] font-black rounded uppercase tracking-wider shrink-0 ${
                                     item.badge === "RAMPS"
                                       ? "bg-[#063560] text-blue-200 border border-blue-400/30"
@@ -576,7 +672,7 @@ export default function Sidebar({ currentModule, role, onModuleChange, activeTab
                     </div>
 
                     {/* Secondary Quick Settings Links */}
-                    <div className="space-y-1.5">
+                    <div className="space-y-2">
                       <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">
                         Module Configurations
                       </span>

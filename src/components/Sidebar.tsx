@@ -38,7 +38,8 @@ import {
   ShieldAlert,
   ShieldCheck,
   User,
-  GraduationCap
+  GraduationCap,
+  ExternalLink
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { useJourney } from "./journey/JourneyContext";
@@ -179,6 +180,14 @@ export default function Sidebar({ currentModule, role, onModuleChange, activeTab
           tabKey: "trainer-monitoring" 
         },
         { name: "Candidate Experience", icon: BookOpen, isEnabled: true, moduleKey: "Candidate Experience" },
+        { 
+          name: "Applicant Portal", 
+          displayName: "Applicant Portal", 
+          icon: ExternalLink, 
+          isEnabled: true, 
+          moduleKey: "Public Applicant Portal", 
+          badge: "PUBLIC" 
+        },
       ]
     },
     {
@@ -296,6 +305,14 @@ export default function Sidebar({ currentModule, role, onModuleChange, activeTab
 
     if (item.name === "Time & Attendance") {
       return currentModule === "Time & Attendance";
+    }
+
+    if (item.moduleKey === "Public Applicant Portal") {
+      return currentModule === "Public Applicant Portal" || currentModule === "Applicant Portal" || currentModule === "NHO Applicant Portal";
+    }
+
+    if (item.moduleKey === "Employee Dashboard") {
+      return currentModule === "Employee Dashboard" || currentModule === "Employee Portal";
     }
 
     if (!item.moduleKey) return false;

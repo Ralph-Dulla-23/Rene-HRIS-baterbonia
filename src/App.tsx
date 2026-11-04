@@ -457,7 +457,7 @@ function AuthenticatedWorkspace() {
           <div className="mt-20 px-6 flex-1 flex flex-col w-full">
             <OMDashboard userEmail={user.email} onSwitchModule={setCurrentModule} />
           </div>
-        ) : currentModule === "Employee Dashboard" ? (
+        ) : currentModule === "Employee Dashboard" || currentModule === "Employee Portal" ? (
           <div className="mt-20 px-6 flex-1 flex flex-col w-full">
             <EmployeeDashboard userEmail={user.email} onSwitchModule={setCurrentModule} />
           </div>
@@ -493,7 +493,7 @@ function AuthenticatedWorkspace() {
           <div className="mt-20 px-6 flex-1 flex flex-col w-full">
             <PublicTalentPoolApplicationPage onNavigateToTalentPool={() => setCurrentModule("Talent Pool")} />
           </div>
-        ) : currentModule === "Public Applicant Portal" || currentModule === "NHO Applicant Portal" ? (
+        ) : currentModule === "Public Applicant Portal" || currentModule === "NHO Applicant Portal" || currentModule === "Applicant Portal" ? (
           <div className="mt-16 flex-1 flex flex-col w-full min-w-0">
             <PublicApplicantPortalPage onBackToWorkspace={() => setCurrentModule("New Hire Orientation")} />
           </div>
@@ -584,6 +584,10 @@ function AuthenticatedWorkspace() {
               onSwitchModule={setCurrentModule} 
               onClose={() => setCurrentModule("Workforce Hiring")}
             />
+          </div>
+        ) : user.role === 'Employee' ? (
+          <div className="mt-20 px-6 flex-1 flex flex-col w-full">
+            <EmployeeDashboard userEmail={user.email} onSwitchModule={setCurrentModule} />
           </div>
         ) : (
           <div className="mt-20 px-6 flex-1 flex flex-col w-full max-w-[1920px] mx-auto min-h-0">
