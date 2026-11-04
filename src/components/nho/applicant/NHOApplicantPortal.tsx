@@ -86,14 +86,15 @@ export default function NHOApplicantPortal({ subTab = "overview", onSubTabChange
       {/* A clear landing workspace; the checklist belongs to the portal shell. */}
       {currentTab === "overview" && (
         <div className="grid gap-4 xl:grid-cols-[minmax(0,1.55fr)_minmax(260px,1fr)]">
-          <div className="rounded-2xl border border-[#E4EBF3] bg-white p-6 shadow-[0_3px_14px_rgba(4,44,81,0.025)] sm:p-7">
+          <div className="rounded-2xl border border-[#E6ECF2] bg-white p-6 sm:p-7 shadow-xs relative overflow-hidden">
+            <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-[#FF6B3D] to-[#FF5C28]" />
             <p className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#FF5C28]">
               {waitingForReview ? "Awaiting verification" : nextOverviewTask ? "Your next action" : "Onboarding complete"}
             </p>
-            <h2 className="mt-2 max-w-xl text-[21px] font-extrabold tracking-tight text-[#042C51]">
+            <h2 className="mt-2 max-w-xl text-[21px] font-black tracking-tight text-[#042C51]">
               {waitingForReview ? "Your submitted files are under review" : nextOverviewTask ? nextOverviewTask.label : "All onboarding tasks are verified"}
             </h2>
-            <p className="mt-2 max-w-xl text-[13px] leading-relaxed text-[#677A8E]">
+            <p className="mt-2 max-w-xl text-[13px] leading-relaxed text-[#667085] font-medium">
               {waitingForReview ? "You have no pending candidate actions right now. Talent Acquisition must verify the remaining submissions. You can review their status below." :
                nextOverviewTask?.id === "majors" ? "Submit the required pre-employment documents individually. Talent Acquisition will review each submission before verification." :
                nextOverviewTask?.id === "orientation" ? "Read through the seven orientation modules and complete the five-question knowledge check and acknowledgment." :
@@ -104,11 +105,11 @@ export default function NHOApplicantPortal({ subTab = "overview", onSubTabChange
             {nextOverviewTask && (
               <div className="mt-5 flex flex-wrap items-center gap-3">
                 <button type="button" onClick={() => setTab(nextOverviewTask.id)}
-                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#FF5C28] px-5 py-3 text-xs font-extrabold text-white transition-colors hover:bg-[#E34F20] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF5C28]">
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#FF5C28] px-5 py-3 text-xs font-bold text-white transition-colors hover:bg-[#e04f20] shadow-xs cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF5C28]">
                   {waitingForReview ? "View submitted items" : nextOverviewTask.id === "orientation" ? "Continue orientation" : nextOverviewTask.id === "agreements" ? "Review agreements" : "Open requirements"}
                   <ChevronRight size={15} />
                 </button>
-                <span className="text-[12px] font-semibold text-[#6C7F93]">{nextOverviewTask.description}</span>
+                <span className="text-[12px] font-semibold text-[#667085]">{nextOverviewTask.description}</span>
               </div>
             )}
             {!nextOverviewTask && (
@@ -123,8 +124,9 @@ export default function NHOApplicantPortal({ subTab = "overview", onSubTabChange
             )}
           </div>
           <div className="space-y-4">
-            <div className="rounded-2xl border border-[#E4EBF3] bg-white p-5 shadow-[0_3px_14px_rgba(4,44,81,0.025)]">
-              <h3 className="text-sm font-extrabold text-[#042C51]">Important information</h3>
+            <div className="rounded-2xl border border-[#E6ECF2] bg-white p-5 shadow-xs relative overflow-hidden">
+              <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-[#042C51] via-[#0B365F] to-[#FF5C28]" />
+              <h3 className="text-sm font-black text-[#042C51]">Important information</h3>
               <div className="mt-4 space-y-3 text-[12px]">
                 <div className="flex items-start justify-between gap-3">
                   <span className="text-[#75859B]">NHO attendance</span>
@@ -145,8 +147,8 @@ export default function NHOApplicantPortal({ subTab = "overview", onSubTabChange
                 </div>
               </div>
             </div>
-            <div className="rounded-2xl border border-[#E4EBF3] bg-white p-5 shadow-[0_3px_14px_rgba(4,44,81,0.025)]">
-              <h3 className="text-sm font-extrabold text-[#042C51]">Already completed</h3>
+            <div className="rounded-2xl border border-[#E6ECF2] bg-white p-5 shadow-xs">
+              <h3 className="text-sm font-black text-[#042C51]">Already completed</h3>
               <div className="mt-3 space-y-2.5">
                 {overviewTasks.filter(task => task.complete).length ? overviewTasks.filter(task => task.complete).map(task => (
                   <button type="button" key={task.id} onClick={() => setTab(task.id)}
@@ -164,8 +166,9 @@ export default function NHOApplicantPortal({ subTab = "overview", onSubTabChange
 
       {/* Major requirements: compact rows with details on demand. */}
       {currentTab === "majors" && (
-        <div className="overflow-hidden rounded-2xl border border-[#E4EBF3] bg-white shadow-[0_3px_14px_rgba(4,44,81,0.025)]">
-          <div className="border-b border-[#EBF0F5] px-5 py-5 sm:px-6">
+        <div className="overflow-hidden rounded-2xl border border-[#E6ECF2] bg-white shadow-xs relative">
+          <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-[#042C51] via-[#0B365F] to-[#FF5C28]" />
+          <div className="border-b border-[#EBF0F5] px-5 py-5 sm:px-6 pt-6">
             <h2 className="text-[15px] font-extrabold text-[#042C51]">Mandatory pre-employment documents</h2>
             <p className="mt-1 text-[12px] leading-relaxed text-[#6C7D91]">
               Submit each document individually. Talent Acquisition reviews uploaded files before IT endorsement.
@@ -236,8 +239,9 @@ export default function NHOApplicantPortal({ subTab = "overview", onSubTabChange
 
       {/* Agreement signing retains the original electronic signature / upload modal. */}
       {currentTab === "agreements" && (
-        <div className="overflow-hidden rounded-2xl border border-[#E4EBF3] bg-white shadow-[0_3px_14px_rgba(4,44,81,0.025)]">
-          <div className="border-b border-[#EBF0F5] px-5 py-5 sm:px-6">
+        <div className="overflow-hidden rounded-2xl border border-[#E6ECF2] bg-white shadow-xs relative">
+          <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-[#042C51] via-[#0B365F] to-[#FF5C28]" />
+          <div className="border-b border-[#EBF0F5] px-5 py-5 sm:px-6 pt-6">
             <h2 className="text-[15px] font-extrabold text-[#042C51]">Essential employment agreements</h2>
             <p className="mt-1 text-[12px] leading-relaxed text-[#6C7D91]">Sign electronically or upload a signed copy. Talent Acquisition must verify all agreements before IT endorsement.</p>
             <p className="mt-3 text-[11px] font-bold text-[#5B728A]">{verifiedAgreementsCount} of {agreements.length} verified</p>

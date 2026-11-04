@@ -162,29 +162,38 @@ function PublicApplicantPortalInner({ onBackToLogin, onBackToWorkspace }: Public
   );
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#F0F4F8] font-jakarta text-[#042C51]">
-      <header className="sticky top-0 z-40 border-b border-[#E3EAF1] bg-white">
-        <div className="h-[3px] bg-gradient-to-r from-[#042C51] via-[#042C51] to-[#FF5C28]" />
+    <div className="flex min-h-screen flex-col bg-[#F7F9FC] font-jakarta text-[#042C51]">
+      <header className="sticky top-0 z-40 border-b border-[#E6ECF2] bg-white shadow-xs">
+        <div className="h-[3px] bg-gradient-to-r from-[#042C51] via-[#0B365F] to-[#FF5C28]" />
         <div className="mx-auto flex max-w-[1640px] flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8">
           <div className="flex min-w-0 items-center gap-3">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#042C51] text-sm font-extrabold text-white">S</span>
+            <div className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-[#FF6B3D] to-[#FF5C28] flex items-center justify-center shadow-lg shadow-[#ff5c28]/25 shrink-0">
+              <span className="text-xl font-black text-white tracking-tighter">S</span>
+              <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-[#FFA488] border-2 border-[#042C51] shadow-xs" />
+            </div>
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="text-[15px] font-extrabold tracking-tight">SiBS HRIS</span>
-                <span className="rounded-md bg-[#FFF0E9] px-2 py-1 text-[10px] font-bold uppercase text-[#E85325]">Employee onboarding</span>
+                <span className="text-base font-extrabold tracking-tight">
+                  <span className="text-[#FF5C28]">SiBS</span>{" "}
+                  <span className="text-[#042C51]">HRIS</span>
+                </span>
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#FFF0E9] border border-orange-200/60 text-[#FF5C28] text-[9.5px] font-black uppercase tracking-wider">
+                  <span className="h-1.5 w-1.5 rounded-full bg-[#FF5C28]" />
+                  Employee Onboarding
+                </span>
               </div>
-              <p className="text-[11px] text-[#75859B]">New Hire Orientation · Candidate Portal</p>
+              <p className="text-[10px] font-bold tracking-wider uppercase text-[#667085]">New Hire Orientation · Candidate Portal</p>
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2.5">
             <button
               type="button"
               onClick={() => selectSection("profile")}
-              className="max-w-[320px] rounded-xl bg-[#F5F8FB] px-3 py-2 text-left transition hover:bg-[#EAF1F8]"
+              className="max-w-[320px] rounded-xl bg-[#F7F9FC] border border-[#E6ECF2] px-3.5 py-2 text-left transition hover:bg-[#EAF1F8]"
               title="View your personal information"
             >
               <span className="block truncate text-xs font-bold text-[#042C51]">{activeApplicant.fullName}</span>
-              <span className="block truncate text-[10px] text-[#718198]">{activeApplicant.position}</span>
+              <span className="block truncate text-[10px] text-[#667085] font-medium">{activeApplicant.position}</span>
             </button>
             {hasDemoTools && (
               <div ref={previewToolsRef} className="relative">
@@ -193,7 +202,7 @@ function PublicApplicantPortalInner({ onBackToLogin, onBackToWorkspace }: Public
                   onClick={() => setPreviewToolsOpen(open => !open)}
                   aria-expanded={previewToolsOpen}
                   aria-controls="nho-preview-tools"
-                  className="inline-flex h-10 items-center gap-2 rounded-xl border border-[#DCE5EF] bg-white px-3 text-xs font-bold hover:bg-[#F7F9FC]"
+                  className="inline-flex h-10 items-center gap-2 rounded-xl border border-[#BECBDA] bg-white px-3 text-xs font-bold text-[#042C51] hover:bg-[#F7F9FC] shadow-xs"
                 >
                   <Settings2 size={15} /> Preview tools <ChevronDown size={13} />
                 </button>
@@ -231,7 +240,7 @@ function PublicApplicantPortalInner({ onBackToLogin, onBackToWorkspace }: Public
               <button
                 type="button"
                 onClick={onBackToWorkspace || onBackToLogin}
-                className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-[#DCE5EF] bg-white px-3 text-xs font-bold transition-colors hover:bg-[#F7F9FC]"
+                className="inline-flex h-10 items-center gap-2 rounded-xl bg-[#042C51] hover:bg-[#083a69] text-white px-4 text-xs font-bold shadow-xs transition-colors cursor-pointer"
               >
                 <ArrowLeft size={14} /> <span className="hidden sm:inline">{onBackToWorkspace ? "Staff Workspace" : "Exit to Sign In"}</span><span className="sm:hidden">Exit</span>
               </button>
@@ -243,31 +252,37 @@ function PublicApplicantPortalInner({ onBackToLogin, onBackToWorkspace }: Public
       <main className="mx-auto w-full max-w-[1640px] flex-1 px-4 pb-12 pt-6 sm:px-6 lg:px-8">
         <div className="mb-5 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
           <div>
-            <p className="mb-1 text-[11px] font-bold uppercase tracking-[0.12em] text-[#E85325]">My onboarding workspace</p>
-            <h1 className="text-2xl font-extrabold tracking-tight sm:text-[28px]">Welcome, {activeApplicant.firstName}!</h1>
-            <p className="mt-1 max-w-2xl text-[13px] leading-relaxed text-[#687B91]">Follow your onboarding checklist, complete outstanding tasks, and revisit submitted requirements whenever you need.</p>
+            <div className="flex items-center gap-2 mb-1.5">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-blue-100 bg-[#E9F0FC] px-2.5 py-1 text-[9px] font-black uppercase tracking-wide text-[#042C51]">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#FF5C28]" />
+                My Onboarding Workspace
+              </span>
+            </div>
+            <h1 className="text-2xl font-black text-[#042C51] tracking-tight sm:text-[28px]">Welcome, {activeApplicant.firstName}!</h1>
+            <p className="mt-1 max-w-2xl text-[13px] leading-relaxed text-[#667085] font-medium">Follow your onboarding checklist, complete outstanding tasks, and revisit submitted requirements whenever you need.</p>
           </div>
-          <div className="flex flex-wrap items-center gap-3 text-[11px] text-[#5C7087]">
-            <span className="inline-flex items-center gap-1.5"><CalendarDays size={15} /> NHO: <strong className="text-[#042C51]">{formatDate(activeApplicant.scheduledNhoDate)}</strong></span>
+          <div className="flex flex-wrap items-center gap-3 text-[11px] text-[#667085] bg-white border border-[#E6ECF2] rounded-xl px-3.5 py-2 shadow-xs">
+            <span className="inline-flex items-center gap-1.5"><CalendarDays size={15} className="text-[#FF5C28]" /> NHO: <strong className="text-[#042C51]">{formatDate(activeApplicant.scheduledNhoDate)}</strong></span>
             {activeApplicant.nonMajorDeadlineDate && (
-              <span className={`inline-flex items-center gap-1.5 ${overdueNonMajor ? "font-semibold text-[#BE3935]" : ""}`}>
-                <CalendarDays size={15} /> Additional docs: <strong className={overdueNonMajor ? "text-[#BE3935]" : "text-[#042C51]"}>{formatDate(activeApplicant.nonMajorDeadlineDate)}</strong>
+              <span className={`inline-flex items-center gap-1.5 ${overdueNonMajor ? "font-semibold text-[#E74C3C]" : ""}`}>
+                <CalendarDays size={15} className={overdueNonMajor ? "text-[#E74C3C]" : "text-[#042C51]"} /> Additional docs: <strong className={overdueNonMajor ? "text-[#E74C3C]" : "text-[#042C51]"}>{formatDate(activeApplicant.nonMajorDeadlineDate)}</strong>
                 {overdueNonMajor ? "(overdue)" : ""}
               </span>
             )}
           </div>
         </div>
 
-        <div className="mb-5 rounded-2xl border border-[#E3EAF1] bg-white px-5 py-4 shadow-[0_3px_14px_rgba(4,44,81,0.025)]">
-          <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="mb-5 rounded-2xl border border-[#E6ECF2] bg-white p-5 shadow-xs relative overflow-hidden">
+          <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-[#042C51] via-[#0B365F] to-[#FF5C28]" />
+          <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
             <div className="min-w-0">
-              <p className="text-sm font-extrabold">Your onboarding progress</p>
-              <p className="mt-0.5 text-[12px] text-[#728298]">{completedSections} of 4 task groups complete · {nextSection ? nextActionTitle : "All tasks verified"}</p>
+              <p className="text-sm font-black text-[#042C51]">Your Onboarding Progress</p>
+              <p className="mt-0.5 text-xs text-[#667085] font-medium">{completedSections} of 4 task groups complete · {nextSection ? nextActionTitle : "All tasks verified"}</p>
             </div>
-            <span className="text-lg font-extrabold tabular-nums text-[#042C51]">{progressPercentage}%</span>
+            <span className="text-2xl font-black tabular-nums text-[#042C51]">{progressPercentage}%</span>
           </div>
-          <div className="mt-3 h-2 overflow-hidden rounded-full bg-[#E9EEF5]" role="progressbar" aria-valuenow={progressPercentage} aria-valuemin={0} aria-valuemax={100} aria-label="Onboarding progress">
-            <div className="h-full rounded-full bg-[#0A7358] transition-all duration-300" style={{ width: `${progressPercentage}%` }} />
+          <div className="mt-3.5 h-2.5 overflow-hidden rounded-full bg-[#E9EEF5]" role="progressbar" aria-valuenow={progressPercentage} aria-valuemin={0} aria-valuemax={100} aria-label="Onboarding progress">
+            <div className="h-full rounded-full bg-gradient-to-r from-[#042C51] via-[#FF6B3D] to-[#FF5C28] transition-all duration-300" style={{ width: `${progressPercentage}%` }} />
           </div>
         </div>
 

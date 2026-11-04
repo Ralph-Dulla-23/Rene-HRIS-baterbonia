@@ -342,6 +342,19 @@ function AuthenticatedWorkspace() {
     };
   }, [clusterFilter, accountFilter, detailRecords]);
 
+  // Dedicated full-screen Candidate Portal view without staff sidebar and header
+  if (currentModule === "Public Applicant Portal" || currentModule === "Applicant Portal" || currentModule === "NHO Applicant Portal") {
+    return (
+      <NHOProvider initialRole="Applicant">
+        <JourneyProvider>
+          <PublicApplicantPortalPage 
+            onBackToWorkspace={() => setCurrentModule("New Hire Orientation")} 
+          />
+        </JourneyProvider>
+      </NHOProvider>
+    );
+  }
+
   return (
     <NHOProvider initialRole={nhoRoleForDemoRole[user.role]}>
     <JourneyProvider>
