@@ -457,8 +457,7 @@ export default function NHOOrientationViewer({ onProceedToRequirements }: NHOOri
                 const questionGlobalIdx = q.id - 1;
                 const selectedOpt = quizAnswers[questionGlobalIdx];
                 const isAnswered = selectedOpt !== undefined;
-                const isCorrect = isAnswered && selectedOpt === q.correctOptionIndex;
-
+                
                 return (
                   <div key={q.id} className="p-6 rounded-2xl bg-[#F7F9FC] border border-[#E6ECF2] space-y-4">
                     <div className="flex items-center justify-between">
@@ -467,17 +466,10 @@ export default function NHOOrientationViewer({ onProceedToRequirements }: NHOOri
                         <span>Part {activeStage.id} · Question {idx + 1} of {stageQuestions.length}</span>
                       </span>
                       {isAnswered ? (
-                        isCorrect ? (
-                          <span className="text-[10.5px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full flex items-center gap-1">
-                            <Check className="w-3 h-3 text-emerald-600 stroke-[3]" />
-                            <span>Correct (1/1)</span>
-                          </span>
-                        ) : (
-                          <span className="text-[10.5px] font-bold text-red-700 bg-red-50 border border-red-200 px-2 py-0.5 rounded-full flex items-center gap-1">
-                            <XCircle className="w-3 h-3 text-red-600" />
-                            <span>Incorrect (0/1) · Option Can Be Changed</span>
-                          </span>
-                        )
+                        <span className="text-[10.5px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full flex items-center gap-1">
+                          <Check className="w-3 h-3 text-emerald-600 stroke-[3]" />
+                          <span>Answer Recorded</span>
+                        </span>
                       ) : (
                         <span className="text-[10.5px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
                           Answer Required
@@ -492,8 +484,7 @@ export default function NHOOrientationViewer({ onProceedToRequirements }: NHOOri
                     <div className="space-y-2.5 text-xs">
                       {q.options.map((opt, optIdx) => {
                         const isSelected = selectedOpt === optIdx;
-                        const isThisCorrect = optIdx === q.correctOptionIndex;
-
+                        
                         return (
                           <button
                             key={optIdx}
@@ -501,17 +492,13 @@ export default function NHOOrientationViewer({ onProceedToRequirements }: NHOOri
                             onClick={() => handleSelectAnswer(questionGlobalIdx, optIdx)}
                             className={`w-full text-left p-4 rounded-xl border transition-all cursor-pointer flex items-start gap-3.5 ${
                               isSelected
-                                ? isThisCorrect
-                                  ? "bg-emerald-50/90 border-emerald-500 ring-2 ring-emerald-500/20 font-bold text-emerald-950 shadow-xs"
-                                  : "bg-red-50/90 border-red-500 ring-2 ring-red-500/20 font-bold text-red-950 shadow-xs"
+                                ? "bg-white border-[#FF5C28] ring-2 ring-[#FF5C28]/20 font-bold text-[#042C51] shadow-xs"
                                 : "bg-white border-slate-200 hover:border-slate-300 text-slate-700"
                             }`}
                           >
                             <span className={`w-5 h-5 rounded-full border flex items-center justify-center text-[10px] font-black shrink-0 mt-0.5 ${
                               isSelected 
-                                ? isThisCorrect
-                                  ? "border-emerald-600 bg-emerald-600 text-white"
-                                  : "border-red-600 bg-red-600 text-white"
+                                ? "border-[#FF5C28] bg-[#FF5C28] text-white"
                                 : "border-slate-300 text-slate-500"
                             }`}>
                               {String.fromCharCode(65 + optIdx)}
@@ -521,35 +508,6 @@ export default function NHOOrientationViewer({ onProceedToRequirements }: NHOOri
                         );
                       })}
                     </div>
-
-                    {/* Immediate Feedback with Red/Green Status */}
-                    {isAnswered && (
-                      isCorrect ? (
-                        <div className="p-4 bg-emerald-50/90 border border-emerald-200 rounded-xl text-xs text-emerald-950 space-y-1">
-                          <strong className="font-bold flex items-center gap-1.5 text-emerald-900">
-                            <CheckCircle className="w-4 h-4 text-emerald-600" />
-                            <span>Correct! Key Takeaway:</span>
-                          </strong>
-                          <p className="text-[11.5px] text-emerald-900 leading-relaxed font-normal">
-                            {q.explanation}
-                          </p>
-                        </div>
-                      ) : (
-                        <div className="p-4 bg-red-50/90 border border-red-300 rounded-xl text-xs text-red-950 space-y-1">
-                          <strong className="font-bold flex items-center gap-1.5 text-red-800">
-                            <AlertCircle className="w-4 h-4 text-red-600" />
-                            <span>Incorrect Choice · Policy Takeaway:</span>
-                          </strong>
-                          <p className="text-[11.5px] text-red-900 leading-relaxed font-normal">
-                            {q.explanation}
-                          </p>
-                          <p className="text-[10.5px] text-red-700 font-bold pt-1 flex items-center gap-1">
-                            <Sparkles className="w-3 h-3 text-[#FF5C28]" />
-                            <span>Tip: Passing threshold is 80% (5 of 6). You can choose another option above to correct your score.</span>
-                          </p>
-                        </div>
-                      )
-                    )}
                   </div>
                 );
               })}
