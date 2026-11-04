@@ -1,4 +1,4 @@
-import { NHOApplicant, NHODocumentItem, NHOQuizQuestion } from "./nhoTypes";
+import { NHOApplicant, NHODocumentItem, NHOQuizQuestion, NHOOrientationSlideItem, NHOOrientationDeckConfig } from "./nhoTypes";
 
 export const NHO_QUIZ_QUESTIONS: NHOQuizQuestion[] = [
   {
@@ -62,6 +62,110 @@ export const NHO_QUIZ_QUESTIONS: NHOQuizQuestion[] = [
     explanation: "SiBS enforces a zero-tolerance policy against harassment and safety violations. Prompt reporting to HR Admin or the Ethics Hotline ensures immediate investigation and protection."
   }
 ];
+
+];
+
+export function calculateQuizScore(answers?: Record<number, number>): {
+  score: number;
+  total: number;
+  percentage: number;
+  passed: boolean;
+} {
+  const total = NHO_QUIZ_QUESTIONS.length;
+  if (!answers) return { score: 0, total, percentage: 0, passed: false };
+  let score = 0;
+  NHO_QUIZ_QUESTIONS.forEach((q, idx) => {
+    if (answers[idx] === q.correctOptionIndex) {
+      score++;
+    }
+  });
+  const percentage = Math.round((score / total) * 100);
+  return {
+    score,
+    total,
+    percentage,
+    passed: score >= 4
+  };
+}
+
+export const INITIAL_ORIENTATION_SLIDES: NHOOrientationSlideItem[] = [
+  {
+    num: 1,
+    title: "Welcome to SiBS (The Siblings Solutions)",
+    kicker: "Phase 1: Orientation Welcome",
+    body: "Welcome to the SiBS family! Today marks your formal journey as a valued member of our professional team. During this orientation, you will discover our organizational heritage, core values, daily operating standards, and support channels designed to ensure your long-term career growth."
+  },
+  {
+    num: 2,
+    title: "Company Heritage & Identity",
+    kicker: "Who We Are",
+    body: "SiBS delivers premier enterprise business solutions, customer experience consulting, and specialized tech-enabled services to leading global brands. Our culture is founded upon mutual respect, operational rigor, client focus, and an uncompromising commitment to employee development."
+  },
+  {
+    num: 3,
+    title: "Our Mission, Vision, and Core Values",
+    kicker: "The SiBS Foundation",
+    body: "Mission: To empower businesses and people through compassionate, high-performing service solutions.\n\nVision: To be the benchmark partner for outsourced expertise across Asia-Pacific and North America.\n\nValues: Integrity, Accountability, Synergy, Excellence, and Continuous Learning."
+  },
+  {
+    num: 4,
+    title: "Workplace Professionalism & Code of Conduct",
+    kicker: "Behavioral Standards",
+    body: "We celebrate a collaborative, diverse environment. All employees are expected to maintain punctual shift attendance, respectful interpersonal dialogue, professional communication, and strict adherence to dress code standards inside all SiBS facilities."
+  },
+  {
+    num: 5,
+    title: "Company Policies & Responsibilities",
+    kicker: "Operational Guidelines",
+    body: "Every employee is responsible for familiarizing themselves with the SiBS Employee Handbook. Important guidelines include timely time-tracking via Kronos, attendance escalation at least two hours prior to shift commencement, and respect for company equipment."
+  },
+  {
+    num: 6,
+    title: "Information Security & Clean Desk Policy",
+    kicker: "Data Protection & NDA",
+    body: "Protecting our clients' sensitive financial, healthcare, and proprietary information is our highest mandate. Mobile phones, personal recording gear, and paper notes are strictly forbidden in production zones. Workstations must be locked whenever unattended."
+  },
+  {
+    num: 7,
+    title: "HR Support & People Partnership",
+    kicker: "We Are Here For You",
+    body: "Your HR Operations team, Talent Acquisition partners, and Employee Relations leads are your daily allies. Reach out through our official HR Ticketing portal, helpdesk email, or visit our People Hub on the 5th floor."
+  }
+];
+
+export const INITIAL_ORIENTATION_DECK_CONFIG: NHOOrientationDeckConfig = {
+  version: "v1.0-sample",
+  deckTitle: "SiBS Official New Hire Orientation Presentation Deck",
+  deckFileName: "SiBS_NHO_Core_Orientation_Deck_2026.pptx",
+  deckFileSize: "14.2 MB",
+  uploadedBy: "Alena Batacan (TA Lead)",
+  uploadedAt: "2026-10-01 09:15 AM",
+  passingScorePct: 80,
+  slides: INITIAL_ORIENTATION_SLIDES
+};
+
+export const ORIENTATION_CONFIG_STORAGE_KEY = "sibs_nho_orientation_config";
+
+export function getStoredOrientationDeckConfig(): NHOOrientationDeckConfig {
+  if (typeof window === "undefined") return INITIAL_ORIENTATION_DECK_CONFIG;
+  try {
+    const raw = localStorage.getItem(ORIENTATION_CONFIG_STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch (e) {
+    console.error("Failed to parse stored orientation config", e);
+  }
+  return INITIAL_ORIENTATION_DECK_CONFIG;
+}
+
+export function saveStoredOrientationDeckConfig(config: NHOOrientationDeckConfig): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(ORIENTATION_CONFIG_STORAGE_KEY, JSON.stringify(config));
+    window.dispatchEvent(new Event("sibs_nho_orientation_config_updated"));
+  } catch (e) {
+    console.error("Failed to save orientation config", e);
+  }
+}
 
 export const INITIAL_NHO_TEMPLATES_LIST: Omit<NHODocumentItem, "id" | "status" | "deadlineStatus" | "dueDate">[] = [
   // 4 Majors

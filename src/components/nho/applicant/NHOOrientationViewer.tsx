@@ -1,9 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { useNHO } from "../NHOContext";
-import { NHO_QUIZ_QUESTIONS } from "../nhoInitialData";
-import { ChevronLeft, ChevronRight, CheckCircle, AlertCircle, Sparkles, BookOpen, Check, ArrowRight, RotateCcw } from "lucide-react";
+import { NHOOrientationDeckConfig } from "../nhoTypes";
+import { NHO_QUIZ_QUESTIONS, calculateQuizScore, getStoredOrientationDeckConfig, INITIAL_ORIENTATION_SLIDES } from "../nhoInitialData";
+import { ChevronLeft, ChevronRight, CheckCircle, AlertCircle, Sparkles, BookOpen, Check, ArrowRight, RotateCcw, Award } from "lucide-react";
 
-export default function NHOOrientationViewer() {
+interface NHOOrientationViewerProps {
+  onProceedToRequirements?: () => void;
+}
+
+export default function NHOOrientationViewer({ onProceedToRequirements }: NHOOrientationViewerProps = {}) {
   const { 
     activeApplicant, 
     updateOrientationSlide, 
@@ -12,53 +17,21 @@ export default function NHOOrientationViewer() {
     showToast 
   } = useNHO();
 
-  // 7 Orientation Slides definitions
-  const slides = [
-    {
-      num: 1,
-      title: "Welcome to SiBS (The Siblings Solutions)",
-      kicker: "Phase 1: Orientation Welcome",
-      body: "Welcome to the SiBS family! Today marks your formal journey as a valued member of our professional team. During this orientation, you will discover our organizational heritage, core values, daily operating standards, and support channels designed to ensure your long-term career growth."
-    },
-    {
-      num: 2,
-      title: "Company Heritage & Identity",
-      kicker: "Who We Are",
-      body: "SiBS delivers premier enterprise business solutions, customer experience consulting, and specialized tech-enabled services to leading global brands. Our culture is founded upon mutual respect, operational rigor, client focus, and an uncompromising commitment to employee development."
-    },
-    {
-      num: 3,
-      title: "Our Mission, Vision, and Core Values",
-      kicker: "The SiBS Foundation",
-      body: "Mission: To empower businesses and people through compassionate, high-performing service solutions.\n\nVision: To be the benchmark partner for outsourced expertise across Asia-Pacific and North America.\n\nValues: Integrity, Accountability, Synergy, Excellence, and Continuous Learning."
-    },
-    {
-      num: 4,
-      title: "Workplace Professionalism & Code of Conduct",
-      kicker: "Behavioral Standards",
-      body: "We celebrate a collaborative, diverse environment. All employees are expected to maintain punctual shift attendance, respectful interpersonal dialogue, professional communication, and strict adherence to dress code standards inside all SiBS facilities."
-    },
-    {
-      num: 5,
-      title: "Company Policies & Responsibilities",
-      kicker: "Operational Guidelines",
-      body: "Every employee is responsible for familiarizing themselves with the SiBS Employee Handbook. Important guidelines include timely time-tracking via Kronos, attendance escalation at least two hours prior to shift commencement, and respect for company equipment."
-    },
-    {
-      num: 6,
-      title: "Information Security & Clean Desk Policy",
-      kicker: "Data Protection & NDA",
-      body: "Protecting our clients' sensitive financial, healthcare, and proprietary information is our highest mandate. Mobile phones, personal recording gear, and paper notes are strictly forbidden in production zones. Workstations must be locked whenever unattended."
-    },
-    {
-      num: 7,
-      title: "HR Support & People Partnership",
-      kicker: "We Are Here For You",
-      body: "Your HR Operations team, Talent Acquisition partners, and Employee Relations leads are your daily allies. Reach out through our official HR Ticketing portal, helpdesk email, or visit our People Hub on the 5th floor."
-    }
-  ];
+  // Dynamic Orientation Deck Configuration loaded from Recruitment Settings
+  const [deckConfig, setDeckConfig] = useState<NHOOrientationDeckConfig>(() => getStoredOrientationDeckConfig());
 
-  const totalSlides = slides.length; // 7
+  useEffect(() => {
+    const handleConfigUpdate = () => {
+      setDeckConfig(getStoredOrientationDeckConfig());
+    };
+    window.addEventListener("sibs_nho_orientation_config_updated", handleConfigUpdate);
+    return () => {
+      window.removeEventListener("sibs_nho_orientation_config_updated", handleConfigUpdate);
+    };
+  }, []);
+
+  const slides = deckConfig.slides && deckConfig.slides.length > 0 ? deckConfig.slides : INITIAL_ORIENTATION_SLIDES;
+  const totalSlides = slides.length;
 
   // Reactive local state ensures immediate 0-latency UI responsiveness
   const [currentSlide, setCurrentSlide] = useState<number>(activeApplicant.orientationCurrentSlide || 1);
@@ -102,7 +75,17 @@ export default function NHOOrientationViewer() {
     }
   };
 
+  const maxViewedSlide = Math.max(
+    currentSlide,
+    ...(activeApplicant.orientationSlidesViewed || [1])
+  );
+
   const handleJumpToSlide = (slideNum: number) => {
+    // Strictly no shortcuts or skipping ahead
+    if (slideNum > maxViewedSlide) {
+      showToast("Please review the slides in sequential order without skipping ahead.", "info");
+      return;
+    }
     setCurrentSlide(slideNum);
     try {
       updateOrientationSlide(activeApplicant.id, slideNum);
@@ -150,7 +133,7 @@ export default function NHOOrientationViewer() {
           <span>Notice: Company-specific policy statements are sample prototype content until actual SiBS orientation material is formally approved.</span>
         </span>
         <span className="font-mono text-[10px] text-amber-800 bg-amber-100/80 px-2 py-0.5 rounded font-bold">
-          v1.0-sample
+          {deckConfig.version || "v1.0-sample"}
         </span>
       </div>
 
@@ -231,25 +214,29 @@ export default function NHOOrientationViewer() {
               <span>Previous Slide</span>
             </button>
 
-            {/* Slide Indicators */}
+            {/* Slide Indicators: strictly ordered without shortcuts */}
             <div className="order-3 flex w-full items-center justify-center gap-2 sm:order-none sm:w-auto" aria-label="Orientation slide navigation">
-              {slides.map(s => (
-                <button
-                  key={s.num}
-                  type="button"
-                  onClick={() => handleJumpToSlide(s.num)}
-                  className={`h-2.5 rounded-full transition-all cursor-pointer ${
-                    s.num === currentSlide 
-                      ? "bg-[#FF5C28] w-8 shadow-xs" 
-                      : s.num < currentSlide
-                        ? "bg-[#042C51] w-2.5 opacity-70 hover:opacity-100" 
-                        : "bg-slate-200 w-2.5 hover:bg-slate-300"
-                  }`}
-                  title={`Go to slide ${s.num}`}
-                  aria-label={`Go to slide ${s.num}`}
-                  aria-current={s.num === currentSlide ? "step" : undefined}
-                />
-              ))}
+              {slides.map(s => {
+                const canJump = s.num <= maxViewedSlide;
+                return (
+                  <button
+                    key={s.num}
+                    type="button"
+                    disabled={!canJump}
+                    onClick={() => handleJumpToSlide(s.num)}
+                    className={`h-2.5 rounded-full transition-all ${
+                      s.num === currentSlide 
+                        ? "bg-[#FF5C28] w-8 shadow-xs cursor-default" 
+                        : canJump
+                          ? "bg-[#042C51] w-2.5 opacity-70 hover:opacity-100 cursor-pointer" 
+                          : "bg-slate-200 w-2.5 cursor-not-allowed opacity-40"
+                    }`}
+                    title={canJump ? `Go to slide ${s.num}` : `Complete slide ${s.num - 1} first`}
+                    aria-label={`Go to slide ${s.num}`}
+                    aria-current={s.num === currentSlide ? "step" : undefined}
+                  />
+                );
+              })}
             </div>
 
             {currentSlide < totalSlides ? (
@@ -414,7 +401,46 @@ export default function NHOOrientationViewer() {
             );
           })()}
 
-          {/* Final Policy Acknowledgment */}
+          {/* Quiz Scoring Feedback Card */}
+          {allQuestionsAnswered && (() => {
+            const scoreResult = calculateQuizScore(quizAnswers);
+            return (
+              <div className="p-5 rounded-2xl bg-[#F7F9FC] border border-[#E6ECF2] shadow-xs space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex items-center gap-3.5">
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-black text-base shrink-0 shadow-xs ${
+                      scoreResult.passed 
+                        ? "bg-emerald-100 text-emerald-800 border border-emerald-300" 
+                        : "bg-amber-100 text-amber-800 border border-amber-300"
+                    }`}>
+                      {scoreResult.score}/{scoreResult.total}
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h4 className="text-sm font-extrabold text-[#042C51]">
+                          Knowledge Check Score: {scoreResult.score}/{scoreResult.total} ({scoreResult.percentage}%)
+                        </h4>
+                        <span className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full ${
+                          scoreResult.passed 
+                            ? "bg-emerald-100 text-emerald-800 border border-emerald-300" 
+                            : "bg-amber-100 text-amber-800 border border-amber-300"
+                        }`}>
+                          {scoreResult.passed ? "Passed" : "Needs Review"}
+                        </span>
+                      </div>
+                      <p className="text-[11.5px] text-slate-500 font-medium mt-0.5">
+                        {scoreResult.passed 
+                          ? "You have satisfied the SiBS orientation passing threshold (minimum 80%). Check the acknowledgment below to finalize."
+                          : "You scored below 80%. You may revisit any question above to adjust your answers before submitting."}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* Final Policy Acknowledgment & Submission */}
           <div className={`p-6 border rounded-2xl space-y-4 transition-all ${
             allQuestionsAnswered 
               ? "bg-orange-50/70 border-orange-200 ring-2 ring-orange-200/50" 
@@ -449,20 +475,60 @@ export default function NHOOrientationViewer() {
               </span>
             </label>
 
-            <div className="flex justify-end pt-2">
-              <button
-                type="button"
-                onClick={handleConfirmCompletion}
-                disabled={!allQuestionsAnswered || !acknowledgmentChecked || activeApplicant.orientationStatus === "Completed"}
-                className="px-6 py-2.5 rounded-xl bg-[#FF5C28] hover:bg-[#e04f20] disabled:opacity-40 text-white font-bold text-xs shadow-xs transition-colors cursor-pointer disabled:cursor-not-allowed flex items-center gap-2"
-              >
-                <CheckCircle className="w-4 h-4" />
-                <span>
-                  {activeApplicant.orientationStatus === "Completed" ? "Orientation Confirmed" : "Confirm Orientation Completion"}
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+              {activeApplicant.orientationStatus === "Completed" && (
+                <span className="text-xs font-bold text-emerald-700 flex items-center gap-1.5">
+                  <CheckCircle className="w-4 h-4 text-emerald-600" />
+                  <span>Orientation Verified &amp; Recorded</span>
                 </span>
-              </button>
+              )}
+              <div className="flex items-center gap-2 ml-auto">
+                <button
+                  type="button"
+                  onClick={handleConfirmCompletion}
+                  disabled={!allQuestionsAnswered || !acknowledgmentChecked || activeApplicant.orientationStatus === "Completed"}
+                  className="px-6 py-2.5 rounded-xl bg-[#FF5C28] hover:bg-[#e04f20] disabled:opacity-40 text-white font-bold text-xs shadow-xs transition-colors cursor-pointer disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  <CheckCircle className="w-4 h-4" />
+                  <span>
+                    {activeApplicant.orientationStatus === "Completed" ? "Orientation Confirmed" : "Confirm Orientation Completion"}
+                  </span>
+                </button>
+              </div>
             </div>
           </div>
+
+          {/* Celebratory Post-Completion Stage: Passing of Requirements */}
+          {activeApplicant.orientationStatus === "Completed" && (
+            <div className="p-6 rounded-2xl bg-gradient-to-r from-emerald-50 via-teal-50 to-green-50 border border-emerald-300 space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <div className="flex items-center gap-3.5">
+                  <div className="w-11 h-11 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-xs shrink-0">
+                    <CheckCircle className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm sm:text-base font-black text-emerald-950">
+                      Orientation &amp; Knowledge Check Passed!
+                    </h4>
+                    <p className="text-xs text-emerald-800 font-medium mt-0.5">
+                      Quiz Score: <strong>{activeApplicant.orientationQuizScore ?? 5}/{activeApplicant.orientationQuizTotal ?? 5} ({activeApplicant.orientationQuizPercentage ?? 100}%)</strong> · Completed {activeApplicant.orientationCompletedAt || "Today"}. Requirement submission is now unlocked.
+                    </p>
+                  </div>
+                </div>
+
+                {onProceedToRequirements && (
+                  <button
+                    type="button"
+                    onClick={onProceedToRequirements}
+                    className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-[#FF5C28] hover:bg-[#e04f20] text-white text-xs font-extrabold shadow-xs cursor-pointer transition-all animate-bounce"
+                  >
+                    <span>Proceed to Step 2: Passing of Requirements</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

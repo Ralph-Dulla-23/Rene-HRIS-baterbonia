@@ -3,6 +3,26 @@ export type NHORole = "TA" | "Applicant" | "IT" | "QDS" | "Trainer" | "WFM" | "H
 export type NHOAttendanceStatus = "Pending" | "Show" | "No Show";
 export type NHOPhysicalClearance = "Pending" | "Cleared" | "Not Cleared";
 export type NHOOrientationStatus = "Not Started" | "In Progress" | "Completed";
+
+export interface NHOOrientationSlideItem {
+  id?: string;
+  num: number;
+  title: string;
+  kicker: string;
+  body: string;
+  attachedQuizQuestionId?: number;
+}
+
+export interface NHOOrientationDeckConfig {
+  version: string;
+  deckTitle: string;
+  deckFileName?: string;
+  deckFileSize?: string;
+  uploadedBy?: string;
+  uploadedAt?: string;
+  passingScorePct: number;
+  slides: NHOOrientationSlideItem[];
+}
 export type NHODocVerificationStatus = "Not Submitted" | "Draft" | "For Verification" | "Needs Correction" | "Verified";
 export type NHODeadlineStatus = "On Time" | "Due Soon" | "Overdue" | "Submitted Late";
 export type NHOITRequestStatus = "Pending" | "In Progress" | "Needs Correction" | "Completed";
@@ -175,6 +195,10 @@ export interface NHOApplicant {
   orientationCurrentSlide: number;
   orientationSlidesViewed: number[];
   orientationQuizAnswers: Record<number, number>; // questionIndex -> selectedOptionIndex
+  orientationQuizScore?: number;
+  orientationQuizTotal?: number;
+  orientationQuizPercentage?: number;
+  orientationQuizPassed?: boolean;
   orientationAcknowledged: boolean;
   orientationCompletedAt?: string;
 
