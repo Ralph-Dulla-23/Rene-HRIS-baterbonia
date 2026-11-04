@@ -1,20 +1,36 @@
 import { NHOApplicant, NHODocumentItem, NHOQuizQuestion, NHOOrientationSlideItem, NHOOrientationDeckConfig } from "./nhoTypes";
 
+export const NHO_QUIZ_STAGES = [
+  { id: 1, triggerAfterSlide: 3, title: "Part 1: Company Heritage & Core Values", questionCount: 1 },
+  { id: 2, triggerAfterSlide: 5, title: "Part 2: Workplace Conduct & Operational Policies", questionCount: 2 },
+  { id: 3, triggerAfterSlide: 6, title: "Part 3: Information Security & Data Protection", questionCount: 2 },
+  { id: 4, triggerAfterSlide: 7, title: "Part 4: Statutory Deadlines & HR People Partnership", questionCount: 1 }
+];
+
 export const NHO_QUIZ_QUESTIONS: NHOQuizQuestion[] = [
+  // PART 1 CHECKPOINT (Triggered after Slide 3: Heritage, Mission & Values)
   {
     id: 1,
-    question: "What is the primary standard for client data protection and workstation security at SiBS?",
+    stageId: 1,
+    stageTitle: "Part 1: Company Heritage & Core Values",
+    triggerAfterSlide: 3,
+    question: "Which set of core values represents the foundation of the SiBS organization?",
     options: [
-      "Employees may write passwords on sticky notes as long as they are kept inside their drawer.",
-      "Workstations must adhere strictly to the Clean Desk and Clean Screen Policy with no unauthorized mobile devices in production areas.",
-      "Employees can share credentials during emergency peak shifts if approved verbally by a peer.",
-      "Screens may be left unlocked if stepping away for under three minutes."
+      "Speed, Cost Reduction, Minimal Overhead, and Individual Recognition.",
+      "Integrity, Accountability, Synergy, Excellence, and Continuous Learning.",
+      "Hierarchy, Information Restriction, Speed, and Autonomy.",
+      "Task Execution Only, Informal Attendance, and Minimal Documentation."
     ],
     correctOptionIndex: 1,
-    explanation: "At SiBS, information security is paramount. The Clean Desk and Clean Screen Policy prohibits unattended unlocked screens and unauthorized personal recording devices in production."
+    explanation: "The SiBS Foundation is anchored upon five core values: Integrity, Accountability, Synergy, Excellence, and Continuous Learning."
   },
+
+  // PART 2 CHECKPOINT (Triggered after Slide 5: Workplace Conduct & Operational Policies)
   {
     id: 2,
+    stageId: 2,
+    stageTitle: "Part 2: Workplace Conduct & Operational Policies",
+    triggerAfterSlide: 5,
     question: "When an employee experiences an unplanned absence or medical emergency, how should notice be provided?",
     options: [
       "Post a message on public social media channels.",
@@ -27,18 +43,41 @@ export const NHO_QUIZ_QUESTIONS: NHOQuizQuestion[] = [
   },
   {
     id: 3,
-    question: "What is the timeline for completing pending non-major pre-employment requirements following physical NHO clearance?",
+    stageId: 2,
+    stageTitle: "Part 2: Workplace Conduct & Operational Policies",
+    triggerAfterSlide: 5,
+    question: "What is the correct procedure if an employee observes a workplace safety or harassment concern?",
     options: [
-      "Any time within the first six months of employment.",
-      "Exactly 14 calendar days from the successfully completed physical NHO clearance date.",
-      "30 working days from the first payroll cutoff.",
-      "No deadline is imposed as long as attendance was marked Show."
+      "Ignore it unless it directly impacts your personal daily metrics.",
+      "Report immediately to HR Admin, an authorized People Partner, or through the confidential Ethics Hotline.",
+      "Discuss it with teammates on external messaging apps before reporting.",
+      "Wait for the annual company performance review."
     ],
     correctOptionIndex: 1,
-    explanation: "The standard SiBS HRIS non-major deadline is exactly 14 calendar days from the successful physical NHO date, including weekends and holidays."
+    explanation: "SiBS enforces a zero-tolerance policy against harassment and safety violations. Prompt reporting to HR Admin or the Ethics Hotline ensures immediate investigation and protection."
   },
+
+  // PART 3 CHECKPOINT (Triggered after Slide 6: Information Security & Clean Desk Policy)
   {
     id: 4,
+    stageId: 3,
+    stageTitle: "Part 3: Information Security & Data Protection",
+    triggerAfterSlide: 6,
+    question: "What is the primary standard for client data protection and workstation security at SiBS?",
+    options: [
+      "Employees may write passwords on sticky notes as long as they are kept inside their drawer.",
+      "Workstations must adhere strictly to the Clean Desk and Clean Screen Policy with no unauthorized mobile devices in production areas.",
+      "Employees can share credentials during emergency peak shifts if approved verbally by a peer.",
+      "Screens may be left unlocked if stepping away for under three minutes."
+    ],
+    correctOptionIndex: 1,
+    explanation: "At SiBS, information security is paramount. The Clean Desk and Clean Screen Policy prohibits unattended unlocked screens and unauthorized personal recording devices in production."
+  },
+  {
+    id: 5,
+    stageId: 3,
+    stageTitle: "Part 3: Information Security & Data Protection",
+    triggerAfterSlide: 6,
     question: "Under the SiBS Non-Disclosure Agreement (NDA), what information is considered confidential?",
     options: [
       "Only financial records of SiBS executive management.",
@@ -49,17 +88,22 @@ export const NHO_QUIZ_QUESTIONS: NHOQuizQuestion[] = [
     correctOptionIndex: 1,
     explanation: "Confidential information includes all client records, proprietary procedures, employee compensation, and technical configurations."
   },
+
+  // PART 4 CHECKPOINT (Triggered after Slide 7: HR Support & Statutory Deadlines)
   {
-    id: 5,
-    question: "What is the correct procedure if an employee observes a workplace safety or harassment concern?",
+    id: 6,
+    stageId: 4,
+    stageTitle: "Part 4: HR Support & Statutory Deadlines",
+    triggerAfterSlide: 7,
+    question: "What is the timeline for completing pending non-major pre-employment requirements following physical NHO clearance?",
     options: [
-      "Ignore it unless it directly impacts your personal daily metrics.",
-      "Report immediately to HR Admin, an authorized People Partner, or through the confidential Ethics Hotline.",
-      "Discuss it with teammates on external messaging apps before reporting.",
-      "Wait for the annual company performance review."
+      "Any time within the first six months of employment.",
+      "Exactly 14 calendar days from the successfully completed physical NHO clearance date.",
+      "30 working days from the first payroll cutoff.",
+      "No deadline is imposed as long as attendance was marked Show."
     ],
     correctOptionIndex: 1,
-    explanation: "SiBS enforces a zero-tolerance policy against harassment and safety violations. Prompt reporting to HR Admin or the Ethics Hotline ensures immediate investigation and protection."
+    explanation: "The standard SiBS HRIS non-major deadline is exactly 14 calendar days from the successful physical NHO date, including weekends and holidays."
   }
 ];
 
@@ -82,7 +126,7 @@ export function calculateQuizScore(answers?: Record<number, number>): {
     score,
     total,
     percentage,
-    passed: score >= 4
+    passed: score >= 5
   };
 }
 

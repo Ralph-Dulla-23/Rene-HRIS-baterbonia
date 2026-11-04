@@ -17,7 +17,7 @@ import {
   NHOQDSNotification,
   NHOQDSAttendanceSchedule
 } from "./nhoTypes";
-import { INITIAL_NHO_APPLICANTS, calculateQuizScore } from "./nhoInitialData";
+import { INITIAL_NHO_APPLICANTS, calculateQuizScore, NHO_QUIZ_QUESTIONS } from "./nhoInitialData";
 import { pureCreateOrLinkJourney, JOURNEY_STORAGE_KEY } from "../journey/JourneyContext";
 import { INITIAL_JOURNEYS } from "../journey/journeyInitialData";
 
@@ -2255,8 +2255,8 @@ export const NHOProvider: React.FC<{ children: React.ReactNode; initialRole?: NH
 
   const submitQuizAnswer = (applicantId: string, questionIndex: number, optionIndex: number): { success: boolean; error?: string } => {
     // Requirement 10: Restrict orientation knowledge-check answers to the five valid questions (0-4)
-    if (!Number.isInteger(questionIndex) || questionIndex < 0 || questionIndex > 4) {
-      const errorMsg = `Invalid knowledge check question index: ${questionIndex}. Must be one of the five valid questions (0-4).`;
+    if (!Number.isInteger(questionIndex) || questionIndex < 0 || questionIndex >= NHO_QUIZ_QUESTIONS.length) {
+      const errorMsg = `Invalid knowledge check question index: ${questionIndex}. Must be within 0 to ${NHO_QUIZ_QUESTIONS.length - 1}.`;
       showToast(errorMsg, "error");
       return { success: false, error: errorMsg };
     }
@@ -2311,8 +2311,8 @@ export const NHOProvider: React.FC<{ children: React.ReactNode; initialRole?: NH
 
     // 2. All 5 knowledge-check questions answered
     const quizAnswerCount = Object.keys(target.orientationQuizAnswers || {}).length;
-    if (quizAnswerCount < 5) {
-      const errorMsg = "Cannot complete orientation: You must answer all five (5) knowledge check questions first.";
+    if (quizAnswerCount < NHO_QUIZ_QUESTIONS.length) {
+      const errorMsg = `Cannot complete orientation: You must answer all ${NHO_QUIZ_QUESTIONS.length} checkpoint questions first.`;
       showToast(errorMsg, "error");
       return { success: false, error: errorMsg };
     }
@@ -2332,7 +2332,7 @@ export const NHOProvider: React.FC<{ children: React.ReactNode; initialRole?: NH
         app.fullName,
         "Applicant",
         "Orientation Completed & Acknowledged",
-        `All 7 presentation slides reviewed, 5 interactive knowledge check questions answered (Score: ${scoreResult.score}/${scoreResult.total} - ${scoreResult.percentage}%), and final policy acknowledgment signed (Orientation Version: v1.0-sample).`
+        `All 7 presentation slides reviewed, ${scoreResult.total} interactive checkpoint questions answered (Score: ${scoreResult.score}/${scoreResult.total} - ${scoreResult.percentage}%), and final policy acknowledgment signed (Orientation Version: v1.0-sample).`
       );
       return {
         ...app,

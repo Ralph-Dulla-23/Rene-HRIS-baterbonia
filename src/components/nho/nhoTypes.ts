@@ -296,6 +296,9 @@ export interface NHOQuizQuestion {
   id: number;
   question: string;
   options: string[];
+  stageId?: number;
+  stageTitle?: string;
+  triggerAfterSlide?: number;
   correctOptionIndex: number;
   explanation: string;
 }
