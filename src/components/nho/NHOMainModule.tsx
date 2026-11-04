@@ -171,6 +171,13 @@ function NHOInnerModule({ onSwitchModule }: { onSwitchModule?: (module: string, 
 
       {/* Main Container Content */}
       <main className="w-full min-w-0 flex-1 space-y-5 px-4 pb-8 pt-4 sm:px-6">
+        {user && ['TA', 'HR', 'HR Admin', 'Super Admin'].includes(user.role) && onSwitchModule && (
+          <div className="flex justify-end">
+            <button type="button" onClick={() => onSwitchModule('Orientation Settings')} className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-[#042C51] hover:bg-slate-50">
+              Edit orientation deck & quizzes
+            </button>
+          </div>
+        )}
         {/* TA Role Views */}
         {role === "TA" && (
           <>

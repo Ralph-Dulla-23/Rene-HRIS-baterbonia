@@ -17,7 +17,7 @@ import {
   NHOQDSNotification,
   NHOQDSAttendanceSchedule
 } from "./nhoTypes";
-import { INITIAL_NHO_APPLICANTS, calculateQuizScore, NHO_QUIZ_QUESTIONS } from "./nhoInitialData";
+import { INITIAL_NHO_APPLICANTS, calculateQuizScore, NHO_QUIZ_QUESTIONS, getStoredOrientationDeckConfig, getCurrentOrientationAnswers, getOrientationQuizKey } from "./nhoInitialData";
 import { pureCreateOrLinkJourney, JOURNEY_STORAGE_KEY } from "../journey/JourneyContext";
 import { INITIAL_JOURNEYS } from "../journey/journeyInitialData";
 
@@ -2254,13 +2254,16 @@ export const NHOProvider: React.FC<{ children: React.ReactNode; initialRole?: NH
   };
 
   const submitQuizAnswer = (applicantId: string, questionIndex: number, optionIndex: number): { success: boolean; error?: string } => {
-    // Requirement 10: Restrict orientation knowledge-check answers to the five valid questions (0-4)
-    if (!Number.isInteger(questionIndex) || questionIndex < 0 || questionIndex >= NHO_QUIZ_QUESTIONS.length) {
-      const errorMsg = `Invalid knowledge check question index: ${questionIndex}. Must be within 0 to ${NHO_QUIZ_QUESTIONS.length - 1}.`;
+    const config = getStoredOrientationDeckConfig();
+    const questions = config.quizQuestions ?? NHO_QUIZ_QUESTIONS;
+    // Validate against the published answer key.
+    if (!Number.isInteger(questionIndex) || questionIndex < 0 || questionIndex >= questions.length) {
+      const errorMsg = `Invalid knowledge check question index: ${questionIndex}. Must be within 0 to ${questions.length - 1}.`;
       showToast(errorMsg, "error");
       return { success: false, error: errorMsg };
     }
 
+    if (!Number.isInteger(optionIndex) || optionIndex < 0 || optionIndex >= questions[questionIndex].options.length) return { success: false, error: "Invalid answer choice" };
     const target = applicants.find(a => a.id === applicantId);
     if (!target) return { success: false, error: "Applicant not found" };
 
@@ -2273,13 +2276,14 @@ export const NHOProvider: React.FC<{ children: React.ReactNode; initialRole?: NH
     setApplicants(prev => prev.map(app => {
       if (app.id !== applicantId) return app;
       const updatedAnswers = {
-        ...(app.orientationQuizAnswers || {}),
+        ...getCurrentOrientationAnswers(app, config),
         [questionIndex]: optionIndex
       };
-      const scoreResult = calculateQuizScore(updatedAnswers);
+      const scoreResult = calculateQuizScore(updatedAnswers, config);
       return {
         ...app,
         orientationQuizAnswers: updatedAnswers,
+        orientationQuizConfigKey: getOrientationQuizKey(config),
         orientationQuizScore: scoreResult.score,
         orientationQuizTotal: scoreResult.total,
         orientationQuizPercentage: scoreResult.percentage,
@@ -2290,6 +2294,8 @@ export const NHOProvider: React.FC<{ children: React.ReactNode; initialRole?: NH
   };
 
   const completeOrientation = (applicantId: string, acknowledged: boolean = false): { success: boolean; error?: string } => {
+    const config = getStoredOrientationDeckConfig();
+    const questions = config.quizQuestions ?? NHO_QUIZ_QUESTIONS;
     const target = applicants.find(a => a.id === applicantId);
     if (!target) return { success: false, error: "Applicant not found" };
 
@@ -2299,20 +2305,18 @@ export const NHOProvider: React.FC<{ children: React.ReactNode; initialRole?: NH
       return { success: false, error: errorMsg };
     }
 
-    // 1. All 7 required slides viewed
-    const requiredSlides = [1, 2, 3, 4, 5, 6, 7];
+    const requiredSlides = config.slides.map(s => s.num);
     const viewedSlides = target.orientationSlidesViewed || [];
     const hasViewedAllSlides = requiredSlides.every(s => viewedSlides.includes(s));
     if (!hasViewedAllSlides) {
-      const errorMsg = "Cannot complete orientation: You must view all seven (7) presentation slides first.";
+      const errorMsg = `Cannot complete orientation: You must view all ${requiredSlides.length} presentation slides first.`;
       showToast(errorMsg, "error");
       return { success: false, error: errorMsg };
     }
 
-    // 2. All 5 knowledge-check questions answered
-    const quizAnswerCount = Object.keys(target.orientationQuizAnswers || {}).length;
-    if (quizAnswerCount < NHO_QUIZ_QUESTIONS.length) {
-      const errorMsg = `Cannot complete orientation: You must answer all ${NHO_QUIZ_QUESTIONS.length} checkpoint questions first.`;
+    const answers = getCurrentOrientationAnswers(target, config);
+    if (!questions.every((q, index) => Number.isInteger(answers[index]) && answers[index] >= 0 && answers[index] < q.options.length)) {
+      const errorMsg = `Cannot complete orientation: You must answer all ${questions.length} checkpoint questions first.`;
       showToast(errorMsg, "error");
       return { success: false, error: errorMsg };
     }
@@ -2324,19 +2328,23 @@ export const NHOProvider: React.FC<{ children: React.ReactNode; initialRole?: NH
       return { success: false, error: errorMsg };
     }
 
-    const scoreResult = calculateQuizScore(target.orientationQuizAnswers);
+    const scoreResult = calculateQuizScore(answers, config);
     setApplicants(prev => prev.map(app => {
       if (app.id !== applicantId) return app;
       const audit = createAuditLog(
         app.fullName,
         "Applicant",
         "Orientation Completed & Acknowledged",
-        `All 7 presentation slides reviewed, ${scoreResult.total} interactive checkpoint questions answered (Score: ${scoreResult.score}/${scoreResult.total} - ${scoreResult.percentage}%), and final policy acknowledgment signed (Orientation Version: v1.0-sample).`
+        `All ${requiredSlides.length} presentation slides reviewed, ${scoreResult.total} interactive checkpoint questions answered (Score: ${scoreResult.score}/${scoreResult.total} - ${scoreResult.percentage}%), and final policy acknowledgment signed (Orientation Version: ${config.version}).`
       );
       return {
         ...app,
         orientationStatus: "Completed",
-        orientationVersion: "v1.0-sample",
+        orientationVersion: config.version,
+        orientationQuizConfigKey: getOrientationQuizKey(config),
+        orientationQuizQuestions: questions,
+        orientationQuizStages: config.quizStages,
+        orientationQuizPassingScorePct: config.passingScorePct,
         orientationAcknowledged: true,
         orientationQuizScore: scoreResult.score,
         orientationQuizTotal: scoreResult.total,

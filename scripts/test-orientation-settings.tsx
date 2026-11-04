@@ -1,0 +1,25 @@
+import { createRequire } from "node:module";
+import assert from 'node:assert/strict';
+import React from 'react';
+import RecruitmentSettings from '../src/components/RecruitmentSettings';
+import { ORIENTATION_CONFIG_STORAGE_KEY } from '../src/components/nho/nhoInitialData';
+
+const loadPackage = createRequire(process.env.SIBS_ORIENTATION_TEST_PACKAGE || process.cwd() + '/package.json');
+const {JSDOM} = loadPackage('jsdom');
+const dom = new JSDOM('<!doctype html><html><body></body></html>', {url:'http://localhost'});
+Object.assign(globalThis,{window:dom.window,document:dom.window.document,localStorage:dom.window.localStorage,Event:dom.window.Event,HTMLElement:dom.window.HTMLElement,Node:dom.window.Node});
+const {render,fireEvent,cleanup} = loadPackage('@testing-library/react');
+const ui=render(<RecruitmentSettings orientationOnly userEmail="ta@demo.sibs.local" />);
+assert.equal(ui.queryByRole('button',{name:/Multi-Tier Approval Matrix/}),null);
+assert.equal(ui.queryByRole('button',{name:/Assessment Benchmarks/}),null);
+fireEvent.change(ui.getByLabelText('Question text'),{target:{value:'Updated question from TA'}});
+assert.equal(localStorage.getItem(ORIENTATION_CONFIG_STORAGE_KEY),null,'Question edits remain a draft');
+fireEvent.click(ui.getByRole('button',{name:'Publish Deck Settings'}));
+const published=localStorage.getItem(ORIENTATION_CONFIG_STORAGE_KEY)!;
+assert.equal(JSON.parse(published).quizQuestions[0].question,'Updated question from TA');
+fireEvent.change(ui.getByLabelText('Number of questions in this part'),{target:{value:'2'}});
+fireEvent.click(ui.getByRole('button',{name:'Publish Deck Settings'}));
+assert.ok(ui.getByRole('alert').textContent.includes('question text'));
+assert.equal(localStorage.getItem(ORIENTATION_CONFIG_STORAGE_KEY),published,'Invalid added question does not replace published settings');
+cleanup();
+console.log('PASS TA/HR orientation-only settings: draft isolation, publishing and invalid-question rejection');

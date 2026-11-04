@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
+import OrientationQuizEditor from "./nho/OrientationQuizEditor";
 import ApplicationQuestionsFormSettings from "./ApplicationQuestionsFormSettings";
 import { 
   NHOOrientationDeckConfig, 
@@ -8,7 +9,7 @@ import {
   getStoredOrientationDeckConfig, 
   saveStoredOrientationDeckConfig, 
   INITIAL_ORIENTATION_DECK_CONFIG,
-  NHO_QUIZ_QUESTIONS
+  validateOrientationDeckConfig
 } from "./nho/nhoInitialData";
 import {
   Settings,
@@ -58,6 +59,7 @@ import {
 } from "lucide-react";
 
 interface RecruitmentSettingsProps {
+  orientationOnly?: boolean;
   userEmail?: string;
   onSwitchModule?: (moduleName: string) => void;
 }
@@ -591,12 +593,13 @@ const INITIAL_APPROVAL_RULES: Record<string, ApprovalUser[]> = {
 
 export default function RecruitmentSettings({
   userEmail = "alena.batacan@thesiblingssolutions.com",
-  onSwitchModule
+  onSwitchModule,
+  orientationOnly = false
 }: RecruitmentSettingsProps) {
   // Active Tab
   const [activeTab, setActiveTab] = useState<
     "headcounts" | "interview_form" | "application_questions" | "pipeline" | "assessments" | "emails" | "holidays" | "approvals" | "orientation_deck"
-  >("headcounts");
+  >(orientationOnly ? "orientation_deck" : "headcounts");
 
   // Notifications / Toast
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -608,6 +611,7 @@ export default function RecruitmentSettings({
 
   // ---------------- TAB 9: ORIENTATION DECK & SLIDES SETTINGS ----------------
   const [orientationConfig, setOrientationConfig] = useState<NHOOrientationDeckConfig>(() => getStoredOrientationDeckConfig());
+  const [orientationErrors, setOrientationErrors] = useState<string[]>([]);
   const [selectedSlideIdx, setSelectedSlideIdx] = useState<number>(0);
   const [isEditingSlide, setIsEditingSlide] = useState<boolean>(false);
   const [editingSlideData, setEditingSlideData] = useState<NHOOrientationSlideItem | null>(null);
@@ -635,8 +639,7 @@ export default function RecruitmentSettings({
         version: deckVersionInput
       };
       setOrientationConfig(updated);
-      saveStoredOrientationDeckConfig(updated);
-      showToast(`Orientation presentation deck "${file.name}" uploaded successfully!`);
+      showToast(`Orientation presentation deck "${file.name}" selected in draft. Publish to apply.`);
     }
   };
 
@@ -659,9 +662,8 @@ export default function RecruitmentSettings({
       passingScorePct: passingScoreInput
     };
     setOrientationConfig(updated);
-    saveStoredOrientationDeckConfig(updated);
     setIsEditingSlide(false);
-    showToast(`Slide ${editingSlideData.num} updated and published live!`);
+    showToast(`Slide ${editingSlideData.num} updated in draft. Publish to apply.`);
   };
 
   const handleAddNewSlide = () => {
@@ -681,7 +683,6 @@ export default function RecruitmentSettings({
       passingScorePct: passingScoreInput
     };
     setOrientationConfig(updated);
-    saveStoredOrientationDeckConfig(updated);
     setIsAddingNewSlide(false);
     setNewSlideData({
       num: updatedSlides.length + 1,
@@ -704,7 +705,6 @@ export default function RecruitmentSettings({
       slides: filtered
     };
     setOrientationConfig(updated);
-    saveStoredOrientationDeckConfig(updated);
     setSelectedSlideIdx(Math.max(0, idx - 1));
     showToast("Slide removed and presentation order re-indexed.");
   };
@@ -722,7 +722,6 @@ export default function RecruitmentSettings({
       slides: renumbered
     };
     setOrientationConfig(updated);
-    saveStoredOrientationDeckConfig(updated);
     setSelectedSlideIdx(toIdx);
     showToast(`Slide moved ${direction}.`);
   };
@@ -734,8 +733,14 @@ export default function RecruitmentSettings({
       passingScorePct: passingScoreInput
     };
     setOrientationConfig(updated);
-    saveStoredOrientationDeckConfig(updated);
-    showToast("Orientation deck settings & knowledge check configuration saved!");
+    const errors = validateOrientationDeckConfig(updated);
+    setOrientationErrors(errors);
+    if (errors.length) { showToast("Resolve the orientation settings errors before publishing."); return; }
+    if (!saveStoredOrientationDeckConfig(updated)) {
+      setOrientationErrors(["Could not save orientation settings in this browser. Your draft is still available; please try again."]);
+      return;
+    }
+    showToast("Orientation deck and quiz published to the applicant portal.");
   };
 
   // ---------------- TAB 1: HEADCOUNTS STATE ----------------
@@ -1766,6 +1771,7 @@ export default function RecruitmentSettings({
           <span className="text-xs font-bold">{toastMessage}</span>
         </div>
       )}      {/* TOP HEADER BANNER */}
+      {!orientationOnly && <>
       <section className="bg-[#042C51] text-white p-6 sm:p-8 rounded-2xl shadow-lg border border-[#0A3A67] relative overflow-hidden">
         {/* Background Cog Watermark */}
         <div className="absolute -right-10 -bottom-10 opacity-10 pointer-events-none">
@@ -1995,6 +2001,7 @@ export default function RecruitmentSettings({
         </button>
       </div>
 
+      </>}
       {/* TAB CONTENT AREAS */}
 
       {/* ================= TAB 1: UPDATE HEADCOUNTS ================= */}
@@ -3699,6 +3706,7 @@ export default function RecruitmentSettings({
             </div>
           </div>
 
+          {orientationErrors.length > 0 && <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-4 text-xs text-red-800"><p className="font-bold mb-2">Review before publishing</p><ul className="list-disc pl-5 space-y-1">{orientationErrors.map((error, index) => <li key={index}>{error}</li>)}</ul></div>}
           {/* MAIN 2-COLUMN GRID */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
             {/* LEFT COLUMN: FILE ASSETS & SLIDE LIST (4 COLS) */}
@@ -3710,7 +3718,7 @@ export default function RecruitmentSettings({
                     Core PPT Presentation Asset
                   </span>
                   <span className="text-[9.5px] font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full border border-emerald-200">
-                    Live Active Deck
+                    Presentation Draft
                   </span>
                 </div>
 
@@ -3762,7 +3770,7 @@ export default function RecruitmentSettings({
                       min="50"
                       max="100"
                       value={passingScoreInput}
-                      onChange={e => setPassingScoreInput(parseInt(e.target.value, 10) || 80)}
+                      onChange={e => setPassingScoreInput(Number(e.target.value))}
                       className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white text-xs font-bold text-[#042C51]"
                     />
                   </div>
@@ -4050,39 +4058,7 @@ export default function RecruitmentSettings({
                 })()
               )}
 
-              {/* KNOWLEDGE CHECK QUIZ QUESTIONS PREVIEW */}
-              <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-5 space-y-4">
-                <div className="flex items-center justify-between pb-3 border-b border-slate-200">
-                  <div className="flex items-center gap-2">
-                    <GraduationCap className="w-5 h-5 text-[#FF5C28]" />
-                    <h4 className="text-xs font-black text-[#042C51] uppercase tracking-wider">
-                      Knowledge Check Quiz Attached to Deck (5 Questions)
-                    </h4>
-                  </div>
-                  <span className="text-[10.5px] font-bold text-slate-500">
-                    Pass Standard: {passingScoreInput}% (Minimum 4 of 5 correct)
-                  </span>
-                </div>
-
-                <div className="space-y-3">
-                  {NHO_QUIZ_QUESTIONS.map((q, qIdx) => (
-                    <div key={q.id} className="p-3.5 rounded-xl bg-white border border-slate-200 text-xs space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-bold text-[#FF5C28] uppercase">
-                          Question {q.id}
-                        </span>
-                        <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                          Option {String.fromCharCode(65 + q.correctOptionIndex)} is Correct
-                        </span>
-                      </div>
-                      <p className="font-bold text-[#042C51]">{q.question}</p>
-                      <div className="text-[11px] text-slate-500 bg-slate-50 p-2 rounded-lg font-medium">
-                        <strong>Takeaway:</strong> {q.explanation}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              <OrientationQuizEditor config={{ ...orientationConfig, passingScorePct: passingScoreInput }} onChange={setOrientationConfig} />
             </div>
           </div>
         </div>

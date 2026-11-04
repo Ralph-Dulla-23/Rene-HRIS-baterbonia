@@ -107,26 +107,27 @@ export const NHO_QUIZ_QUESTIONS: NHOQuizQuestion[] = [
   }
 ];
 
-export function calculateQuizScore(answers?: Record<number, number>): {
+export function calculateQuizScore(answers?: Record<number, number>, config: NHOOrientationDeckConfig = getStoredOrientationDeckConfig()): {
   score: number;
   total: number;
   percentage: number;
   passed: boolean;
 } {
-  const total = NHO_QUIZ_QUESTIONS.length;
+  const questions = config.quizQuestions ?? NHO_QUIZ_QUESTIONS;
+  const total = questions.length;
   if (!answers) return { score: 0, total, percentage: 0, passed: false };
   let score = 0;
-  NHO_QUIZ_QUESTIONS.forEach((q, idx) => {
+  questions.forEach((q, idx) => {
     if (answers[idx] === q.correctOptionIndex) {
       score++;
     }
   });
-  const percentage = Math.round((score / total) * 100);
+  const percentage = total ? Math.round((score / total) * 100) : 0;
   return {
     score,
     total,
     percentage,
-    passed: score >= 5
+    passed: total > 0 && score * 100 >= config.passingScorePct * total
   };
 }
 
@@ -183,29 +184,81 @@ export const INITIAL_ORIENTATION_DECK_CONFIG: NHOOrientationDeckConfig = {
   uploadedBy: "Alena Batacan (TA Lead)",
   uploadedAt: "2026-10-01 09:15 AM",
   passingScorePct: 80,
-  slides: INITIAL_ORIENTATION_SLIDES
+  slides: INITIAL_ORIENTATION_SLIDES,
+  quizStages: NHO_QUIZ_STAGES,
+  quizQuestions: NHO_QUIZ_QUESTIONS
 };
 
 export const ORIENTATION_CONFIG_STORAGE_KEY = "sibs_nho_orientation_config";
+
+// Question order is part of the key because existing applicant answers use array indices.
+export function getOrientationQuizKey(config: NHOOrientationDeckConfig): string {
+  return JSON.stringify([config.quizStages ?? NHO_QUIZ_STAGES, config.quizQuestions ?? NHO_QUIZ_QUESTIONS]);
+}
+
+export function getCurrentOrientationAnswers(applicant: Pick<NHOApplicant, 'orientationQuizAnswers' | 'orientationQuizConfigKey'>, config: NHOOrientationDeckConfig): Record<number, number> {
+  const key = applicant.orientationQuizConfigKey;
+  const expected = getOrientationQuizKey(config);
+  const legacyKey = getOrientationQuizKey(INITIAL_ORIENTATION_DECK_CONFIG);
+  return (key ? key === expected : expected === legacyKey) ? applicant.orientationQuizAnswers || {} : {};
+}
 
 export function getStoredOrientationDeckConfig(): NHOOrientationDeckConfig {
   if (typeof window === "undefined") return INITIAL_ORIENTATION_DECK_CONFIG;
   try {
     const raw = localStorage.getItem(ORIENTATION_CONFIG_STORAGE_KEY);
-    if (raw) return JSON.parse(raw);
+    if (raw) {
+      const stored = JSON.parse(raw);
+      return {
+        ...INITIAL_ORIENTATION_DECK_CONFIG,
+        ...stored,
+        quizStages: stored.quizStages ?? NHO_QUIZ_STAGES,
+        quizQuestions: stored.quizQuestions ?? NHO_QUIZ_QUESTIONS,
+      };
+    }
   } catch (e) {
     console.error("Failed to parse stored orientation config", e);
   }
   return INITIAL_ORIENTATION_DECK_CONFIG;
 }
 
-export function saveStoredOrientationDeckConfig(config: NHOOrientationDeckConfig): void {
-  if (typeof window === "undefined") return;
+export function validateOrientationDeckConfig(config: NHOOrientationDeckConfig): string[] {
+  const errors: string[] = [];
+  const stages = config.quizStages ?? NHO_QUIZ_STAGES;
+  const questions = config.quizQuestions ?? NHO_QUIZ_QUESTIONS;
+  if (!config.version.trim()) errors.push('Enter a deck version.');
+  if (!Number.isFinite(config.passingScorePct) || config.passingScorePct < 50 || config.passingScorePct > 100) errors.push('Passing score must be between 50 and 100.');
+  if (!config.slides.length) errors.push('At least one slide is required.');
+  if (stages.length !== 4 || new Set(stages.map(s => s.id)).size !== 4) errors.push('Keep the four established quiz parts.');
+  let previousSlide = 0;
+  stages.forEach((stage, idx) => {
+    if (stage.id !== idx + 1) errors.push('Keep the four established part IDs in order.');
+    if (!stage.title.trim()) errors.push(`Part ${idx + 1}: enter a title.`);
+    if (!Number.isInteger(stage.triggerAfterSlide) || stage.triggerAfterSlide <= previousSlide || stage.triggerAfterSlide > config.slides.length) errors.push(`Part ${idx + 1}: choose a checkpoint slide after the previous part and within the deck.`);
+    previousSlide = stage.triggerAfterSlide;
+    if (!Number.isInteger(stage.questionCount) || stage.questionCount < 1 || questions.filter(q => q.stageId === stage.id).length !== stage.questionCount) errors.push(`Part ${idx + 1}: the question count must match its assigned questions (at least one).`);
+  });
+  if (stages.at(-1)?.triggerAfterSlide !== config.slides.length) errors.push('Place the final checkpoint after the final slide.');
+  if (new Set(questions.map(q => q.id)).size !== questions.length) errors.push('Question IDs must be unique.');
+  questions.forEach((q, idx) => {
+    if (!stages.some(s => s.id === q.stageId)) errors.push(`Question ${idx + 1}: choose a valid part.`);
+    if (!q.question.trim()) errors.push(`Question ${idx + 1}: enter question text.`);
+    if (q.options.length < 2 || q.options.some(o => !o.trim())) errors.push(`Question ${idx + 1}: enter at least two non-empty answer choices.`);
+    if (!Number.isInteger(q.correctOptionIndex) || q.correctOptionIndex < 0 || q.correctOptionIndex >= q.options.length) errors.push(`Question ${idx + 1}: select a correct answer.`);
+  });
+  return errors;
+}
+
+export function saveStoredOrientationDeckConfig(config: NHOOrientationDeckConfig): boolean {
+  if (typeof window === "undefined") return false;
+  if (validateOrientationDeckConfig(config).length) return false;
   try {
     localStorage.setItem(ORIENTATION_CONFIG_STORAGE_KEY, JSON.stringify(config));
     window.dispatchEvent(new Event("sibs_nho_orientation_config_updated"));
+    return true;
   } catch (e) {
     console.error("Failed to save orientation config", e);
+    return false;
   }
 }
 

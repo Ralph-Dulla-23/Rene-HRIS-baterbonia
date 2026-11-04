@@ -120,7 +120,7 @@ export default function NHOApplicantPortal({ subTab = "overview", onSubTabChange
             <p className="mt-2 max-w-xl text-[13px] leading-relaxed text-[#667085] font-medium">
               {waitingForReview ? "You have no pending candidate actions right now. Talent Acquisition must verify the remaining submissions. You can review their status below." :
                nextOverviewTask?.id === "majors" ? "Submit the required pre-employment documents individually. Talent Acquisition will review each submission before verification." :
-               nextOverviewTask?.id === "orientation" ? "Read through the seven orientation modules and complete the five-question knowledge check and acknowledgment." :
+               nextOverviewTask?.id === "orientation" ? "Review the orientation parts and complete their checkpoint questions and final acknowledgment." :
                nextOverviewTask?.id === "agreements" ? "Review the required agreements and submit an electronic signature or a signed copy for verification." :
                nextOverviewTask?.id === "requirements" ? "Your mandatory documents and agreements are complete. Finish any remaining additional uploads to close out your checklist." :
                "There are no outstanding documents or onboarding activities in your current checklist. You can still review your previous submissions."}

@@ -1,23 +1,25 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useNHO } from "../NHOContext";
 import { NHOOrientationDeckConfig } from "../nhoTypes";
-import { 
-  NHO_QUIZ_STAGES, 
-  NHO_QUIZ_QUESTIONS, 
-  calculateQuizScore, 
-  getStoredOrientationDeckConfig, 
-  INITIAL_ORIENTATION_SLIDES 
+import {
+  calculateQuizScore,
+  getCurrentOrientationAnswers,
+  getOrientationQuizKey,
+  INITIAL_ORIENTATION_DECK_CONFIG,
+  getStoredOrientationDeckConfig,
+  ORIENTATION_CONFIG_STORAGE_KEY,
+  INITIAL_ORIENTATION_SLIDES
 } from "../nhoInitialData";
-import { 
-  ChevronLeft, 
-  ChevronRight, 
-  CheckCircle, 
-  AlertCircle, 
-  Sparkles, 
-  BookOpen, 
-  Check, 
-  ArrowRight, 
-  Award, 
+import {
+  ChevronLeft,
+  ChevronRight,
+  CheckCircle,
+  AlertCircle,
+  Sparkles,
+  BookOpen,
+  Check,
+  ArrowRight,
+  Award,
   HelpCircle,
   ShieldCheck
 } from "lucide-react";
@@ -29,12 +31,12 @@ interface NHOOrientationViewerProps {
 type OrientationViewMode = "slide" | "checkpoint" | "final";
 
 export default function NHOOrientationViewer({ onProceedToRequirements }: NHOOrientationViewerProps = {}) {
-  const { 
-    activeApplicant, 
-    updateOrientationSlide, 
-    submitQuizAnswer, 
-    completeOrientation, 
-    showToast 
+  const {
+    activeApplicant,
+    updateOrientationSlide,
+    submitQuizAnswer,
+    completeOrientation,
+    showToast
   } = useNHO();
 
   // Dynamic Orientation Deck Configuration loaded from Recruitment Settings
@@ -45,13 +47,22 @@ export default function NHOOrientationViewer({ onProceedToRequirements }: NHOOri
       setDeckConfig(getStoredOrientationDeckConfig());
     };
     window.addEventListener("sibs_nho_orientation_config_updated", handleConfigUpdate);
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === ORIENTATION_CONFIG_STORAGE_KEY) handleConfigUpdate();
+    };
+    window.addEventListener("storage", handleStorage);
     return () => {
       window.removeEventListener("sibs_nho_orientation_config_updated", handleConfigUpdate);
+      window.removeEventListener("storage", handleStorage);
     };
   }, []);
 
   const slides = deckConfig.slides && deckConfig.slides.length > 0 ? deckConfig.slides : INITIAL_ORIENTATION_SLIDES;
   const totalSlides = slides.length;
+  const isCompleted = activeApplicant.orientationStatus === "Completed";
+  const quizStages = (isCompleted && activeApplicant.orientationQuizStages) || deckConfig.quizStages || [];
+  const quizQuestions = (isCompleted && activeApplicant.orientationQuizQuestions) || deckConfig.quizQuestions || [];
+  const currentAnswers = () => isCompleted ? activeApplicant.orientationQuizAnswers || {} : getCurrentOrientationAnswers(activeApplicant, deckConfig);
 
   // Track view mode: slide presentation, interspersed stage checkpoint, or final score/acknowledgment
   const [viewMode, setViewMode] = useState<OrientationViewMode>(() => {
@@ -61,8 +72,14 @@ export default function NHOOrientationViewer({ onProceedToRequirements }: NHOOri
 
   const [currentSlide, setCurrentSlide] = useState<number>(activeApplicant.orientationCurrentSlide || 1);
   const [activeStageId, setActiveStageId] = useState<number>(1);
-  const [quizAnswers, setQuizAnswers] = useState<Record<number, number>>(activeApplicant.orientationQuizAnswers || {});
+  const [quizAnswers, setQuizAnswers] = useState<Record<number, number>>(currentAnswers);
   const [acknowledgmentChecked, setAcknowledgmentChecked] = useState<boolean>(Boolean(activeApplicant.orientationAcknowledged));
+
+  useEffect(() => {
+    if (!isCompleted && !activeApplicant.orientationSlidesViewed.includes(currentSlide)) {
+      updateOrientationSlide(activeApplicant.id, currentSlide);
+    }
+  }, [currentSlide, activeApplicant.id]);
 
   // Sync state whenever active candidate switches
   useEffect(() => {
@@ -70,7 +87,7 @@ export default function NHOOrientationViewer({ onProceedToRequirements }: NHOOri
       setCurrentSlide(activeApplicant.orientationCurrentSlide);
     }
     if (activeApplicant?.orientationQuizAnswers) {
-      setQuizAnswers(activeApplicant.orientationQuizAnswers);
+      setQuizAnswers(currentAnswers());
     }
     if (typeof activeApplicant?.orientationAcknowledged === "boolean") {
       setAcknowledgmentChecked(activeApplicant.orientationAcknowledged);
@@ -80,6 +97,19 @@ export default function NHOOrientationViewer({ onProceedToRequirements }: NHOOri
     }
   }, [activeApplicant?.id]);
 
+  const quizConfigKey = getOrientationQuizKey(deckConfig);
+  const previousConfigKey = useRef(quizConfigKey);
+  useEffect(() => {
+    const changed = previousConfigKey.current !== quizConfigKey;
+    previousConfigKey.current = quizConfigKey;
+    if (activeApplicant.orientationStatus === "Completed") return;
+    const savedKey = activeApplicant.orientationQuizConfigKey ?? getOrientationQuizKey(INITIAL_ORIENTATION_DECK_CONFIG);
+    if (!changed && savedKey === quizConfigKey) return;
+    setQuizAnswers(getCurrentOrientationAnswers(activeApplicant, deckConfig));
+    setCurrentSlide(1);
+    setViewMode("slide");
+  }, [quizConfigKey, activeApplicant.id]);
+
   const maxViewedSlide = Math.max(
     currentSlide,
     ...(activeApplicant.orientationSlidesViewed || [1])
@@ -87,29 +117,35 @@ export default function NHOOrientationViewer({ onProceedToRequirements }: NHOOri
 
   // Check if current slide triggers an interspersed checkpoint
   const currentSlideCheckpoint = useMemo(() => {
-    return NHO_QUIZ_STAGES.find(st => st.triggerAfterSlide === currentSlide);
-  }, [currentSlide]);
+    return quizStages.find(st => st.triggerAfterSlide === currentSlide);
+  }, [currentSlide, quizStages]);
 
   // Questions belonging to the active stage
   const stageQuestions = useMemo(() => {
-    return NHO_QUIZ_QUESTIONS.filter(q => q.stageId === activeStageId);
-  }, [activeStageId]);
+    return quizQuestions.filter(q => q.stageId === activeStageId);
+  }, [activeStageId, quizQuestions]);
 
   // Check if all questions in the current stage checkpoint are answered
   const isCurrentStageAnswered = useMemo(() => {
     if (!stageQuestions.length) return false;
-    return stageQuestions.every(q => quizAnswers[q.id - 1] !== undefined);
+    return stageQuestions.every(q => quizAnswers[quizQuestions.findIndex(item => item.id === q.id)] !== undefined);
   }, [stageQuestions, quizAnswers]);
 
   // Total answers across all checkpoints
   const totalAnsweredCount = Object.keys(quizAnswers).length;
-  const allQuestionsAnswered = NHO_QUIZ_QUESTIONS.length > 0 && 
-    NHO_QUIZ_QUESTIONS.every((_, idx) => quizAnswers[idx] !== undefined);
+  const allQuestionsAnswered = quizQuestions.length > 0 &&
+    quizQuestions.every((_, idx) => quizAnswers[idx] !== undefined);
 
   // Current score calculation
   const scoreResult = useMemo(() => {
-    return calculateQuizScore(quizAnswers);
-  }, [quizAnswers]);
+    if (isCompleted && activeApplicant.orientationQuizScore !== undefined) return {
+      score: activeApplicant.orientationQuizScore,
+      total: activeApplicant.orientationQuizTotal ?? quizQuestions.length,
+      percentage: activeApplicant.orientationQuizPercentage ?? 0,
+      passed: activeApplicant.orientationQuizPassed ?? false,
+    };
+    return calculateQuizScore(quizAnswers, { ...deckConfig, quizQuestions });
+  }, [quizAnswers, deckConfig, isCompleted, activeApplicant, quizQuestions]);
 
   // Navigation handlers
   const handleNextSlide = () => {
@@ -156,9 +192,9 @@ export default function NHOOrientationViewer({ onProceedToRequirements }: NHOOri
   };
 
   const handleSelectAnswer = (qIdx: number, optIdx: number) => {
-    setQuizAnswers(prev => ({ ...prev, [qIdx]: optIdx }));
     try {
-      submitQuizAnswer(activeApplicant.id, qIdx, optIdx);
+      const result = submitQuizAnswer(activeApplicant.id, qIdx, optIdx);
+      if (result.success) setQuizAnswers(prev => ({ ...prev, [qIdx]: optIdx }));
     } catch (e) {
       console.warn("Could not sync quiz answer to context", e);
     }
@@ -171,10 +207,10 @@ export default function NHOOrientationViewer({ onProceedToRequirements }: NHOOri
       return;
     }
 
-    const activeStage = NHO_QUIZ_STAGES.find(st => st.id === activeStageId);
+    const activeStage = quizStages.find(st => st.id === activeStageId);
     const triggerSlide = activeStage ? activeStage.triggerAfterSlide : currentSlide;
 
-    if (activeStageId < NHO_QUIZ_STAGES.length) {
+    if (activeStageId < quizStages.length) {
       // Advance to next slide after the trigger slide
       const nextSlide = Math.min(totalSlides, triggerSlide + 1);
       setCurrentSlide(nextSlide);
@@ -192,7 +228,7 @@ export default function NHOOrientationViewer({ onProceedToRequirements }: NHOOri
 
   const handleConfirmCompletion = () => {
     if (!allQuestionsAnswered) {
-      showToast(`Please answer all ${NHO_QUIZ_QUESTIONS.length} checkpoint questions first.`, "error");
+      showToast(`Please answer all ${quizQuestions.length} checkpoint questions first.`, "error");
       return;
     }
     if (!acknowledgmentChecked) {
@@ -210,7 +246,7 @@ export default function NHOOrientationViewer({ onProceedToRequirements }: NHOOri
     if (activeApplicant.orientationStatus === "Completed") return 100;
     if (viewMode === "final") return 95;
     const slideWeight = (currentSlide / totalSlides) * 60;
-    const quizWeight = (totalAnsweredCount / NHO_QUIZ_QUESTIONS.length) * 40;
+    const quizWeight = (totalAnsweredCount / quizQuestions.length) * 40;
     return Math.min(90, Math.round(slideWeight + quizWeight));
   }, [activeApplicant.orientationStatus, viewMode, currentSlide, totalSlides, totalAnsweredCount]);
 
@@ -240,7 +276,7 @@ export default function NHOOrientationViewer({ onProceedToRequirements }: NHOOri
             <h2 className="text-sm font-bold tracking-tight">Interactive SiBS Orientation &amp; Interspersed Quizzes</h2>
             <span className="text-[11px] text-slate-300">
               {viewMode === "slide" && `Slide ${currentSlide} of ${totalSlides} · Presentation Mode`}
-              {viewMode === "checkpoint" && `Checkpoint Quiz: Part ${activeStageId} of 4 · Stage Knowledge Check`}
+              {viewMode === "checkpoint" && `Checkpoint Quiz: Part ${activeStageId} of ${quizStages.length} · Stage Knowledge Check`}
               {viewMode === "final" && "Final Scoring & Policy Acknowledgment"}
             </span>
           </div>
@@ -260,7 +296,7 @@ export default function NHOOrientationViewer({ onProceedToRequirements }: NHOOri
           ) : viewMode === "final" ? (
             <span className="px-3 py-1.5 rounded-xl bg-blue-500/20 text-blue-200 font-bold text-xs flex items-center gap-1.5 border border-blue-500/30">
               <Award className="w-4 h-4 text-blue-300" />
-              <span>Score Review: {totalAnsweredCount}/{NHO_QUIZ_QUESTIONS.length} Answered</span>
+              <span>Score Review: {totalAnsweredCount}/{quizQuestions.length} Answered</span>
             </span>
           ) : (
             <span className="px-3 py-1.5 rounded-xl bg-white/10 text-slate-200 font-bold text-xs">
@@ -272,7 +308,7 @@ export default function NHOOrientationViewer({ onProceedToRequirements }: NHOOri
 
       {/* Progress Bar */}
       <div className="w-full bg-[#E9EEF5] h-1.5">
-        <div 
+        <div
           className="h-full transition-all duration-300 bg-gradient-to-r from-[#042C51] via-[#FF6B3D] to-[#FF5C28]"
           style={{ width: `${compositeProgress}%` }}
         />
@@ -320,7 +356,7 @@ export default function NHOOrientationViewer({ onProceedToRequirements }: NHOOri
             <div className="order-3 flex w-full items-center justify-center gap-2 sm:order-none sm:w-auto" aria-label="Orientation slide navigation">
               {slides.map(s => {
                 const canJump = s.num <= maxViewedSlide;
-                const hasStage = NHO_QUIZ_STAGES.some(st => st.triggerAfterSlide === s.num);
+                const hasStage = quizStages.some(st => st.triggerAfterSlide === s.num);
                 return (
                   <button
                     key={s.num}
@@ -328,16 +364,16 @@ export default function NHOOrientationViewer({ onProceedToRequirements }: NHOOri
                     disabled={!canJump}
                     onClick={() => handleJumpToSlide(s.num)}
                     className={`h-2.5 rounded-full transition-all relative ${
-                      s.num === currentSlide 
-                        ? "bg-[#FF5C28] w-8 shadow-xs cursor-default" 
+                      s.num === currentSlide
+                        ? "bg-[#FF5C28] w-8 shadow-xs cursor-default"
                         : canJump
                           ? hasStage
                             ? "bg-[#042C51] w-3.5 opacity-90 hover:opacity-100 cursor-pointer"
-                            : "bg-[#042C51] w-2.5 opacity-70 hover:opacity-100 cursor-pointer" 
+                            : "bg-[#042C51] w-2.5 opacity-70 hover:opacity-100 cursor-pointer"
                           : "bg-slate-200 w-2.5 cursor-not-allowed opacity-40"
                     }`}
                     title={
-                      canJump 
+                      canJump
                         ? hasStage ? `Slide ${s.num} (Has Quiz Checkpoint)` : `Go to slide ${s.num}`
                         : `Complete slide ${s.num - 1} first`
                     }
@@ -383,7 +419,7 @@ export default function NHOOrientationViewer({ onProceedToRequirements }: NHOOri
 
       {/* VIEW MODE 2: INTERSPERSED CHECKPOINT QUIZ */}
       {viewMode === "checkpoint" && (() => {
-        const activeStage = NHO_QUIZ_STAGES.find(st => st.id === activeStageId) || NHO_QUIZ_STAGES[0];
+        const activeStage = quizStages.find(st => st.id === activeStageId) || quizStages[0];
 
         return (
           <div className="p-6 md:p-8 space-y-6">
@@ -392,7 +428,7 @@ export default function NHOOrientationViewer({ onProceedToRequirements }: NHOOri
               <div>
                 <div className="flex items-center gap-2">
                   <span className="text-[10px] font-black text-[#FF5C28] uppercase tracking-wider">
-                    Orientation Stage Checkpoint · Part {activeStage.id} of 4
+                    Orientation Stage Checkpoint · Part {activeStage.id} of {quizStages.length}
                   </span>
                   <span className="text-[11px] font-semibold text-slate-400">
                     (Triggered after Slide {activeStage.triggerAfterSlide})
@@ -419,10 +455,10 @@ export default function NHOOrientationViewer({ onProceedToRequirements }: NHOOri
             {/* Questions for This Stage */}
             <div className="space-y-6">
               {stageQuestions.map((q, idx) => {
-                const questionGlobalIdx = q.id - 1;
+                const questionGlobalIdx = quizQuestions.findIndex(item => item.id === q.id);
                 const selectedOpt = quizAnswers[questionGlobalIdx];
                 const isAnswered = selectedOpt !== undefined;
-                
+
                 return (
                   <div key={q.id} className="p-6 rounded-2xl bg-[#F7F9FC] border border-[#E6ECF2] space-y-4">
                     <div className="flex items-center justify-between">
@@ -449,7 +485,7 @@ export default function NHOOrientationViewer({ onProceedToRequirements }: NHOOri
                     <div className="space-y-2.5 text-xs">
                       {q.options.map((opt, optIdx) => {
                         const isSelected = selectedOpt === optIdx;
-                        
+
                         return (
                           <button
                             key={optIdx}
@@ -462,7 +498,7 @@ export default function NHOOrientationViewer({ onProceedToRequirements }: NHOOri
                             }`}
                           >
                             <span className={`w-5 h-5 rounded-full border flex items-center justify-center text-[10px] font-black shrink-0 mt-0.5 ${
-                              isSelected 
+                              isSelected
                                 ? "border-[#FF5C28] bg-[#FF5C28] text-white"
                                 : "border-slate-300 text-slate-500"
                             }`}>
@@ -496,7 +532,7 @@ export default function NHOOrientationViewer({ onProceedToRequirements }: NHOOri
                 className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#FF5C28] hover:bg-[#e04f20] disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold text-xs shadow-xs cursor-pointer transition-all"
               >
                 <span>
-                  {activeStageId < NHO_QUIZ_STAGES.length
+                  {activeStageId < quizStages.length
                     ? `Save & Continue to Part ${activeStageId + 1} (Slide ${activeStage.triggerAfterSlide + 1})`
                     : "Complete Checkpoints & View Final Results"}
                 </span>
@@ -551,11 +587,11 @@ export default function NHOOrientationViewer({ onProceedToRequirements }: NHOOri
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-3 border-t border-[#E6ECF2]">
-              {NHO_QUIZ_STAGES.map(stage => {
-                const stageQs = NHO_QUIZ_QUESTIONS.filter(q => q.stageId === stage.id);
+              {quizStages.map(stage => {
+                const stageQs = quizQuestions.filter(q => q.stageId === stage.id);
                 let stageScore = 0;
                 stageQs.forEach(q => {
-                  if (quizAnswers[q.id - 1] === q.correctOptionIndex) stageScore++;
+                  if (quizAnswers[quizQuestions.findIndex(item => item.id === q.id)] === q.correctOptionIndex) stageScore++;
                 });
                 return (
                   <div key={stage.id} className="p-3.5 rounded-xl border bg-white border-[#E6ECF2] flex flex-col justify-between space-y-2">
@@ -584,13 +620,13 @@ export default function NHOOrientationViewer({ onProceedToRequirements }: NHOOri
                 <span>Final Orientation Acknowledgment &amp; Policy Sign-Off</span>
                 {allQuestionsAnswered && (
                   <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-extrabold uppercase">
-                    All Checkpoints Answered ({totalAnsweredCount}/{NHO_QUIZ_QUESTIONS.length})
+                    All Checkpoints Answered ({totalAnsweredCount}/{quizQuestions.length})
                   </span>
                 )}
               </h4>
               {!allQuestionsAnswered && (
                 <span className="text-[11px] text-slate-500 font-medium">
-                  Please answer all {NHO_QUIZ_QUESTIONS.length} questions to unlock
+                  Please answer all {quizQuestions.length} questions to unlock
                 </span>
               )}
             </div>
@@ -604,7 +640,7 @@ export default function NHOOrientationViewer({ onProceedToRequirements }: NHOOri
                 className="mt-0.5 rounded border-slate-300 text-[#FF5C28] focus:ring-[#FF5C28] w-4 h-4 cursor-pointer disabled:cursor-not-allowed"
               />
               <span className="text-xs leading-relaxed font-medium text-slate-800">
-                I hereby confirm that I have personally reviewed all seven (7) modules of the SiBS New Hire Orientation, answered all interspersed checkpoint quizzes, and agree to uphold all company policies, workplace standards, information security protocols, and attendance procedures.
+                I hereby confirm that I have personally reviewed all {totalSlides} slides of the SiBS New Hire Orientation, answered all interspersed checkpoint quizzes, and agree to uphold all company policies, workplace standards, information security protocols, and attendance procedures.
               </span>
             </label>
 

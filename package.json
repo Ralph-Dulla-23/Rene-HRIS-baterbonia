@@ -12,7 +12,8 @@
     "test:auth": "tsx scripts/test-demo-auth.ts",
     "test:coaching": "tsx scripts/test-trainer-coaching.ts",
     "test:calendar": "tsx scripts/test-trainee-calendar.ts",
-    "test:handoff": "tsx scripts/test-day30-handoff.ts"
+    "test:handoff": "tsx scripts/test-day30-handoff.ts",
+    "test:orientation": "tsx scripts/test-orientation-config.ts && tsx scripts/test-orientation-editor.tsx && tsx scripts/test-orientation-settings.tsx && tsx scripts/test-orientation-viewer.tsx"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",
@@ -40,5 +41,8 @@
     "vite": "^6.2.3",
     "xlsx": "^0.18.5"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "@testing-library/react": "^16.3.0",
+    "jsdom": "^26.1.0"
+  }
 }

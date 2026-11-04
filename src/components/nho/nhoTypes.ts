@@ -22,6 +22,15 @@ export interface NHOOrientationDeckConfig {
   uploadedAt?: string;
   passingScorePct: number;
   slides: NHOOrientationSlideItem[];
+  quizStages?: NHOQuizStage[];
+  quizQuestions?: NHOQuizQuestion[];
+}
+
+export interface NHOQuizStage {
+  id: number;
+  title: string;
+  triggerAfterSlide: number;
+  questionCount: number;
 }
 export type NHODocVerificationStatus = "Not Submitted" | "Draft" | "For Verification" | "Needs Correction" | "Verified";
 export type NHODeadlineStatus = "On Time" | "Due Soon" | "Overdue" | "Submitted Late";
@@ -195,6 +204,10 @@ export interface NHOApplicant {
   orientationCurrentSlide: number;
   orientationSlidesViewed: number[];
   orientationQuizAnswers: Record<number, number>; // questionIndex -> selectedOptionIndex
+  orientationQuizConfigKey?: string;
+  orientationQuizQuestions?: NHOQuizQuestion[];
+  orientationQuizStages?: NHOQuizStage[];
+  orientationQuizPassingScorePct?: number;
   orientationQuizScore?: number;
   orientationQuizTotal?: number;
   orientationQuizPercentage?: number;

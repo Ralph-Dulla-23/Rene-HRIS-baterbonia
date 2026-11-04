@@ -58,6 +58,7 @@ export function normalizeModule(module: string): string {
   return module;
 }
 export function canAccessModule(role: DemoRole, module: string): boolean {
+  if (module === 'Orientation Settings') return ['TA', 'HR', 'HR Admin', 'Super Admin'].includes(role);
   if (role === 'Super Admin') return true;
   if (module === 'Employee Public Portal' || module === 'Applicant Portal') return true;
   return modules[role].includes(normalizeModule(module));

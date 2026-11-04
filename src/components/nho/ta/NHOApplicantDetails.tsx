@@ -26,7 +26,7 @@ import {
   Check
 } from "lucide-react";
 import NHOSendCredentialsModal from "./NHOSendCredentialsModal";
-import { NHO_QUIZ_QUESTIONS } from "../nhoInitialData";
+import { getStoredOrientationDeckConfig, getCurrentOrientationAnswers, calculateQuizScore } from "../nhoInitialData";
 
 interface NHOApplicantDetailsProps {
   applicant: NHOApplicant;
@@ -63,27 +63,18 @@ export default function NHOApplicantDetails({
 
   const { isEligible, checks } = checkITEndorsementEligibility(applicant);
 
-  const quizInfo = (() => {
-    const total = applicant.orientationQuizTotal ?? NHO_QUIZ_QUESTIONS.length;
-    let score = applicant.orientationQuizScore;
-    if (score === undefined) {
-      if (applicant.orientationQuizAnswers && Object.keys(applicant.orientationQuizAnswers).length > 0) {
-        let calculated = 0;
-        NHO_QUIZ_QUESTIONS.forEach((q, idx) => {
-          if (applicant.orientationQuizAnswers && applicant.orientationQuizAnswers[idx] === q.correctOptionIndex) {
-            calculated++;
-          }
-        });
-        score = calculated;
-      } else if (applicant.orientationStatus === "Completed") {
-        score = NHO_QUIZ_QUESTIONS.length;
-      } else {
-        score = 0;
-      }
-    }
-    const percentage = applicant.orientationQuizPercentage ?? Math.round((score / total) * 100);
-    return { score, total, percentage };
-  })();
+  const orientationConfig = getStoredOrientationDeckConfig();
+  const completedOrientation = applicant.orientationStatus === "Completed";
+  const quizQuestions = (completedOrientation && applicant.orientationQuizQuestions) || orientationConfig.quizQuestions || [];
+  const quizAnswers = completedOrientation ? applicant.orientationQuizAnswers || {} : getCurrentOrientationAnswers(applicant, orientationConfig);
+  const benchmark = (completedOrientation && applicant.orientationQuizPassingScorePct !== undefined) ? applicant.orientationQuizPassingScorePct : orientationConfig.passingScorePct;
+  const calculatedQuizInfo = calculateQuizScore(quizAnswers, { ...orientationConfig, quizQuestions, passingScorePct: benchmark });
+  const quizInfo = completedOrientation ? {
+    score: applicant.orientationQuizScore ?? calculatedQuizInfo.score,
+    total: applicant.orientationQuizTotal ?? calculatedQuizInfo.total,
+    percentage: applicant.orientationQuizPercentage ?? calculatedQuizInfo.percentage,
+    passed: applicant.orientationQuizPassed ?? calculatedQuizInfo.passed,
+  } : calculatedQuizInfo;
 
   const handleWithdraw = () => {
     if (!withdrawReason.trim()) {
@@ -484,11 +475,11 @@ export default function NHOApplicantDetails({
                       <div className="flex items-center gap-2">
                         <h3 className="text-sm font-bold text-[#042C51]">Orientation Knowledge Check Score</h3>
                         <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-300">
-                          {quizInfo.percentage}% · Passed Benchmark
+                          {quizInfo.percentage}% · {quizInfo.passed ? "Benchmark met" : "Below benchmark"}
                         </span>
                       </div>
                       <p className="text-[11px] text-slate-500 mt-0.5">
-                        Candidate answered {quizInfo.score} of {quizInfo.total} questions correctly (passing threshold is 80% / 4 of 5).
+                        Candidate answered {quizInfo.score} of {quizInfo.total} questions correctly (benchmark: {benchmark}%, or {Math.ceil(quizInfo.total * benchmark / 100)} of {quizInfo.total} correct).
                       </p>
                     </div>
                   </div>
@@ -540,7 +531,7 @@ export default function NHOApplicantDetails({
                 <div className="flex items-center justify-between border-b border-[#E6ECF2] pb-2.5">
                   <h4 className="font-bold text-[#042C51] text-xs uppercase tracking-wider flex items-center gap-2">
                     <FileCheck className="w-4 h-4 text-[#FF5C28]" />
-                    <span>Knowledge Check Evaluation Audit (5 Questions)</span>
+                    <span>Knowledge Check Evaluation Audit ({quizQuestions.length} Questions)</span>
                   </h4>
                   <span className="text-[11px] font-bold text-slate-600">
                     Total Score: <strong className="text-emerald-700">{quizInfo.score} / {quizInfo.total} ({quizInfo.percentage}%)</strong>
@@ -548,8 +539,8 @@ export default function NHOApplicantDetails({
                 </div>
 
                 <div className="space-y-3">
-                  {NHO_QUIZ_QUESTIONS.map((q, qIdx) => {
-                    const candidateAnswerIdx = applicant.orientationQuizAnswers ? applicant.orientationQuizAnswers[qIdx] : q.correctOptionIndex;
+                  {quizQuestions.map((q, qIdx) => {
+                    const candidateAnswerIdx = quizAnswers[qIdx];
                     const isAnswered = candidateAnswerIdx !== undefined;
                     const isCorrect = isAnswered && candidateAnswerIdx === q.correctOptionIndex;
                     return (

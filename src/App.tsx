@@ -556,6 +556,10 @@ function AuthenticatedWorkspace() {
           <div className="mt-20 px-6 flex-1 flex flex-col w-full">
             <OfficeLocations onSwitchModule={setCurrentModule} />
           </div>
+        ) : currentModule === "Orientation Settings" ? (
+          <div className="mt-20 px-6 flex-1 flex flex-col w-full">
+            <RecruitmentSettings orientationOnly userEmail={user.email} onSwitchModule={setCurrentModule} />
+          </div>
         ) : currentModule === "Recruitment Settings" ? (
           <div className="mt-20 px-6 flex-1 flex flex-col w-full">
             <RecruitmentSettings userEmail={user.email} onSwitchModule={setCurrentModule} />
