@@ -156,6 +156,14 @@ export default function Sidebar({ currentModule, role, onModuleChange, activeTab
         { name: "Offers", icon: Gift, isEnabled: true, moduleKey: "Offers" },
         { name: "New Hire Orientation (NHO)", icon: Sparkles, isEnabled: true, moduleKey: "New Hire Orientation", badge: "V1" },
         { 
+          name: "Applicant Portal", 
+          displayName: "Applicant Portal", 
+          icon: ExternalLink, 
+          isEnabled: true, 
+          moduleKey: "Public Applicant Portal", 
+          badge: "PUBLIC" 
+        },
+        { 
           name: "Onboarding & Employee Journey", 
           displayName: "Onboarding & Journey", 
           icon: ClipboardCheck, 
@@ -180,14 +188,6 @@ export default function Sidebar({ currentModule, role, onModuleChange, activeTab
           tabKey: "trainer-monitoring" 
         },
         { name: "Candidate Experience", icon: BookOpen, isEnabled: true, moduleKey: "Candidate Experience" },
-        { 
-          name: "Applicant Portal", 
-          displayName: "Applicant Portal", 
-          icon: ExternalLink, 
-          isEnabled: true, 
-          moduleKey: "Public Applicant Portal", 
-          badge: "PUBLIC" 
-        },
       ]
     },
     {

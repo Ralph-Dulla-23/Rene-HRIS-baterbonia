@@ -2236,15 +2236,14 @@ export const NHOProvider: React.FC<{ children: React.ReactNode; initialRole?: NH
     const target = applicants.find(a => a.id === applicantId);
     if (!target) return;
 
-    const perm = canApplicantPerformActions(target);
-    if (!perm.allowed) {
-      showToast(perm.reason!, "error");
+    if (target.outcome === "Withdrawn" || target.outcome === "Drop-Off") {
+      showToast(`Applicant case has reached a terminal status (${target.outcome}).`, "error");
       return;
     }
 
     setApplicants(prev => prev.map(app => {
       if (app.id !== applicantId) return app;
-      const viewed = Array.from(new Set([...app.orientationSlidesViewed, slideNumber]));
+      const viewed = Array.from(new Set([...(app.orientationSlidesViewed || []), slideNumber]));
       return {
         ...app,
         orientationCurrentSlide: slideNumber,
@@ -2265,10 +2264,10 @@ export const NHOProvider: React.FC<{ children: React.ReactNode; initialRole?: NH
     const target = applicants.find(a => a.id === applicantId);
     if (!target) return { success: false, error: "Applicant not found" };
 
-    const perm = canApplicantPerformActions(target);
-    if (!perm.allowed) {
-      showToast(perm.reason!, "error");
-      return { success: false, error: perm.reason };
+    if (target.outcome === "Withdrawn" || target.outcome === "Drop-Off") {
+      const errorMsg = `Applicant case has reached a terminal status (${target.outcome}).`;
+      showToast(errorMsg, "error");
+      return { success: false, error: errorMsg };
     }
 
     setApplicants(prev => prev.map(app => {
@@ -2276,7 +2275,7 @@ export const NHOProvider: React.FC<{ children: React.ReactNode; initialRole?: NH
       return {
         ...app,
         orientationQuizAnswers: {
-          ...app.orientationQuizAnswers,
+          ...(app.orientationQuizAnswers || {}),
           [questionIndex]: optionIndex
         }
       };
@@ -2288,15 +2287,16 @@ export const NHOProvider: React.FC<{ children: React.ReactNode; initialRole?: NH
     const target = applicants.find(a => a.id === applicantId);
     if (!target) return { success: false, error: "Applicant not found" };
 
-    const perm = canApplicantPerformActions(target);
-    if (!perm.allowed) {
-      showToast(perm.reason!, "error");
-      return { success: false, error: perm.reason };
+    if (target.outcome === "Withdrawn" || target.outcome === "Drop-Off") {
+      const errorMsg = `Applicant case has reached a terminal status (${target.outcome}).`;
+      showToast(errorMsg, "error");
+      return { success: false, error: errorMsg };
     }
 
     // 1. All 7 required slides viewed
     const requiredSlides = [1, 2, 3, 4, 5, 6, 7];
-    const hasViewedAllSlides = requiredSlides.every(s => target.orientationSlidesViewed.includes(s));
+    const viewedSlides = target.orientationSlidesViewed || [];
+    const hasViewedAllSlides = requiredSlides.every(s => viewedSlides.includes(s));
     if (!hasViewedAllSlides) {
       const errorMsg = "Cannot complete orientation: You must view all seven (7) presentation slides first.";
       showToast(errorMsg, "error");
