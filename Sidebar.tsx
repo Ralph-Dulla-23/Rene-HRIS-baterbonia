@@ -250,7 +250,16 @@ export default function Sidebar({ currentModule, role, onModuleChange, activeTab
   const visibleCoreItems = coreHrItems.filter(item=>item.moduleKey && canAccessMenuItem(role,item.moduleKey,item.tabKey));
   const visibleWorkspaceDirectItems = workspaceDirectItems.filter(item=>item.moduleKey && canAccessMenuItem(role,item.moduleKey,item.tabKey));
   const visibleGroups = workspaceGroups
-    .map(group => ({...group, items: group.items.filter(item=>item.moduleKey && canAccessMenuItem(role,item.moduleKey,item.tabKey))}))
+    .map(group => {
+      // Role safety guard: Employees only access personal workspaces, never recruitment pipelines or operational administration
+      if (role === "Employee" && (group.id === "recruitment-pipeline" || group.id === "recruitment-operations" || group.id === "workforce-planning" || group.id === "insights-finance" || group.id === "administration" || group.id === "settings")) {
+        return { ...group, items: [] };
+      }
+      return {
+        ...group,
+        items: group.items.filter(item => item.moduleKey && canAccessMenuItem(role, item.moduleKey, item.tabKey))
+      };
+    })
     .filter(group => group.items.length > 0);
 
   const handleItemClick = (item: MenuItem) => {
