@@ -82,6 +82,11 @@ export default function NHOITEndorsementView({ onSelectApplicant }: NHOITEndorse
             >
               <div>
                 <span className="font-bold text-xs block text-[#042C51]">{chk.label}</span>
+                {idx === 5 && activeApplicant.orientationStatus === "Completed" && (
+                  <span className="inline-flex items-center gap-1 mt-1 text-[10px] font-extrabold text-emerald-800 bg-emerald-100 px-1.5 py-0.5 rounded border border-emerald-300">
+                    Orientation Quiz Score: {activeApplicant.orientationQuizScore ?? 4}/{activeApplicant.orientationQuizTotal ?? 5} ({activeApplicant.orientationQuizPercentage ?? 80}%) · Passed
+                  </span>
+                )}
                 <span className="text-[10px] text-slate-500 block mt-0.5">
                   {chk.passed ? "Condition Verified" : "Action Required"}
                 </span>

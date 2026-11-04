@@ -63,8 +63,6 @@ export const NHO_QUIZ_QUESTIONS: NHOQuizQuestion[] = [
   }
 ];
 
-];
-
 export function calculateQuizScore(answers?: Record<number, number>): {
   score: number;
   total: number;
@@ -361,7 +359,11 @@ export const INITIAL_NHO_APPLICANTS: NHOApplicant[] = [
     orientationStatus: "Completed",
     orientationCurrentSlide: 7,
     orientationSlidesViewed: [1, 2, 3, 4, 5, 6, 7],
-    orientationQuizAnswers: { 0: 1, 1: 1, 2: 1, 3: 1, 4: 1 },
+    orientationQuizAnswers: { 0: 1, 1: 1, 2: 1, 3: 0, 4: 1 },
+    orientationQuizScore: 4,
+    orientationQuizTotal: 5,
+    orientationQuizPercentage: 80,
+    orientationQuizPassed: true,
     orientationAcknowledged: true,
     orientationCompletedAt: "2026-10-09 11:20 AM",
     itEndorsed: false,
@@ -1099,6 +1101,10 @@ export const INITIAL_NHO_APPLICANTS: NHOApplicant[] = [
     orientationCurrentSlide: 7,
     orientationSlidesViewed: [1, 2, 3, 4, 5, 6, 7],
     orientationQuizAnswers: { 0: 1, 1: 1, 2: 1, 3: 1, 4: 1 },
+    orientationQuizScore: 5,
+    orientationQuizTotal: 5,
+    orientationQuizPercentage: 100,
+    orientationQuizPassed: true,
     orientationAcknowledged: true,
     orientationCompletedAt: "2026-10-05 02:00 PM",
     itEndorsed: true,
@@ -1301,6 +1307,10 @@ export const INITIAL_NHO_APPLICANTS: NHOApplicant[] = [
     orientationCurrentSlide: 7,
     orientationSlidesViewed: [1, 2, 3, 4, 5, 6, 7],
     orientationQuizAnswers: { 0: 1, 1: 1, 2: 1, 3: 1, 4: 1 },
+    orientationQuizScore: 5,
+    orientationQuizTotal: 5,
+    orientationQuizPercentage: 100,
+    orientationQuizPassed: true,
     orientationAcknowledged: true,
     orientationCompletedAt: "2026-09-21 03:00 PM",
     itEndorsed: true,

@@ -737,7 +737,6 @@ export default function RecruitmentSettings({
     saveStoredOrientationDeckConfig(updated);
     showToast("Orientation deck settings & knowledge check configuration saved!");
   };
-  };
 
   // ---------------- TAB 1: HEADCOUNTS STATE ----------------
   const [headcounts, setHeadcounts] = useState<HeadcountRecord[]>(INITIAL_HEADCOUNTS);

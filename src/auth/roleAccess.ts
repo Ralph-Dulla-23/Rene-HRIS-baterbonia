@@ -59,6 +59,7 @@ export function normalizeModule(module: string): string {
 }
 export function canAccessModule(role: DemoRole, module: string): boolean {
   if (role === 'Super Admin') return true;
+  if (module === 'Employee Public Portal' || module === 'Applicant Portal') return true;
   return modules[role].includes(normalizeModule(module));
 }
 export function canAccessJourneyTab(role: DemoRole, tab: string): boolean {

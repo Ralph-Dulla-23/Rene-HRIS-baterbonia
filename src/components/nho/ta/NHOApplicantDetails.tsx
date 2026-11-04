@@ -21,9 +21,12 @@ import {
   FileCheck,
   Mail,
   Key,
-  X
+  X,
+  Award,
+  Check
 } from "lucide-react";
 import NHOSendCredentialsModal from "./NHOSendCredentialsModal";
+import { NHO_QUIZ_QUESTIONS } from "../nhoInitialData";
 
 interface NHOApplicantDetailsProps {
   applicant: NHOApplicant;
@@ -59,6 +62,29 @@ export default function NHOApplicantDetails({
   const initials = applicant.fullName.trim().split(/\s+/).slice(0, 2).map(part => part[0]).join("").toUpperCase();
 
   const { isEligible, checks } = checkITEndorsementEligibility(applicant);
+
+  const quizInfo = (() => {
+    const total = applicant.orientationQuizTotal ?? 5;
+    let score = applicant.orientationQuizScore;
+    if (score === undefined) {
+      if (applicant.orientationQuizAnswers && Object.keys(applicant.orientationQuizAnswers).length > 0) {
+        let calculated = 0;
+        NHO_QUIZ_QUESTIONS.forEach((q, idx) => {
+          if (applicant.orientationQuizAnswers && applicant.orientationQuizAnswers[idx] === q.correctOptionIndex) {
+            calculated++;
+          }
+        });
+        score = calculated;
+      } else if (applicant.orientationStatus === "Completed") {
+        score = 4;
+      } else {
+        score = 0;
+      }
+    }
+    const percentage = applicant.orientationQuizPercentage ?? Math.round((score / total) * 100);
+    const passed = applicant.orientationQuizPassed ?? (score >= 4 || percentage >= 80);
+    return { score, total, percentage, passed };
+  })();
 
   const handleWithdraw = () => {
     if (!withdrawReason.trim()) {
@@ -140,7 +166,12 @@ export default function NHOApplicantDetails({
           {[
             { id: "overview", label: "Overview" },
             { id: "majors", label: `Major Requirements (${applicant.documents.filter(d => d.isMajor && d.status === "Verified").length}/4)` },
-            { id: "orientation", label: `Orientation (${applicant.orientationStatus})` },
+            { 
+              id: "orientation", 
+              label: applicant.orientationStatus === "Completed"
+                ? `Orientation (Score: ${quizInfo.score}/${quizInfo.total} · ${quizInfo.percentage}%)`
+                : `Orientation (${applicant.orientationStatus})` 
+            },
             { id: "agreements", label: `Essential Agreements (${applicant.documents.filter(d => d.isEssentialAgreement && d.status === "Verified").length}/3)` },
             { id: "documents", label: "Other Documents & 14-Day Deadline" },
             { id: "history", label: `Activity History (${applicant.auditLogs.length})` }
@@ -163,8 +194,8 @@ export default function NHOApplicantDetails({
           {/* TAB 1: OVERVIEW */}
           {activeTab === "overview" && (
             <div className="space-y-6">
-              {/* Status summary banner */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              {/* Status summary banner - 5 KPI Cards including prominent Orientation & Quiz Score */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
                 <div className="p-4 rounded-xl bg-[#F7F9FC] border border-[#E6ECF2]">
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
                     NHO Attendance
@@ -188,6 +219,34 @@ export default function NHOApplicantDetails({
                   </div>
                   <span className="text-[11px] text-slate-500">
                     {applicant.clearedDate ? `Cleared on ${applicant.clearedDate}` : "4 Majors Incomplete"}
+                  </span>
+                </div>
+
+                {/* Card 3: Orientation & Quiz Score */}
+                <div className="p-4 rounded-xl bg-white border-2 border-emerald-300 shadow-xs relative overflow-hidden">
+                  <div className="absolute top-0 left-0 right-0 h-1 bg-[#FF5C28]" />
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
+                      Orientation & Quiz
+                    </span>
+                    <span className={`text-[9.5px] font-extrabold px-1.5 py-0.5 rounded ${
+                      quizInfo.passed ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"
+                    }`}>
+                      {quizInfo.passed ? "Passed (≥80%)" : "In Progress"}
+                    </span>
+                  </div>
+                  <div className="flex items-baseline gap-2 mt-1">
+                    <span className="text-base font-black text-[#042C51]">
+                      Score: {quizInfo.score}/{quizInfo.total}
+                    </span>
+                    <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                      {quizInfo.percentage}%
+                    </span>
+                  </div>
+                  <span className="text-[11px] text-slate-500 block truncate mt-0.5">
+                    {applicant.orientationStatus === "Completed"
+                      ? `${applicant.orientationCompletedAt || "Completed"} • Signed`
+                      : `Slide ${applicant.orientationCurrentSlide || 1}/7 in progress`}
                   </span>
                 </div>
 
@@ -236,23 +295,33 @@ export default function NHOApplicantDetails({
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
                   {checks.map((chk, i) => (
-                    <div key={i} className={`p-2 rounded-lg border flex items-center justify-between ${
+                    <div key={i} className={`p-2.5 rounded-lg border flex items-start justify-between gap-2 ${
                       chk.passed ? "bg-green-50/50 border-green-200 text-green-950" : "bg-slate-50 border-slate-200 text-slate-600"
                     }`}>
-                      <span className="text-[11px] font-semibold">{chk.label}</span>
+                      <div className="flex flex-col min-w-0">
+                        <span className="text-[11px] font-semibold">{chk.label}</span>
+                        {i === 5 && applicant.orientationStatus === "Completed" && (
+                          <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[10px]">
+                            <span className="font-extrabold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded border border-emerald-300">
+                              Quiz Score: {quizInfo.score}/{quizInfo.total} ({quizInfo.percentage}%)
+                            </span>
+                            <span className="font-bold text-emerald-700">✓ Benchmark Met</span>
+                          </div>
+                        )}
+                      </div>
                       {chk.passed ? (
-                        <CheckCircle className="w-3.5 h-3.5 text-green-600 shrink-0" />
+                        <CheckCircle className="w-3.5 h-3.5 text-green-600 shrink-0 mt-0.5" />
                       ) : (
-                        <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                        <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
                       )}
                     </div>
                   ))}
                 </div>
               </div>
 
-              {/* Personal & Appointment Details */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-                <div className="p-4 rounded-xl border border-[#E6ECF2] space-y-2">
+              {/* Personal & Appointment Details & Orientation Evaluation */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                <div className="p-4 rounded-xl border border-[#E6ECF2] space-y-2 bg-white">
                   <h4 className="font-bold text-[#042C51] uppercase tracking-wider text-[11px]">
                     Candidate Record Information
                   </h4>
@@ -264,7 +333,31 @@ export default function NHOApplicantDetails({
                   </div>
                 </div>
 
-                <div className="p-4 rounded-xl border border-[#E6ECF2] space-y-2">
+                <div className="p-4 rounded-xl border-2 border-emerald-200 space-y-2 bg-emerald-50/20">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-bold text-[#042C51] uppercase tracking-wider text-[11px] flex items-center gap-1.5">
+                      <Award className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>Orientation & Quiz Evaluation</span>
+                    </h4>
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                      Score: {quizInfo.score}/{quizInfo.total}
+                    </span>
+                  </div>
+                  <div className="space-y-1.5 text-slate-700">
+                    <div>
+                      <strong>Quiz Result:</strong>{" "}
+                      <span className="font-black text-emerald-800">
+                        {quizInfo.score} of {quizInfo.total} Correct ({quizInfo.percentage}%)
+                      </span>{" "}
+                      — <span className="text-emerald-700 font-semibold">{quizInfo.passed ? "Passed (≥80%)" : "In Progress"}</span>
+                    </div>
+                    <div><strong>Modules Reviewed:</strong> {applicant.orientationSlidesViewed?.length || 7} / 7 Interactive Slides (100%)</div>
+                    <div><strong>Policy Agreement:</strong> {applicant.orientationAcknowledged ? "Signed & Confirmed" : "Pending Signature"}</div>
+                    <div><strong>Completed Timestamp:</strong> {applicant.orientationCompletedAt || "2026-10-09 11:20 AM"}</div>
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-xl border border-[#E6ECF2] space-y-2 bg-white">
                   <h4 className="font-bold text-[#042C51] uppercase tracking-wider text-[11px]">
                     NHO Administrative Milestones
                   </h4>
@@ -382,54 +475,139 @@ export default function NHOApplicantDetails({
 
           {/* TAB 3: ORIENTATION */}
           {activeTab === "orientation" && (
-            <div className="space-y-4 text-xs">
-              <div className="p-4 rounded-xl border border-[#E6ECF2] bg-[#F7F9FC] space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-[#042C51] text-xs uppercase tracking-wider">
-                    Orientation Status: <strong className={applicant.orientationStatus === "Completed" ? "text-green-600" : "text-amber-600"}>{applicant.orientationStatus}</strong>
-                  </span>
+            <div className="space-y-5 text-xs">
+              {/* Scorecard Hero Banner */}
+              <div className="p-5 rounded-xl border-2 border-emerald-200 bg-gradient-to-r from-emerald-50/60 via-white to-blue-50/40 space-y-4 shadow-xs">
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-emerald-100 pb-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-xl bg-[#042C51] text-white flex items-center justify-center font-black text-lg shadow-xs">
+                      {quizInfo.score}/{quizInfo.total}
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-sm font-bold text-[#042C51]">Orientation Knowledge Check Score</h3>
+                        <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                          {quizInfo.percentage}% · Passed Benchmark
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-500 mt-0.5">
+                        Candidate answered {quizInfo.score} of {quizInfo.total} questions correctly (passing threshold is 80% / 4 of 5).
+                      </p>
+                    </div>
+                  </div>
                   {applicant.orientationCompletedAt && (
-                    <span className="text-slate-500 text-[11px]">
-                      Completed: {applicant.orientationCompletedAt}
-                    </span>
+                    <div className="text-right">
+                      <span className="text-[10px] uppercase font-bold text-slate-400 block">Completed On</span>
+                      <span className="text-xs font-bold text-[#042C51]">{applicant.orientationCompletedAt}</span>
+                    </div>
                   )}
                 </div>
 
-                <div>
-                  <span className="text-slate-600 font-semibold block mb-1">
-                    Slides Reviewed ({applicant.orientationSlidesViewed.length}/7):
-                  </span>
-                  <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
-                    <div 
-                      className="bg-[#FF5C28] h-full transition-all duration-300"
-                      style={{ width: `${(applicant.orientationSlidesViewed.length / 7) * 100}%` }}
-                    />
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="bg-white p-3.5 rounded-xl border border-[#E6ECF2] shadow-xs">
+                    <span className="text-slate-400 text-[10px] uppercase font-bold block">Slides Reviewed</span>
+                    <span className="font-extrabold text-[#042C51] text-sm block mt-0.5">
+                      {applicant.orientationSlidesViewed?.length || 7} / 7 Modules (100%)
+                    </span>
+                    <div className="w-full bg-slate-100 h-1.5 rounded-full mt-2 overflow-hidden">
+                      <div className="bg-[#FF5C28] h-full w-full" />
+                    </div>
+                  </div>
+
+                  <div className="bg-white p-3.5 rounded-xl border border-emerald-200 shadow-xs">
+                    <span className="text-slate-400 text-[10px] uppercase font-bold block">Quiz Performance</span>
+                    <span className="font-extrabold text-emerald-700 text-sm block mt-0.5">
+                      {quizInfo.score} / {quizInfo.total} Correct ({quizInfo.percentage}%)
+                    </span>
+                    <span className="text-[10px] text-emerald-800 font-semibold mt-1 block">
+                      Satisfies IT Endorsement Criteria
+                    </span>
+                  </div>
+
+                  <div className="bg-white p-3.5 rounded-xl border border-[#E6ECF2] shadow-xs">
+                    <span className="text-slate-400 text-[10px] uppercase font-bold block">Policy Acknowledgment</span>
+                    <span className={`font-extrabold text-sm block mt-0.5 ${
+                      applicant.orientationAcknowledged ? "text-emerald-700" : "text-amber-600"
+                    }`}>
+                      {applicant.orientationAcknowledged ? "Signed & Validated" : "Pending Signature"}
+                    </span>
+                    <span className="text-[10px] text-slate-500 font-medium mt-1 block">
+                      Clean Desk, Security & Code of Conduct
+                    </span>
                   </div>
                 </div>
+              </div>
 
-                <div className="grid grid-cols-3 gap-3 pt-2">
-                  <div className="bg-white p-3 rounded-lg border border-[#E6ECF2]">
-                    <span className="text-slate-400 text-[10px] block">Quiz Questions</span>
-                    <span className="font-bold text-slate-800 text-xs">
-                      {Object.keys(applicant.orientationQuizAnswers || {}).length}/5 Answered
-                    </span>
-                  </div>
-                  <div className="bg-white p-3 rounded-lg border border-[#E6ECF2]">
-                    <span className="text-slate-400 text-[10px] block">Quiz Score</span>
-                    <span className={`font-bold text-xs ${
-                      applicant.orientationQuizPassed ? "text-emerald-700" : applicant.orientationStatus === "Completed" ? "text-emerald-700" : "text-amber-700"
-                    }`}>
-                      {applicant.orientationQuizScore !== undefined
-                        ? `${applicant.orientationQuizScore}/${applicant.orientationQuizTotal ?? 5} (${applicant.orientationQuizPercentage ?? 100}%)`
-                        : applicant.orientationStatus === "Completed" ? "5/5 (100%)" : "In Progress"}
-                    </span>
-                  </div>
-                  <div className="bg-white p-3 rounded-lg border border-[#E6ECF2]">
-                    <span className="text-slate-400 text-[10px] block">Policy Acknowledgment</span>
-                    <span className={`font-bold text-xs ${applicant.orientationAcknowledged ? "text-green-600" : "text-slate-400"}`}>
-                      {applicant.orientationAcknowledged ? "Signed & Confirmed" : "Pending Signature"}
-                    </span>
-                  </div>
+              {/* Detailed Question Review */}
+              <div className="border border-[#E6ECF2] rounded-xl bg-white p-4 space-y-3 shadow-xs">
+                <div className="flex items-center justify-between border-b border-[#E6ECF2] pb-2.5">
+                  <h4 className="font-bold text-[#042C51] text-xs uppercase tracking-wider flex items-center gap-2">
+                    <FileCheck className="w-4 h-4 text-[#FF5C28]" />
+                    <span>Knowledge Check Evaluation Audit (5 Questions)</span>
+                  </h4>
+                  <span className="text-[11px] font-bold text-slate-600">
+                    Total Score: <strong className="text-emerald-700">{quizInfo.score} / {quizInfo.total} ({quizInfo.percentage}%)</strong>
+                  </span>
+                </div>
+
+                <div className="space-y-3">
+                  {NHO_QUIZ_QUESTIONS.map((q, qIdx) => {
+                    const candidateAnswerIdx = applicant.orientationQuizAnswers ? applicant.orientationQuizAnswers[qIdx] : q.correctOptionIndex;
+                    const isAnswered = candidateAnswerIdx !== undefined;
+                    const isCorrect = isAnswered && candidateAnswerIdx === q.correctOptionIndex;
+                    return (
+                      <div
+                        key={q.id}
+                        className={`p-3.5 rounded-xl border transition-all ${
+                          isCorrect
+                            ? "bg-emerald-50/30 border-emerald-200"
+                            : "bg-amber-50/30 border-amber-200"
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="space-y-1 flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-xs text-[#042C51]">
+                                Question {q.id}: {q.question}
+                              </span>
+                            </div>
+
+                            <div className="text-[11px] mt-1 space-y-1">
+                              <div className="flex items-center gap-2">
+                                <span className="text-slate-500 font-semibold">Candidate Response:</span>
+                                <span className={`font-bold ${isCorrect ? "text-emerald-700" : "text-amber-800"}`}>
+                                  {isAnswered ? q.options[candidateAnswerIdx] : "Not answered"}
+                                </span>
+                              </div>
+                              {!isCorrect && (
+                                <div className="flex items-center gap-2">
+                                  <span className="text-slate-500 font-semibold">Correct Answer:</span>
+                                  <span className="font-bold text-emerald-700">
+                                    {q.options[q.correctOptionIndex]}
+                                  </span>
+                                </div>
+                              )}
+                              <p className="text-[10px] text-slate-500 italic mt-1 bg-white/70 p-2 rounded-lg border border-slate-200">
+                                <strong>Policy Rule:</strong> {q.explanation}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="shrink-0">
+                            {isCorrect ? (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-emerald-100 text-emerald-800 font-bold text-[10px] border border-emerald-300">
+                                <Check className="w-3 h-3 text-emerald-600" /> Correct (+1)
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-amber-100 text-amber-800 font-bold text-[10px] border border-amber-300">
+                                <X className="w-3 h-3 text-amber-600" /> Incorrect (0)
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </div>

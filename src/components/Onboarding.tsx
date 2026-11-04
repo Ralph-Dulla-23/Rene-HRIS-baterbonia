@@ -1671,7 +1671,7 @@ export default function Onboarding({
                 : "bg-white border-[#E6ECF2]"
             }`}>
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-black uppercase text-[#FF5C28] tracking-wider">Post-FST Handoffs</span>
+                <span className="text-[10px] font-black uppercase text-[#FF5C28] tracking-wider">Day 30 TL Handoffs</span>
                 <div className="flex items-center gap-1">
                   {pendingDay30HandoffsCount > 0 && (
                     <span className="text-[9px] font-extrabold text-white bg-[#FF5C28] px-1.5 py-0.5 rounded-full uppercase tracking-wider">
@@ -1685,7 +1685,7 @@ export default function Onboarding({
               </div>
               <div className="mt-1.5">
                 <div className="text-xl font-extrabold text-[#042C51] tracking-tight">{pendingDay30HandoffsCount}</div>
-                <div className="text-[9px] text-slate-400 font-bold mt-1 uppercase tracking-wide">FST ➔ PST transition needed</div>
+                <div className="text-[9px] text-slate-400 font-bold mt-1 uppercase tracking-wide">Trainer ➔ TL transition needed</div>
               </div>
             </div>
           </div>
@@ -2399,21 +2399,23 @@ export default function Onboarding({
       </AnimatePresence>
 
       {/* Comprehensive Onboarding & Employee Profile Modal */}
-      <OnboardingDetailsModal
-        isOpen={isDetailsModalOpen}
-        onClose={() => setIsDetailsModalOpen(false)}
-        record={selectedRecord as any}
-        onOpenOutcomeModal={() => {
-          if (selectedRecord) {
-            handleOpenOutcomeModal(selectedRecord);
-          }
-        }}
-        onOpenStageModal={() => {
-          if (selectedRecord) {
-            handleOpenOutcomeModal(selectedRecord);
-          }
-        }}
-      />
+      {isDetailsModalOpen && selectedRecord && (
+        <OnboardingDetailsModal
+          isOpen={isDetailsModalOpen}
+          onClose={() => setIsDetailsModalOpen(false)}
+          record={selectedRecord as any}
+          onOpenOutcomeModal={() => {
+            if (selectedRecord) {
+              handleOpenOutcomeModal(selectedRecord);
+            }
+          }}
+          onOpenStageModal={() => {
+            if (selectedRecord) {
+              handleOpenOutcomeModal(selectedRecord);
+            }
+          }}
+        />
+      )}
 
 
       {/* Outcome Modal */}

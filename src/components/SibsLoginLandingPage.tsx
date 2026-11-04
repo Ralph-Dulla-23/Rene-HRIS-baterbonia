@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Check, ChevronLeft, ChevronRight, Copy, Eye, EyeOff, KeyRound, LogIn, Search, ShieldCheck, UserCheck, X } from 'lucide-react';
+import { Check, ChevronLeft, ChevronRight, Copy, ExternalLink, Eye, EyeOff, GraduationCap, KeyRound, LogIn, Search, ShieldCheck, UserCheck, X } from 'lucide-react';
 import { DEMO_ACCOUNTS, DEMO_PASSWORD } from '../auth/demoAccounts';
 import { useDemoAuth } from '../auth/DemoAuthContext';
 
@@ -280,6 +280,37 @@ export default function SibsLoginLandingPage({ onNavigateToPublicApp, onNavigate
             )}
           </div>
         </div>
+
+        {/* Public Applicant / Employee Portal Launcher (No credentials required) */}
+        {onNavigateToApplicantPortal && (!searchTerm || 'applicant employee portal quiz upload temporary access public'.includes(searchTerm.toLowerCase())) && (
+          <div className="px-4 mt-3">
+            <div className="rounded-xl border border-[#FF5C28]/50 bg-gradient-to-r from-[#FF5C28]/25 via-[#0B365F] to-[#042C51] p-3 shadow-lg">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#FF5C28] text-white shadow-sm">
+                  <GraduationCap size={16} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-xs font-bold text-white">Employee Public Portal</span>
+                    <span className="rounded bg-[#FF5C28] px-1.5 py-0.5 text-[8.5px] font-black uppercase text-white tracking-wider">
+                      Uploads &amp; Quiz
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-slate-300">Temporary public access • No password</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={onNavigateToApplicantPortal}
+                className="mt-2.5 flex w-full items-center justify-center gap-1.5 rounded-lg bg-[#FF5C28] hover:bg-[#e04f20] px-3 py-2 text-xs font-bold text-white shadow-sm transition-all cursor-pointer group"
+                title="Launch Public Employee Portal for document uploads and orientation quiz"
+              >
+                <span>Launch Public Employee Portal</span>
+                <ExternalLink size={13} className="transition-transform group-hover:translate-x-0.5" />
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Roles List */}
         <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2">

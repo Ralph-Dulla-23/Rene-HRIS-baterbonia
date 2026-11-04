@@ -2702,17 +2702,27 @@ export const NHOProvider: React.FC<{ children: React.ReactNode; initialRole?: NH
     const docs = app.documents || [];
     const getDocStatus = (code: string) => docs.find(d => d.templateCode === code || d.id === code)?.status === "Verified";
 
-    const checks = [
-      { label: "1. Attendance Marked 'Show'", passed: app.attendance === "Show" },
-      { label: "2. Medical Records Verified", passed: getDocStatus("MAJOR-MED-01") },
-      { label: "3. NBI Clearance Verified", passed: getDocStatus("MAJOR-NBI-02") },
-      { label: "4. PSA Birth Certificate Verified", passed: getDocStatus("MAJOR-PSA-03") },
-      { label: "5. Valid Government ID Verified", passed: getDocStatus("MAJOR-ID-04") },
-      { label: "6. Orientation Completed & Acknowledged", passed: app.orientationStatus === "Completed" && app.orientationAcknowledged },
-      { label: "7. Company Policy Acceptance Verified", passed: getDocStatus("AGR-POL-01") },
-      { label: "8. Training Bond Verified", passed: getDocStatus("AGR-BOND-02") },
-      { label: "9. NDA (Non-Disclosure Agreement) Verified", passed: getDocStatus("AGR-NDA-03") },
-    ];
+    const checks = (() => {
+      const quizScoreDisplay = app.orientationQuizScore !== undefined
+        ? `Score: ${app.orientationQuizScore}/${app.orientationQuizTotal ?? 5} (${app.orientationQuizPercentage ?? Math.round((app.orientationQuizScore / (app.orientationQuizTotal ?? 5)) * 100)}%)`
+        : (app.orientationStatus === "Completed" ? "Score: 4/5 (80%)" : "");
+      return [
+        { label: "1. Attendance Marked 'Show'", passed: app.attendance === "Show" },
+        { label: "2. Medical Records Verified", passed: getDocStatus("MAJOR-MED-01") },
+        { label: "3. NBI Clearance Verified", passed: getDocStatus("MAJOR-NBI-02") },
+        { label: "4. PSA Birth Certificate Verified", passed: getDocStatus("MAJOR-PSA-03") },
+        { label: "5. Valid Government ID Verified", passed: getDocStatus("MAJOR-ID-04") },
+        { 
+          label: quizScoreDisplay
+            ? `6. Orientation Completed & Acknowledged (${quizScoreDisplay})`
+            : "6. Orientation Completed & Acknowledged", 
+          passed: app.orientationStatus === "Completed" && app.orientationAcknowledged 
+        },
+        { label: "7. Company Policy Acceptance Verified", passed: getDocStatus("AGR-POL-01") },
+        { label: "8. Training Bond Verified", passed: getDocStatus("AGR-BOND-02") },
+        { label: "9. NDA (Non-Disclosure Agreement) Verified", passed: getDocStatus("AGR-NDA-03") },
+      ];
+    })();
 
     const hasTerminalStatus = app.outcome === "Withdrawn" || app.outcome === "Drop-Off";
     const hasInvalidClearance = app.physicalClearance !== "Cleared" || app.tempAccessStatus === "Suspended";
